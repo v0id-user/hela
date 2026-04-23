@@ -120,30 +120,45 @@ are hard.
 | Scale       | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs  | 99.95% |
 | Enterprise  | contact | custom      | custom      | all                 | custom   | 99.99% |
 
-## Deploy (Fly.io)
+## Deploy
+
+**Currently deployed on Railway.** Live URLs:
+
+- web:     https://web-production-f24fc.up.railway.app
+- app:     https://app-production-1716a.up.railway.app
+- gateway: https://gateway-production-bfdf.up.railway.app
+- control: https://control-production-059e.up.railway.app
+
+One `hela` Railway project, 5 services (postgres, gateway, control,
+web, app). Polar sandbox for billing. CI/CD auto-deploys on push to
+main via `.github/workflows/ci.yml` — tests run first, then per-service
+`railway up` with a scoped `RAILWAY_TOKEN` secret.
+
+### CI flow
 
 ```
-# first-time:
-cd infra/terraform && terraform init && terraform apply
-
-# per-region gateway roll:
-make deploy.gateway.iad
-
-# global control roll:
-make deploy.control
+push to main
+  │
+  ├─ test-gateway (mix compile+test against ephemeral PG)
+  ├─ test-control (ditto)
+  └─ test-js      (bun install + build SDK + build web/app)
+              │
+              └─→ deploy-control ─┬─→ deploy-gateway
+                                   ├─→ deploy-app
+                                   └─→ deploy-web
 ```
 
-The `ci.yml` workflow does all of this on push to main. Gateway rolls
-region-by-region with a short bake so a bad release gets caught before
-hitting all five regions at once.
+Deploy jobs fire only on `push` to `main` (not PRs). Each has a
+`concurrency:` group so overlapping pushes don't race.
 
-## Platform-agnostic-ish
+### Platform-agnostic
 
-The Dockerfiles are plain. Fly is the primary target because BEAM
-clustering over IPv6 is a one-liner there and each region gets a cheap
-Postgres, but nothing in the apps assumes Fly. Swap `dns_cluster` for
-`libcluster` with a different strategy and the same images run on AWS,
-Hetzner, Kubernetes, wherever.
+The Dockerfiles are vanilla. Railway is the current target; Fly.io
+configs are in `infra/fly/` for when BEAM clustering over IPv6 +
+multi-region is worth the move. `packages/sdk-types.REGIONS` and the
+SDK don't assume a host — swap `dns_cluster` for `libcluster` with a
+different strategy and the same images run on AWS, Hetzner, Kubernetes,
+wherever.
 
 ## License
 
