@@ -27,6 +27,7 @@ defmodule Hela.Projects do
       field :tier, :string, default: "free"
       field :region, :string
       field :jwt_public_key_jwk, :map
+      field :jwt_signing_secret, :string
       field :updated_at, :utc_datetime
     end
   end
@@ -45,6 +46,18 @@ defmodule Hela.Projects do
       nil -> {:error, :no_project}
       %{jwt_public_key_jwk: nil} -> {:error, :no_jwk}
       %{jwt_public_key_jwk: jwk} -> {:ok, jwk}
+    end
+  end
+
+  @doc """
+  Per-project HS256 signing secret. Canonical source is the control
+  plane; control pushes it via the sync endpoint. Used both to verify
+  server-issued tokens and to sign new ones at `/v1/tokens`.
+  """
+  def fetch_signing_secret(project_id) do
+    case get(project_id) do
+      %{jwt_signing_secret: s} when is_binary(s) and byte_size(s) > 0 -> {:ok, s}
+      _ -> {:error, :no_secret}
     end
   end
 
@@ -81,7 +94,9 @@ defmodule Hela.Projects do
     row = struct(Row, Map.put(attrs, :updated_at, DateTime.utc_now() |> DateTime.truncate(:second)))
 
     Repo.insert!(row,
-      on_conflict: {:replace, [:tier, :region, :jwt_public_key_jwk, :updated_at, :account_id]},
+      on_conflict:
+        {:replace,
+         [:tier, :region, :jwt_public_key_jwk, :jwt_signing_secret, :updated_at, :account_id]},
       conflict_target: :id
     )
 

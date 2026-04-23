@@ -14,7 +14,8 @@ defmodule HelaWeb.InternalController do
       account_id: params["account_id"],
       tier: params["tier"] || "free",
       region: params["region"],
-      jwt_public_key_jwk: params["jwt_public_key_jwk"]
+      jwt_public_key_jwk: params["jwt_public_key_jwk"],
+      jwt_signing_secret: params["jwt_signing_secret"]
     })
 
     json(conn, %{ok: true})

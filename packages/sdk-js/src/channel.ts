@@ -39,24 +39,14 @@ export class HelaChannel {
   /** Publish a message to this channel. Resolves with the server-assigned id. */
   publish(
     body: string,
-    opts?: { author?: string; replyTo?: string }
+    opts?: { author?: string; replyTo?: string; timeoutMs?: number }
   ): Promise<{ id: string; quota: "ok" | "over" }> {
-    return new Promise((resolve, reject) => {
-      this.raw
-        .push("publish", { body, author: opts?.author, reply_to_id: opts?.replyTo })
-        .receive("ok", (r) => resolve(r))
-        .receive("error", (e) => reject(e));
-    });
+    return this.pushP("publish", { body, author: opts?.author, reply_to_id: opts?.replyTo }, opts?.timeoutMs);
   }
 
   /** Fetch older messages. `before` is a message id returned by the server. */
-  history(opts?: { before?: string; limit?: number }): Promise<HistoryReply> {
-    return new Promise((resolve, reject) => {
-      this.raw
-        .push("history", { before: opts?.before, limit: opts?.limit })
-        .receive("ok", (r: HistoryReply) => resolve(r))
-        .receive("error", (e) => reject(e));
-    });
+  history(opts?: { before?: string; limit?: number; timeoutMs?: number }): Promise<HistoryReply> {
+    return this.pushP("history", { before: opts?.before, limit: opts?.limit }, opts?.timeoutMs);
   }
 
   /** Subscribe to incoming messages. Returns an unsubscribe function. */
@@ -66,12 +56,24 @@ export class HelaChannel {
   }
 
   /** Change your presence-roster nickname without re-joining. */
-  setNickname(nickname: string): Promise<void> {
+  setNickname(nickname: string, timeoutMs?: number): Promise<void> {
+    return this.pushP("set_nick", { nickname }, timeoutMs);
+  }
+
+  /**
+   * Thin wrapper around Phoenix.Channel.push that always resolves or
+   * rejects — never hangs. Every SDK call flows through this so a dropped
+   * reply can't deadlock the caller.
+   */
+  private pushP<T>(event: string, payload: unknown, timeoutMs = 10_000): Promise<T> {
     return new Promise((resolve, reject) => {
       this.raw
-        .push("set_nick", { nickname })
-        .receive("ok", () => resolve())
-        .receive("error", (e) => reject(e));
+        .push(event, payload as object, timeoutMs)
+        .receive("ok", (r: T) => resolve(r))
+        .receive("error", (e) => reject(e))
+        .receive("timeout", () =>
+          reject(Object.assign(new Error(`${event} timeout`), { reason: "timeout", event }))
+        );
     });
   }
 }

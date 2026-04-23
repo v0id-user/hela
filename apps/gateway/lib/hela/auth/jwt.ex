@@ -55,12 +55,18 @@ defmodule Hela.Auth.JWT do
     end
   end
 
+  # Per-project random secret pushed from the control plane on project
+  # creation. No customer-facing way to read it — only the control plane
+  # and the regional gateway know the value. Rotating kills any still-
+  # valid server-issued tokens.
   defp verify_with_server_secret(token, project_id) do
-    signer = Joken.Signer.create("HS256", "apikey:" <> project_id)
+    with {:ok, secret} <- Hela.Projects.fetch_signing_secret(project_id) do
+      signer = Joken.Signer.create("HS256", secret)
 
-    case Joken.verify(token, signer) do
-      {:ok, c} -> {:ok, c}
-      _ -> {:error, :bad_signature}
+      case Joken.verify(token, signer) do
+        {:ok, c} -> {:ok, c}
+        _ -> {:error, :bad_signature}
+      end
     end
   rescue
     _ -> {:error, :bad_signature}

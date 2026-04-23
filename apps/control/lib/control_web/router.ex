@@ -45,5 +45,6 @@ defmodule ControlWeb.Router do
     delete "/projects/:id/keys/:key_id", KeysController, :revoke
 
     put "/projects/:id/jwk", ProjectsController, :set_jwk
+    post "/projects/:id/checkout", ProjectsController, :checkout
   end
 end

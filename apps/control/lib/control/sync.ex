@@ -50,7 +50,8 @@ defmodule Control.Sync do
       account_id: p.account_id,
       tier: p.tier,
       region: p.region,
-      jwt_public_key_jwk: p.jwt_public_key_jwk
+      jwt_public_key_jwk: p.jwt_public_key_jwk,
+      jwt_signing_secret: p.jwt_signing_secret
     }
 
     request(region, :post, "/_internal/projects", body)

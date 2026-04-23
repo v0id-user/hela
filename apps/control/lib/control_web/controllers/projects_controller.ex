@@ -60,6 +60,27 @@ defmodule ControlWeb.ProjectsController do
     end
   end
 
+  @doc """
+  Start a Polar Checkout session for a paid-tier project. The dashboard
+  redirects the user to the returned `url`; on completion Polar sends a
+  `subscription.created` webhook which we store against the project.
+
+  For Free-tier projects this returns `{url: nil}` — nothing to charge.
+  """
+  def checkout(conn, %{"id" => id} = params) do
+    success =
+      params["success_url"] ||
+        "https://app-production-1716a.up.railway.app/projects/#{id}?checkout=ok"
+
+    with {:ok, p} <- load_own(conn, id),
+         {:ok, url} <- Control.Billing.start_checkout(p, success) do
+      json(conn, %{url: url, tier: p.tier})
+    else
+      :not_found -> not_found(conn)
+      {:error, reason} -> conn |> put_status(400) |> json(%{error: inspect(reason)})
+    end
+  end
+
   defp load_own(conn, id) do
     case Accounts.get_project(id) do
       nil -> :not_found
