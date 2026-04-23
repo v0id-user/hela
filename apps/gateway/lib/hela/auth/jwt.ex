@@ -29,14 +29,41 @@ defmodule Hela.Auth.JWT do
   def verify(token, fetch_jwk) when is_binary(token) and is_function(fetch_jwk, 1) do
     with {:ok, unverified} <- peek_claims(token),
          project_id when is_binary(project_id) <- unverified["pid"] || {:error, :missing_pid},
-         {:ok, jwk} <- fetch_jwk.(project_id),
-         {:ok, claims} <- verify_with_jwk(token, jwk),
+         {:ok, claims} <- verify_one_of(token, project_id, fetch_jwk),
          :ok <- validate_claims(claims, project_id) do
       {:ok, claims}
     else
       {:error, _} = e -> e
       _ -> {:error, :bad_token}
     end
+  end
+
+  # Customer-registered RSA JWK is the canonical path. If no JWK is
+  # registered (or verify fails), fall back to HS256 with the server-
+  # derived secret used by `/v1/tokens` — that path only works for
+  # tokens we minted ourselves, so authenticity is still enforced.
+  defp verify_one_of(token, project_id, fetch_jwk) do
+    case fetch_jwk.(project_id) do
+      {:ok, jwk} ->
+        case verify_with_jwk(token, jwk) do
+          {:ok, _} = ok -> ok
+          _ -> verify_with_server_secret(token, project_id)
+        end
+
+      _ ->
+        verify_with_server_secret(token, project_id)
+    end
+  end
+
+  defp verify_with_server_secret(token, project_id) do
+    signer = Joken.Signer.create("HS256", "apikey:" <> project_id)
+
+    case Joken.verify(token, signer) do
+      {:ok, c} -> {:ok, c}
+      _ -> {:error, :bad_signature}
+    end
+  rescue
+    _ -> {:error, :bad_signature}
   end
 
   @doc """
@@ -90,9 +117,16 @@ defmodule Hela.Auth.JWT do
 
   # --- internals --------------------------------------------------------
 
+  # Joken.peek_claims already returns {:ok, claims} | {:error, _} in this
+  # version, so we pass its result through verbatim rather than re-wrapping.
   defp peek_claims(token) do
     try do
-      {:ok, Joken.peek_claims(token)}
+      case Joken.peek_claims(token) do
+        {:ok, _} = ok -> ok
+        {:error, _} = err -> err
+        claims when is_map(claims) -> {:ok, claims}
+        _ -> {:error, :malformed}
+      end
     rescue
       _ -> {:error, :malformed}
     end

@@ -36,14 +36,14 @@ defmodule Control.Polar do
   @doc """
   Create (or reuse) a Polar customer for an account. We store the
   returned id on `accounts.polar_customer_id`.
+
+  Note: Polar's API rejects `organization_id` in the body when the
+  request is authed with an organization token (the token itself scopes
+  the call). So we just send email + external_id.
   """
   def create_customer(%{email: email, id: external_id}) do
     if configured?() do
-      post("/v1/customers", %{
-        email: email,
-        external_id: external_id,
-        organization_id: organization_id()
-      })
+      post("/v1/customers", %{email: email, external_id: external_id})
     else
       Logger.info("polar not configured; skipping customer create for #{email}")
       {:ok, %{"id" => nil}}
