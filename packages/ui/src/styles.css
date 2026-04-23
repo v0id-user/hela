@@ -1,0 +1,97 @@
+/*
+ * The hela design system. silver on black, monospace, zero radius.
+ * One accent: muted amber #c9a76a — active states, CTAs, warnings.
+ * Consumed by both apps/web and apps/app so they stay visually identical.
+ */
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #c0c0c0;
+}
+body {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+#root { min-height: 100vh; }
+
+a { color: #b0b0b0; text-decoration: none; }
+a:hover { color: #fff; }
+
+h1, h2, h3, h4 {
+  font-weight: normal;
+  margin: 0;
+  font-family: inherit;
+  color: #e0e0e0;
+}
+h1 { font-size: 22px; }
+h2 { font-size: 18px; }
+h3 { font-size: 14px; }
+p  { margin: 0; }
+
+button {
+  font-family: inherit;
+  font-size: 12px;
+  background: #1a1a1a;
+  color: #c0c0c0;
+  border: 1px solid #3a3a3a;
+  border-top-color: #4a4a4a;
+  border-left-color: #4a4a4a;
+  border-right-color: #2a2a2a;
+  border-bottom-color: #2a2a2a;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+button:active:not(:disabled) {
+  border-top-color: #2a2a2a;
+  border-left-color: #2a2a2a;
+  border-right-color: #4a4a4a;
+  border-bottom-color: #4a4a4a;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:hover:not(:disabled) { background: #222; color: #fff; }
+
+.cta, button.cta {
+  background: #1a1613;
+  color: #c9a76a;
+  border-top-color: #2e271e;
+  border-left-color: #2e271e;
+  border-right-color: #140f0c;
+  border-bottom-color: #140f0c;
+}
+.cta:hover:not(:disabled), button.cta:hover:not(:disabled) {
+  background: #221a14;
+  color: #e7c388;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 12px;
+  background: #0a0a0a;
+  color: #c0c0c0;
+  border: 1px solid #333;
+  padding: 3px 6px;
+  border-radius: 0;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #666;
+  background: #0f0f0f;
+}
+
+code, pre {
+  font-family: inherit;
+  background: #0a0a0a;
+  color: #c0c0c0;
+  border: 1px solid #222;
+  padding: 0;
+}
+pre { padding: 10px; overflow-x: auto; }
+
+::selection { background: #444; color: #fff; }

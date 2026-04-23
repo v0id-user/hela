@@ -1,0 +1,5 @@
+#!/bin/sh
+cd -P -- "$(dirname -- "$0")"
+./control eval "Control.Release.migrate"
+export PHX_SERVER=true
+exec ./control start

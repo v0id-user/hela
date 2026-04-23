@@ -1,0 +1,8 @@
+#!/bin/sh
+# Release start: migrate, then boot the Phoenix server.
+# `exec` replaces the shell, so we can't chain with &&; run migrate
+# first, then exec the start.
+cd -P -- "$(dirname -- "$0")"
+./hela eval "Hela.Release.migrate"
+export PHX_SERVER=true
+exec ./hela start

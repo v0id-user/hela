@@ -1,0 +1,37 @@
+# js
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+.bun/
+
+# elixir
+apps/*/_build/
+apps/*/deps/
+apps/*/.elixir_ls/
+apps/*/erl_crash.dump
+apps/*/priv/static/assets/
+apps/*/priv/static/cache_manifest.json
+apps/*/.fetch
+
+# env
+**/.env
+**/.env.local
+.env
+.env.local
+
+# macos
+.DS_Store
+
+# terraform
+infra/terraform/.terraform/
+infra/terraform/terraform.tfstate*
+infra/terraform/*.auto.tfvars
+
+# agent / editor scratch
+.claude/
+.cursor/
+.vscode/
+
+# bun
+bun.lockb

@@ -1,0 +1,50 @@
+# Single global deployment for the control plane. Account/billing data
+# doesn't need to be multi-region; the Fly Postgres in iad is the
+# canonical source of truth.
+
+app = "hela-control"
+primary_region = "iad"
+kill_signal = "SIGTERM"
+kill_timeout = 30
+
+[build]
+  dockerfile = "apps/control/Dockerfile"
+
+[env]
+  PHX_HOST = "app.hela.dev"
+  PHX_SERVER = "true"
+  POOL_SIZE = "10"
+  # GATEWAYS is a JSON map from region slug to internal gateway URL.
+  # Example value (set via flyctl secrets):
+  # {"iad":"https://hela-gateway-iad.internal:4000", ...}
+
+[[services]]
+  internal_port = 4000
+  protocol = "tcp"
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.http_checks]]
+    interval = "30s"
+    method = "get"
+    path = "/health"
+    timeout = "2s"
+
+[deploy]
+  release_command = "/app/bin/control eval \"Control.Release.migrate\""
+  strategy = "rolling"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

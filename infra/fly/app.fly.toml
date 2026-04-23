@@ -1,0 +1,30 @@
+app = "hela-app"
+primary_region = "iad"
+
+[build]
+  dockerfile = "apps/app/Dockerfile"
+
+[env]
+  VITE_HELA_CONTROL = "https://app-api.hela.dev"
+  VITE_HELA_GATEWAY = "https://iad.hela.dev"
+
+[[services]]
+  internal_port = 80
+  protocol = "tcp"
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

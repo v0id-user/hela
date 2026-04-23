@@ -1,0 +1,171 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Every job tests first, deploy jobs depend on their tests + only fire on
+# main. The gateway gets deployed after control because a fresh gateway
+# needs control-pushed project config before it can serve traffic.
+
+env:
+  MIX_ENV: test
+
+jobs:
+  # ---------- tests ------------------------------------------------------
+
+  test-gateway:
+    name: gateway · test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gateway_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with: { elixir-version: '1.17.3', otp-version: '27.1.2' }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            apps/gateway/deps
+            apps/gateway/_build
+          key: gateway-${{ hashFiles('apps/gateway/mix.lock') }}
+      - run: mix deps.get
+        working-directory: apps/gateway
+      - run: mix compile --warnings-as-errors
+        working-directory: apps/gateway
+      - run: mix test
+        working-directory: apps/gateway
+
+  test-control:
+    name: control · test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: control_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with: { elixir-version: '1.17.3', otp-version: '27.1.2' }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            apps/control/deps
+            apps/control/_build
+          key: control-${{ hashFiles('apps/control/mix.lock') }}
+      - run: mix deps.get
+        working-directory: apps/control
+      - run: mix compile --warnings-as-errors
+        working-directory: apps/control
+      - run: mix test
+        working-directory: apps/control
+
+  test-js:
+    name: js · typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: bun-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - run: bun run build:sdk
+      - run: cd apps/web && bun run build
+        env:
+          VITE_HELA_API: https://gateway-production-bfdf.up.railway.app
+      - run: cd apps/app && bun run build
+        env:
+          VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
+          VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
+
+  # ---------- deploys — only on push to main -----------------------------
+  #
+  # RAILWAY_TOKEN is a project-scoped token set as a repo secret.
+  # Rotate it: railway.com/account/tokens → delete, create, `gh secret set`.
+
+  deploy-control:
+    name: deploy · control
+    needs: [test-control]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy-control
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun add -g @railway/cli
+      - run: railway up ./apps/control --service control --path-as-root --ci --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-gateway:
+    name: deploy · gateway
+    needs: [test-gateway, deploy-control]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun add -g @railway/cli
+      - run: railway up ./apps/gateway --service gateway --path-as-root --ci --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-web:
+    name: deploy · web
+    needs: [test-js, deploy-gateway]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build:sdk
+      - run: cd apps/web && bun run build
+        env:
+          VITE_HELA_API: https://gateway-production-bfdf.up.railway.app
+      - run: bun add -g @railway/cli
+      - run: railway up ./apps/web --service web --path-as-root --ci --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-app:
+    name: deploy · app
+    needs: [test-js, deploy-control]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build:sdk
+      - run: cd apps/app && bun run build
+        env:
+          VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
+          VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
+      - run: bun add -g @railway/cli
+      - run: railway up ./apps/app --service app --path-as-root --ci --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

@@ -1,0 +1,44 @@
+import Config
+
+if System.get_env("PHX_SERVER") do
+  config :hela, HelaWeb.Endpoint, server: true
+end
+
+if config_env() == :prod do
+  database_url =
+    System.get_env("DATABASE_URL") ||
+      raise """
+      environment variable DATABASE_URL is missing.
+      For example: ecto://USER:PASS@HOST/DATABASE
+      """
+
+  maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+
+  config :hela, Hela.Repo,
+    url: database_url,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
+
+  secret_key_base =
+    System.get_env("SECRET_KEY_BASE") ||
+      raise "environment variable SECRET_KEY_BASE is missing."
+
+  host = System.get_env("PHX_HOST") || "hela.dev"
+  port = String.to_integer(System.get_env("PORT") || "4000")
+
+  config :hela, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+
+  config :hela, :region, System.get_env("HELA_REGION", "iad")
+
+  config :hela, :playground,
+    project_id: System.get_env("PLAYGROUND_PROJECT_ID", "proj_public"),
+    secret:
+      System.get_env("PLAYGROUND_SECRET") ||
+        raise("PLAYGROUND_SECRET missing"),
+    ttl_seconds: String.to_integer(System.get_env("PLAYGROUND_TTL_S") || "300")
+
+  config :hela, HelaWeb.Endpoint,
+    url: [host: host, port: 443, scheme: "https"],
+    http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: port],
+    secret_key_base: secret_key_base
+end

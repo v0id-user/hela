@@ -1,0 +1,27 @@
+{
+  "name": "hela",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/app",
+    "packages/sdk-js",
+    "packages/sdk-types",
+    "packages/ui"
+  ],
+  "scripts": {
+    "dev": "make dev",
+    "build": "bun run --filter=* build",
+    "build:sdk": "cd packages/sdk-types && bun run build && cd ../sdk-js && bun run build",
+    "dev:web": "bun run build:sdk && bun run dev:web:raw",
+    "dev:app": "bun run build:sdk && bun run dev:app:raw",
+    "dev:web:raw": "cd apps/web && bun run dev",
+    "dev:app:raw": "cd apps/app && bun run dev",
+    "dev:all": "bun run build:sdk && concurrently -n g,c,w,a -c auto \"make dev.gateway\" \"make dev.control\" \"bun run dev:web:raw\" \"bun run dev:app:raw\""
+  },
+  "packageManager": "bun@1.1.34",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,78 @@
+services:
+  # Two Postgres databases share one cluster locally; in prod they live
+  # on different Fly Postgres clusters. Single-container is fine for dev.
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: gateway_dev,control_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres-init.sh:/docker-entrypoint-initdb.d/00-multi.sh:ro
+
+  gateway:
+    build: ./apps/gateway
+    restart: unless-stopped
+    environment:
+      PHX_SERVER: "true"
+      HELA_REGION: dev
+      DATABASE_URL: ecto://postgres:postgres@postgres:5432/gateway_dev
+      SECRET_KEY_BASE: dev-gateway-secret-key-base-000000000000000000000000000000000000000000000000000000000000
+      PLAYGROUND_SECRET: dev-only-playground-secret-change-me-in-prod
+      GATEWAY_INTERNAL_SECRET: dev-only-internal-secret
+    depends_on:
+      - postgres
+    ports:
+      - "4001:4000"
+
+  control:
+    build: ./apps/control
+    restart: unless-stopped
+    environment:
+      PHX_SERVER: "true"
+      DATABASE_URL: ecto://postgres:postgres@postgres:5432/control_dev
+      SECRET_KEY_BASE: dev-control-secret-key-base-000000000000000000000000000000000000000000000000000000000000
+      GATEWAY_INTERNAL_SECRET: dev-only-internal-secret
+      GATEWAYS: '{"iad":"http://gateway:4000","sjc":"http://gateway:4000","fra":"http://gateway:4000","sin":"http://gateway:4000","syd":"http://gateway:4000","dev":"http://gateway:4000"}'
+      STRIPE_SECRET_KEY: sk_test_replace_me
+    depends_on:
+      - postgres
+    ports:
+      - "4000:4000"
+
+  web:
+    image: oven/bun:1.1
+    working_dir: /repo
+    command: sh -c "bun install && cd apps/web && bun run dev --host"
+    volumes:
+      - .:/repo
+    environment:
+      VITE_HELA_API: http://localhost:4001
+    ports:
+      - "5173:5173"
+
+  app:
+    image: oven/bun:1.1
+    working_dir: /repo
+    command: sh -c "bun install && cd apps/app && bun run dev --host"
+    volumes:
+      - .:/repo
+    environment:
+      VITE_HELA_CONTROL: http://localhost:4000
+      VITE_HELA_GATEWAY: http://localhost:4001
+    ports:
+      - "5174:5174"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  pgdata:
