@@ -112,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun add -g @railway/cli
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/control --service control --path-as-root --ci --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -126,7 +126,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun add -g @railway/cli
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/gateway --service gateway --path-as-root --ci --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -145,7 +145,7 @@ jobs:
       - run: cd apps/web && bun run build
         env:
           VITE_HELA_API: https://gateway-production-bfdf.up.railway.app
-      - run: bun add -g @railway/cli
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/web --service web --path-as-root --ci --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -165,7 +165,7 @@ jobs:
         env:
           VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
           VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
-      - run: bun add -g @railway/cli
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/app --service app --path-as-root --ci --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
