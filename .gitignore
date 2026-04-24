@@ -35,3 +35,16 @@ infra/terraform/*.auto.tfvars
 
 # bun
 bun.lockb
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# sdk-py: per-package venv and build artefacts
+packages/sdk-py/.venv/
+packages/sdk-py/dist/
+packages/sdk-py/build/
+packages/sdk-py/*.egg-info/
