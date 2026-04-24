@@ -137,7 +137,7 @@ export function Pricing() {
             </div>
 
             <a
-              href={t.slug === "ent" ? "mailto:hello@hela.dev" : signupUrl(t.slug)}
+              href={t.slug === "ent" ? "mailto:hey@v0id.me" : signupUrl(t.slug)}
               style={{ display: "block", marginTop: 14 }}
             >
               <button className={t.featured ? "cta" : ""} style={{ width: "100%" }}>

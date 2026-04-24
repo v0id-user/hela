@@ -2,7 +2,9 @@ import { createRootRoute, createRoute, createRouter, Link, Outlet } from "@tanst
 import { Home } from "./routes/Home";
 import { How } from "./routes/How";
 import { Dashboard } from "./routes/Dashboard";
-import { SIGNIN_URL } from "./lib/urls";
+import { Signup } from "./routes/Signup";
+import { Status } from "./routes/Status";
+import { SIGNIN_URL, signupUrl } from "./lib/urls";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -23,14 +25,17 @@ const rootRoute = createRootRoute({
         <Link
           to="/"
           style={{
-            padding: "6px 14px",
+            padding: "4px 14px",
             borderRight: "1px solid #333",
-            color: "#c9a76a",
-            letterSpacing: 1,
-            fontSize: 12,
+            display: "flex",
+            alignItems: "center",
+            height: 28,
           }}
+          aria-label="hela home"
         >
-          [ hela ]
+          {/* SVG wordmark — swappable anywhere the nav appears.
+              Height matches the nav link height so rows align. */}
+          <img src="/brand/wordmark.svg" alt="hela" height={22} style={{ display: "block" }} />
         </Link>
         <Link to="/" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
           home
@@ -41,8 +46,14 @@ const rootRoute = createRootRoute({
         <Link to="/dashboard" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
           dashboard
         </Link>
+        <Link to="/status" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
+          status
+        </Link>
         <a href={SIGNIN_URL} style={{ ...linkStyle, marginLeft: 0 }}>
           sign in
+        </a>
+        <a href={signupUrl()} style={ctaLinkStyle}>
+          get started &rarr;
         </a>
         <span
           style={{
@@ -79,7 +90,25 @@ const dashboardRoute = createRoute({
   component: Dashboard,
 });
 
-const routeTree = rootRoute.addChildren([homeRoute, howRoute, dashboardRoute]);
+const signupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/signup",
+  component: Signup,
+});
+
+const statusRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/status",
+  component: Status,
+});
+
+const routeTree = rootRoute.addChildren([
+  homeRoute,
+  howRoute,
+  dashboardRoute,
+  signupRoute,
+  statusRoute,
+]);
 
 export const router = createRouter({ routeTree });
 
@@ -100,4 +129,16 @@ const linkStyle: React.CSSProperties = {
 const activeLinkStyle: React.CSSProperties = {
   color: "#fff",
   background: "#1a1a1a",
+};
+
+// Primary CTA slot in the nav — colored to match the wordmark accent
+// (#c9a76a). Same padding/height as the nav links so it aligns.
+const ctaLinkStyle: React.CSSProperties = {
+  color: "#c9a76a",
+  textDecoration: "none",
+  fontSize: 12,
+  padding: "6px 14px",
+  borderLeft: "1px solid #333",
+  borderRight: "1px solid #333",
+  background: "#14110a",
 };

@@ -64,7 +64,7 @@ function Footer() {
           sign in
         </a>
         {" · "}
-        <a href="mailto:hello@hela.dev" style={{ color: "#888" }}>
+        <a href="mailto:hey@v0id.me" style={{ color: "#888" }}>
           contact
         </a>
       </span>

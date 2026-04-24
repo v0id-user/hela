@@ -87,9 +87,11 @@ export function RegionPicker() {
 }
 
 async function runProbe(slug: RegionSlug): Promise<number> {
-  // In local dev we short-circuit to the dev server regardless of slug.
-  // In prod, each region gets its own host.
-  const base = API_BASE.includes("localhost") ? API_BASE : `https://${slug}.hela.dev`;
+  // Until per-region DNS lands, every slug resolves to the single live
+  // gateway on Railway. API_BASE is set by Vite at build time via
+  // VITE_HELA_API. The `slug` is passed through to `/regions/:slug/ping`
+  // so the server still exercises its per-region code path.
+  const base = API_BASE;
 
   const t0 = performance.now();
   const r = await fetch(`${base}/regions/${slug}/ping`, { cache: "no-store" });

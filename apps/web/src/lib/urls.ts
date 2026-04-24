@@ -8,14 +8,15 @@ function isLocalBrowserHost(): boolean {
 }
 
 // Public app origin:
-// - VITE_HELA_APP overrides all
+// - VITE_HELA_APP overrides all (set per Railway environment)
 // - local web dev defaults to app dev server on :5174
-// - production defaults to app.hela.dev
+// - production falls back to the Railway `app` service URL until a
+//   custom domain is set up.
 export const APP_BASE =
   env?.VITE_HELA_APP ??
   (isLocalBrowserHost()
     ? `${window.location.protocol}//${window.location.hostname}:5174`
-    : "https://app.hela.dev");
+    : "https://app-production-1716a.up.railway.app");
 
 export const SIGNIN_URL = APP_BASE;
 
