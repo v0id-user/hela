@@ -23,8 +23,17 @@ if config_env() == :prod do
     System.get_env("SECRET_KEY_BASE") ||
       raise "environment variable SECRET_KEY_BASE is missing."
 
-  host = System.get_env("PHX_HOST") || "web-production-f24fc.up.railway.app"
+  host = System.get_env("PHX_HOST") || "gateway-production-bfdf.up.railway.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
+
+  browser_origins =
+    [
+      host,
+      System.get_env("HELA_WEB_HOST") || "web-production-f24fc.up.railway.app",
+      System.get_env("HELA_APP_HOST") || "app-production-1716a.up.railway.app"
+    ]
+    |> Enum.map(&"//#{&1}")
+    |> Enum.uniq()
 
   config :hela, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -50,5 +59,8 @@ if config_env() == :prod do
   config :hela, HelaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: port],
+    # Browser SDK clients connect cross-origin from the hosted web/app origins.
+    # Keep the allowlist explicit so Phoenix still rejects unexpected origins.
+    check_origin: browser_origins,
     secret_key_base: secret_key_base
 end

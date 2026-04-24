@@ -38,7 +38,7 @@ export default defineConfig({
         },
         {
           command:
-            "cd ../.. && bun run build:sdk && cd apps/web && bun run build && bunx vite preview --host 127.0.0.1 --port 4173 --strictPort",
+            "cd ../../apps/web && bun run build && bunx vite preview --host 127.0.0.1 --port 4173 --strictPort",
           url: PREVIEW_READY_URL,
           reuseExistingServer: !process.env.CI,
           stdout: "pipe",
