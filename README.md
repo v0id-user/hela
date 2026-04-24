@@ -18,8 +18,13 @@ hela/
 │   ├── web/          React · hela.dev — landing page + live playground
 │   └── app/          React · app.hela.dev — customer dashboard
 ├── packages/
+│   ├── schemas/      JSON Schema + OpenAPI — single source of truth
+│   ├── sdk-gen/      codegen: schemas → SDK type modules
 │   ├── sdk-js/       @hela/sdk — the published TypeScript SDK
 │   ├── sdk-types/    @hela/sdk-types — wire-format types, dependency-free
+│   ├── sdk-py/       hela (PyPI) — async Python SDK, Pydantic v2
+│   ├── sdk-go/       hela-go — Go SDK
+│   ├── sdk-rs/       hela (crates.io) — Rust SDK, tokio
 │   └── ui/           @hela/ui — shared design system (silver on black)
 ├── infra/
 │   ├── fly/          per-region gateway fly.toml + control/web/app configs
@@ -174,6 +179,38 @@ multi-region is worth the move. `packages/sdk-types.REGIONS` and the
 SDK don't assume a host — swap `dns_cluster` for `libcluster` with a
 different strategy and the same images run on AWS, Hetzner, Kubernetes,
 wherever.
+
+## SDKs
+
+Four languages, one wire protocol. All four type modules are
+generated from `packages/schemas/` via `make sdk.gen`; transport and
+the domain API are hand-written per language. The recipe for adding a
+fifth is in [`docs/sdk/adding-a-language.md`](docs/sdk/adding-a-language.md).
+
+| package            | lang       | registry                  | runtime                      |
+| ------------------ | ---------- | ------------------------- | ---------------------------- |
+| `@hela/sdk`        | TypeScript | npm                       | browser + Node (phoenix.js)  |
+| `hela`             | Python     | PyPI                      | asyncio (`websockets` + `httpx`) |
+| `hela-go`          | Go         | `go install`              | `coder/websocket`            |
+| `hela` (crate)     | Rust       | crates.io                 | `tokio-tungstenite` + `reqwest` |
+
+Docs: [`docs/sdk/`](docs/sdk/).
+
+## Contributing
+
+Read [`CLAUDE.md`](CLAUDE.md) first — it's the rule set for every
+agentic or human contributor. Key points:
+
+- **Small, focused commits.** One logical change per commit.
+- **Schemas are the source of truth.** `_generated/` modules are
+  never hand-edited; run `make sdk.gen`.
+- **Subject lines match `^[A-Za-z0-9 ,:]{4,72}$`.** Enforced by
+  commit-msg hook + CI. Conventional-Commit prefixes allowed;
+  parens and hyphens aren't.
+- **`lefthook install` once** — pre-commit runs format, lint, and
+  tests for the languages you touched.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full guide.
 
 ## License
 

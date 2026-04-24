@@ -80,6 +80,25 @@ account (1 signup, 1 stripe customer)
 Topic prefix, JWT `pid` claim, Ecto `where project_id = ?` on every
 gateway query. Three layers of defence against cross-tenant access.
 
+## SDK surface
+
+Four client SDKs, all drawing types from
+[`packages/schemas/`](../packages/schemas/) (JSON Schema draft-07 for
+the WS surface, OpenAPI 3.1 for REST). Wire protocol version is
+tracked in [`packages/schemas/VERSION`](../packages/schemas/VERSION);
+bump the major on breaking change, minor on additive change.
+
+- `packages/sdk-js/` — TypeScript, wraps phoenix.js
+- `packages/sdk-py/` — Python asyncio, Pydantic v2
+- `packages/sdk-go/` — Go, `coder/websocket`
+- `packages/sdk-rs/` — Rust, tokio-tungstenite
+
+Transport + domain API are hand-written per language (~300 lines
+each). Type modules are generated. A drift guard in CI regenerates
+and diffs so a schema change that forgets to `make sdk.gen` fails
+fast. See [`docs/sdk/adding-a-language.md`](./sdk/adding-a-language.md)
+for the recipe.
+
 ## Why we don't do X
 
 - **Edge everywhere.** Five regions is enough for sub-100ms over most of

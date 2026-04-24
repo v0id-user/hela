@@ -3,6 +3,13 @@
 Single source of truth for every hela wire shape. Two files, two
 concerns:
 
+**Current protocol version: [`VERSION`](./VERSION) (`1.0.0`).**
+Bump the major when a breaking change lands on the wire. Bump the
+minor for additive changes (new event, new optional field). Patch
+is for spec text / doc clarifications that don't change semantics.
+
+
+
 | file                     | surface                | fed into                     |
 | ------------------------ | ---------------------- | ---------------------------- |
 | `openapi.yaml`           | REST API               | OpenAPI client generators    |
