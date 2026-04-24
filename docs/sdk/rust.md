@@ -51,10 +51,17 @@ let resp = rest.mint_token(TokenRequest {
     sub:   user.id,
     chans: Some(vec![vec!["read".into(), "chat:*".into()]]),
     ttl_seconds: Some(300),
+    ephemeral: false, // true → broadcast-only JWT from /v1/tokens
 }).await?;
 ```
 
 Then pass `resp.token` as `Config::token` on the client side.
+
+**Ephemeral mode** — set `ephemeral: true` on [`TokenRequest`](../../packages/sdk-rs/src/types.rs)
+when calling `mint_token` for broadcast-only HS256 grants from `/v1/tokens`.
+For the public playground, use [`Rest::playground_token_ephemeral`](../../packages/sdk-rs/src/rest.rs)
+instead of `playground_token` when you want the same semantics (live delivery
+only; no join replay, no persistence).
 
 ## channels
 
@@ -125,7 +132,8 @@ let rest = hela::Rest::new("https://gateway-production-bfdf.up.railway.app", hel
 let t    = rest.mint_token(TokenRequest { sub: "u1".into(), ttl_seconds: Some(300), ..Default::default() }).await?;
 let pub_ = rest.publish("chat:lobby", PublishRequest { body: "hi".into(), ..Default::default() }).await?;
 let page = rest.history("chat:lobby", HistoryRequest { limit: Some(100), ..Default::default() }).await?;
-let guest= rest.playground_token(None).await?;
+let guest = rest.playground_token(None).await?;
+let _guest_ephemeral = rest.playground_token_ephemeral(None, true).await?;
 ```
 
 Supply your own `reqwest::Client` via `RestOptions::http` to share

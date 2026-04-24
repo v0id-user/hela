@@ -162,6 +162,7 @@ type TokenRequest struct {
 	Sub        string     `json:"sub"`
 	Chans      [][]string `json:"chans,omitempty"`
 	TTLSeconds int        `json:"ttl_seconds,omitempty"`
+	Ephemeral  bool       `json:"ephemeral,omitempty"`
 }
 
 // TokenResponse carries the short-lived HS256 JWT.
@@ -198,4 +199,5 @@ type PlaygroundToken struct {
 	ProjectID string                 `json:"project_id"` // always "proj_public"
 	ExpiresIn int                    `json:"expires_in"`
 	Scopes    []PlaygroundTokenScope `json:"scopes"`
+	Ephemeral bool                   `json:"ephemeral,omitempty"`
 }

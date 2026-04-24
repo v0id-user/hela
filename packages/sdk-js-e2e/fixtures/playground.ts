@@ -1,10 +1,12 @@
 import type { Page } from "@playwright/test";
 import { issuePlaygroundToken } from "@hela/sdk";
 
-const DEFAULT_GATEWAY_URL =
-  process.env.HELA_E2E_BASE_URL ? "https://gateway-production-bfdf.up.railway.app" : "http://127.0.0.1:4010";
-const DEFAULT_CONTROL_URL =
-  process.env.HELA_E2E_BASE_URL ? "https://control-production-059e.up.railway.app" : "http://127.0.0.1:4010";
+const DEFAULT_GATEWAY_URL = process.env.HELA_E2E_BASE_URL
+  ? "https://gateway-production-bfdf.up.railway.app"
+  : "http://127.0.0.1:4010";
+const DEFAULT_CONTROL_URL = process.env.HELA_E2E_BASE_URL
+  ? "https://control-production-059e.up.railway.app"
+  : "http://127.0.0.1:4010";
 const DEFAULT_APP_URL = "https://app-production-1716a.up.railway.app";
 const PREVIEW_BASE_URL = "http://127.0.0.1:4173";
 
@@ -42,12 +44,19 @@ const corsHeaders = {
   "access-control-allow-headers": "content-type",
 };
 
-export async function mintPlaygroundToken(sub: string): Promise<PlaygroundTokenResponse> {
+export async function mintPlaygroundToken(
+  sub: string,
+  opts?: { ephemeral?: boolean },
+): Promise<PlaygroundTokenResponse> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
-      return await issuePlaygroundToken({ endpoint: deployedUrls.gateway, sub });
+      return await issuePlaygroundToken({
+        endpoint: deployedUrls.gateway,
+        sub,
+        ephemeral: opts?.ephemeral,
+      });
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : String(error);

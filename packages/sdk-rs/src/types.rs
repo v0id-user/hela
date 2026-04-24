@@ -14,6 +14,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn serde_skip_false(b: &bool) -> bool {
+    !*b
+}
+
 // ----- WS: message -------------------------------------------------------
 
 /// A single published message, as it arrives on a subscriber. Canonical
@@ -151,6 +155,8 @@ pub struct TokenRequest {
     pub chans: Option<Vec<Vec<String>>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl_seconds: Option<u32>,
+    #[serde(default, skip_serializing_if = "serde_skip_false")]
+    pub ephemeral: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -186,4 +192,6 @@ pub struct PlaygroundToken {
     pub project_id: String, // always "proj_public"
     pub expires_in: u32,
     pub scopes: Vec<PlaygroundTokenScope>,
+    #[serde(default, skip_serializing_if = "serde_skip_false")]
+    pub ephemeral: bool,
 }

@@ -58,15 +58,21 @@ hela.Connect(ctx, hela.Config{Region: hela.RegionIAD, Token: jwt})
 hela.Connect(ctx, hela.Config{Region: hela.RegionIAD, PlaygroundToken: guest})
 ```
 
-Mint user JWTs via the REST client:
+Mint user JWTs and playground tokens via the REST client:
 
 ```go
 rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.RESTOptions{APIKey: apiKey})
+
+guest, _ := rest.PlaygroundToken(ctx, "")
+ephemeralGuest, _ := rest.PlaygroundTokenWithOpts(ctx, hela.PlaygroundTokenOpts{Ephemeral: true})
+// Ephemeral playground JWTs are broadcast-only on the gateway (no join replay, no persistence).
+
 resp, err := rest.MintToken(ctx, hela.TokenRequest{
     Sub:        user.ID,
     Chans:      [][]string{{"read", fmt.Sprintf("chat:room:%s", roomID)},
                            {"write", fmt.Sprintf("chat:room:%s", roomID)}},
     TTLSeconds: 300,
+    Ephemeral:  false, // set true for broadcast-only HS256 grants from /v1/tokens
 })
 ```
 
@@ -138,7 +144,9 @@ rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.REST
 t, _   := rest.MintToken(ctx, hela.TokenRequest{Sub: "user-1", TTLSeconds: 300})
 pub, _ := rest.Publish(ctx, "chat:lobby", hela.PublishRequest{Body: "hi"})
 page,_ := rest.History(ctx, "chat:lobby", hela.HistoryRequest{Limit: 100})
-guest,_:= rest.PlaygroundToken(ctx, "")
+guest, _ := rest.PlaygroundToken(ctx, "")
+ephemeralGuest, _ := rest.PlaygroundTokenWithOpts(ctx, hela.PlaygroundTokenOpts{Ephemeral: true})
+// guest.Token vs ephemeralGuest.Token → HelaConfig.PlaygroundToken
 ```
 
 Bring your own `*http.Client` via `RESTOptions.HTTP` for retries,
@@ -173,6 +181,7 @@ hela.Connect(ctx, hela.Config{
 | `Channel.Join/Publish/...`   | domain verbs                                     |
 | `Channel.Presence`           | CRDT roster with `OnSync`                        |
 | `NewREST(base, opts)`        | REST client for server-side use                  |
+| `PlaygroundTokenWithOpts`    | mint playground JWT with `Ephemeral` flag        |
 | `ErrHela`                    | sentinel for `errors.Is` / `errors.As`           |
 | `Message`, `PublishReply`, … | hand-written types matching `packages/schemas/`  |
 

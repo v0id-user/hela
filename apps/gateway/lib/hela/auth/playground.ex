@@ -12,10 +12,12 @@ defmodule Hela.Auth.Playground do
 
   def issue_guest_token(opts \\ []) do
     cfg = config()
+    ephemeral = opts[:ephemeral] == true
 
     claims = %{
       "pid" => Keyword.fetch!(cfg, :project_id),
       "sub" => opts[:sub] || "guest:#{:erlang.unique_integer([:positive, :monotonic])}",
+      "ephemeral" => ephemeral,
       "chans" => [
         ["read", "hello:**"],
         ["write", "hello:**"],

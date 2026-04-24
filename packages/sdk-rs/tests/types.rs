@@ -110,6 +110,7 @@ fn token_request_omitempty() {
         sub: "u1".into(),
         chans: None,
         ttl_seconds: None,
+        ephemeral: false,
     };
     let out = serde_json::to_value(&req).unwrap();
     assert_eq!(out, serde_json::json!({"sub": "u1"}));

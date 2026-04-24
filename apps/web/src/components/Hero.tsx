@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  ensureClient,
+  ensureHeroClient,
   noteHeroError,
   noteHeroJoined,
   noteHeroRTT,
@@ -11,7 +11,8 @@ import { signupUrl } from "../lib/urls";
 
 /**
  * The hero-strip inline channel. Anyone visiting the page drops into
- * the same `hello:world` channel. Proves the product works in 5 seconds.
+ * the same `hello:world` channel with an ephemeral playground token —
+ * live messages only, no join replay from cache or Postgres.
  */
 export function Hero() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -29,7 +30,7 @@ export function Hero() {
     let offError: (() => void) | null = null;
 
     (async () => {
-      const client = await ensureClient();
+      const client = await ensureHeroClient();
       offOpen = client.onOpen(() => {
         if (active) setConnected(true);
       });
@@ -102,7 +103,7 @@ export function Hero() {
       <p style={{ color: "#888", maxWidth: 720, marginBottom: 20 }}>
         hela is the open source stack on Elixir/Phoenix, the same monorepo you can self host. the
         regions you pick here are the hosted service: clusters in five cities, JWT authed
-        WebSockets. the demo below is the product — type something, other visitors see it.
+        WebSockets. the demo below runs on an ephemeral token — live traffic only, no replay.
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
@@ -117,7 +118,7 @@ export function Hero() {
         </a>
       </div>
 
-      <div style={{ background: "#0a0a0a", border: "1px solid #333" }}>
+      <div data-testid="hero-channel" style={{ background: "#0a0a0a", border: "1px solid #333" }}>
         <div
           style={{
             fontSize: 10,

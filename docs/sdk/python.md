@@ -40,7 +40,9 @@ Three ways a client gets a token:
 2. **Playground token** — for landing-page demos.
    `await Hela(base_url=…, api_key=None).playground_token()` returns
    a 5-minute guest token scoped to the public sandbox project.
-   Pass as `playground_token=`.
+   Pass as `playground_token=`. Use `playground_token(ephemeral=True)`
+   for a **broadcast-only** JWT (no join replay from cache/DB, no
+   persistence for publishes).
 3. **Anonymous** — allowed for the `metrics:live` topic only. User
    channels reject.
 
@@ -54,6 +56,7 @@ async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_k
         sub=str(user.id),
         chans=[["read", f"chat:room:{room.id}"], ["write", f"chat:room:{room.id}"]],
         ttl_seconds=300,
+        # ephemeral=True  → broadcast-only JWT from /v1/tokens (optional)
     )
     token = resp.token
 ```

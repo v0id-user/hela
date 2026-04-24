@@ -73,6 +73,7 @@ let resp = rest.mint_token(TokenRequest {
         vec!["write".into(), format!("chat:room:{}", room_id)],
     ]),
     ttl_seconds: Some(300),
+    ephemeral: false, // true → broadcast-only JWT from /v1/tokens
 }).await?;
 ```
 
@@ -135,7 +136,7 @@ hela::connect(Config {
 | `client.rs`     | `connect`, `Client`, `Region`, `Config`            |
 | `channel.rs`    | `Channel::{join, publish, history, on_message, leave}` |
 | `presence.rs`   | CRDT roster, `on_sync`                             |
-| `rest.rs`       | REST client: `mint_token`, `publish`, `history`, `playground_token` |
+| `rest.rs`       | REST client: `mint_token`, `publish`, `history`, `playground_token`, `playground_token_ephemeral` |
 | `transport.rs`  | Phoenix Channel v2 socket (private)                |
 | `errors.rs`     | `Error` + `ErrorKind`                              |
 | `types.rs`      | Wire + REST types, `serde`-derived                 |

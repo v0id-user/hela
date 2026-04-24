@@ -16,8 +16,9 @@ defmodule HelaWeb.TokensController do
     sub = params["sub"] || raise "sub required"
     ttl = min(params["ttl_seconds"] || 3600, 24 * 3600)
     chans = Map.get(params, "chans", [])
+    ephemeral = params["ephemeral"] == true
 
-    claims = %{"pid" => project_id, "sub" => sub, "chans" => chans}
+    claims = %{"pid" => project_id, "sub" => sub, "chans" => chans, "ephemeral" => ephemeral}
 
     # Per-project HS256 secret (32 random bytes hex-encoded) generated
     # at project creation by the control plane. Gateway holds it in its

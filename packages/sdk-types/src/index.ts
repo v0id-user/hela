@@ -116,11 +116,16 @@ export interface Snapshot {
 /**
  * What a customer-signed JWT must carry. The gateway enforces these
  * claims at every channel join.
+ *
+ * `ephemeral` — when true, the gateway treats this connection as
+ * broadcast-only: live subscribers still receive messages, but join/history
+ * do not replay cache or Postgres, and publishes are not persisted.
  */
 export interface HelaClaims {
   pid: string;
   sub: string;
   chans: Array<[scope: "read" | "write", pattern: string]>;
+  ephemeral?: boolean;
   exp?: number;
   iat?: number;
 }

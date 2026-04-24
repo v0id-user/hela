@@ -44,6 +44,10 @@ import { issuePlaygroundToken } from "@hela/sdk";
 const { token } = await issuePlaygroundToken();
 await connect({ region: "iad", playgroundToken: token });
 
+// broadcast-only playground token (no join replay, no persistence)
+const { token: liveOnly } = await issuePlaygroundToken({ ephemeral: true });
+await connect({ region: "iad", playgroundToken: liveOnly });
+
 // anonymous — only the metrics:live topic works
 await connect({ region: "iad" });
 ```
@@ -62,10 +66,15 @@ const r = await fetch(`https://gateway-production-bfdf.up.railway.app/v1/tokens`
     sub: user.id,
     chans: [["read", `chat:room:${roomId}`], ["write", `chat:room:${roomId}`]],
     ttl_seconds: 300,
+    // optional: ephemeral: true  → broadcast-only for this JWT on the gateway
   }),
 });
 const { token } = await r.json();
 ```
+
+Include `"ephemeral": true` in that JSON body when you want the same
+broadcast-only semantics as `issuePlaygroundToken({ ephemeral: true })`
+for customer-minted HS256 tokens via `/v1/tokens`.
 
 ## channels
 
@@ -166,7 +175,7 @@ console.log(REGIONS);
 | `HelaChannel` | joined channel: `join`, `publish`, `history`, `onMessage`, `leave` |
 | `HelaPresence` | CRDT roster with `onSync` |
 | `REGIONS`, `wsUrl`, `httpUrl` | region helpers |
-| `issuePlaygroundToken()` | mint a 5-min guest token |
+| `issuePlaygroundToken(opts?)` | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
 | `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | generated types |
 
 ## internals

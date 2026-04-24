@@ -64,24 +64,41 @@ class Hela:
         sub: str,
         chans: list[list[str]] | None = None,
         ttl_seconds: int = 3600,
+        ephemeral: bool = False,
     ) -> TokenResponse:
         """
         Ask the gateway to sign a short-lived HS256 JWT bound to this
         project. Use it on the WebSocket `token` param.
+
+        Set ``ephemeral=True`` for broadcast-only semantics on the gateway
+        (no join replay from cache/DB, no persistence for publishes).
         """
         body = TokenRequest(
             sub=sub,
             chans=chans,
             ttl_seconds=ttl_seconds,
+            ephemeral=ephemeral or None,
         ).model_dump(exclude_none=True)
         r = await self._post("/v1/tokens", body)
         return TokenResponse.model_validate(r)
 
-    async def playground_token(self, *, sub: str | None = None) -> PlaygroundToken:
-        """Issue a guest token for the public sandbox project."""
+    async def playground_token(
+        self,
+        *,
+        sub: str | None = None,
+        ephemeral: bool = False,
+    ) -> PlaygroundToken:
+        """
+        Issue a guest token for the public sandbox project.
+
+        Set ``ephemeral=True`` to mint a broadcast-only JWT (live delivery
+        only; no join replay from cache/DB, no persistence for publishes).
+        """
         body: dict[str, Any] = {}
         if sub is not None:
             body["sub"] = sub
+        if ephemeral:
+            body["ephemeral"] = True
         r = await self._post("/playground/token", body, auth=False)
         return PlaygroundToken.model_validate(r)
 

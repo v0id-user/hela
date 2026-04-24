@@ -31,7 +31,8 @@ async with (await connect(region="iad", token=my_jwt)) as client:
   token and hands it to the browser or worker. Pass as `token=`.
 - **playground token** (landing-page demos) — `await hela.playground_token()`
   returns a 5-minute guest token scoped to the public sandbox project.
-  Pass as `playground_token=`.
+  Pass as `playground_token=`. Use `playground_token(ephemeral=True)` for
+  broadcast-only traffic (no stored replay, no persistence).
 
 Your backend can mint tokens via the REST client:
 
@@ -43,6 +44,7 @@ async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_k
         sub=str(user.id),
         chans=[["read", f"chat:room:{room.id}"], ["write", f"chat:room:{room.id}"]],
         ttl_seconds=300,
+        # ephemeral=True for broadcast-only JWTs (optional)
     )
     return resp.token
 ```

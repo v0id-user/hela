@@ -64,6 +64,7 @@ defmodule Hela.Channels do
   defp do_publish(attrs, tier) do
     t0 = System.monotonic_time(:microsecond)
     msg = Message.new(attrs)
+    ephemeral? = attrs[:ephemeral] == true
     quota = Quota.bump_messages(msg.project_id, tier)
 
     :telemetry.execute(
@@ -72,16 +73,23 @@ defmodule Hela.Channels do
       %{project_id: msg.project_id, channel: msg.channel}
     )
 
-    Cache.put(msg)
+    unless ephemeral? do
+      Cache.put(msg)
+    end
 
     wire = Message.to_wire(msg)
     PubSub.broadcast!(@pubsub, topic(msg.project_id, msg.channel), {:message, wire})
     PubSub.broadcast!(@pubsub, "firehose", {:message, wire})
-    PubSub.broadcast!(@pubsub, "cache:sync", {:cache_sync, msg})
+
+    unless ephemeral? do
+      PubSub.broadcast!(@pubsub, "cache:sync", {:cache_sync, msg})
+    end
 
     Hela.Latency.observe(:broadcast, System.monotonic_time(:microsecond) - t0)
 
-    Pipeline.push(msg, t0)
+    unless ephemeral? do
+      Pipeline.push(msg, t0)
+    end
 
     if quota.over?, do: {:ok, wire, :over_quota}, else: {:ok, wire, :ok}
   end
@@ -111,6 +119,10 @@ defmodule Hela.Channels do
       :miss ->
         {:db, history_db(project_id, channel, before_id, limit) |> Enum.map(&Message.to_wire/1)}
     end
+  end
+
+  def ephemeral_history do
+    {:cache, []}
   end
 
   defp history_db(project_id, channel, before_id, limit) do

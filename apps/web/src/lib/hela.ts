@@ -1,8 +1,13 @@
 import { connect, HelaClient, issuePlaygroundToken } from "@hela/sdk";
 import { API_BASE, IS_DEV } from "./config";
 
-let singleton: HelaClient | null = null;
-let socketHooksInstalled = false;
+/** Non-ephemeral playground socket for `demo:*` panels (history, presence, etc.). */
+let demoSingleton: HelaClient | null = null;
+/** Ephemeral playground socket for the landing hero (`hello:world` broadcast-only). */
+let heroSingleton: HelaClient | null = null;
+
+let heroSocketHooksInstalled = false;
+let demoSocketHooksInstalled = false;
 let lifecycleHooksInstalled = false;
 
 const TOKEN_REFRESH_LEEWAY_MS = 60_000;
@@ -42,7 +47,14 @@ declare global {
   }
 }
 
-const tokenState: TokenState = {
+const demoTokenState: TokenState = {
+  token: null,
+  expiresAtMs: 0,
+  refreshInFlight: null,
+  refreshTimer: null,
+};
+
+const heroTokenState: TokenState = {
   token: null,
   expiresAtMs: 0,
   refreshInFlight: null,
@@ -50,37 +62,66 @@ const tokenState: TokenState = {
 };
 
 /**
- * Returns a connected HelaClient bound to a fresh playground token.
- * Token lives 5 minutes; we keep it fresh in the background. Every
- * demo on the landing page reuses this one socket.
+ * Returns the shared non-ephemeral playground client used by the `demo:*`
+ * primitive panels (history, presence, sequencing, etc.).
  */
 export async function ensureClient(): Promise<HelaClient> {
   installLifecycleHooks();
-  const token = await ensureFreshToken();
+  const token = await ensureDemoFreshToken();
 
-  if (singleton) {
-    singleton.setPlaygroundToken(token);
-    singleton.connect();
-    return singleton;
+  if (demoSingleton) {
+    demoSingleton.setPlaygroundToken(token);
+    demoSingleton.connect();
+    return demoSingleton;
   }
 
-  singleton = connect({
+  demoSingleton = connect({
     region: IS_DEV ? "dev" : "iad",
     playgroundToken: token,
     endpoint: API_BASE,
   });
-  installSocketHooks(singleton);
-  return singleton;
+  installDemoSocketHooks(demoSingleton);
+  return demoSingleton;
+}
+
+/**
+ * Returns the hero-only ephemeral playground client (`hello:world`).
+ * Join/history are broadcast-only; no replay from cache or Postgres.
+ */
+export async function ensureHeroClient(): Promise<HelaClient> {
+  installLifecycleHooks();
+  const token = await ensureHeroFreshToken();
+
+  if (heroSingleton) {
+    heroSingleton.setPlaygroundToken(token);
+    heroSingleton.connect();
+    return heroSingleton;
+  }
+
+  heroSingleton = connect({
+    region: IS_DEV ? "dev" : "iad",
+    playgroundToken: token,
+    endpoint: API_BASE,
+  });
+  installHeroSocketHooks(heroSingleton);
+  return heroSingleton;
 }
 
 export function resetClient(): void {
-  if (singleton) singleton.disconnect();
-  singleton = null;
-  socketHooksInstalled = false;
-  tokenState.token = null;
-  tokenState.expiresAtMs = 0;
-  tokenState.refreshInFlight = null;
-  clearRefreshTimer();
+  if (demoSingleton) demoSingleton.disconnect();
+  if (heroSingleton) heroSingleton.disconnect();
+  demoSingleton = null;
+  heroSingleton = null;
+  heroSocketHooksInstalled = false;
+  demoSocketHooksInstalled = false;
+  demoTokenState.token = null;
+  demoTokenState.expiresAtMs = 0;
+  demoTokenState.refreshInFlight = null;
+  clearDemoRefreshTimer();
+  heroTokenState.token = null;
+  heroTokenState.expiresAtMs = 0;
+  heroTokenState.refreshInFlight = null;
+  clearHeroRefreshTimer();
   resetDebugState();
 }
 
@@ -103,21 +144,55 @@ export function noteHeroError(error: unknown): void {
   updateDebugState({ lastError: describeError(error), ready: false });
 }
 
-async function ensureFreshToken(force = false): Promise<string> {
-  if (!force && tokenState.token && !needsTokenRefresh()) return tokenState.token;
-  if (tokenState.refreshInFlight) return tokenState.refreshInFlight;
+async function ensureDemoFreshToken(force = false): Promise<string> {
+  if (!force && demoTokenState.token && !needsTokenRefresh(demoTokenState))
+    return demoTokenState.token;
+  if (demoTokenState.refreshInFlight) return demoTokenState.refreshInFlight;
 
-  updateDebugState({ tokenStatus: "refreshing" });
-  tokenState.refreshInFlight = (async () => {
+  demoTokenState.refreshInFlight = (async () => {
     const { token, expires_in } = await issuePlaygroundToken({
       endpoint: API_BASE,
       sub: localSubId(),
     });
     const expiresAtMs = readJwtExpiryMs(token) ?? Date.now() + expires_in * 1000;
-    tokenState.token = token;
-    tokenState.expiresAtMs = expiresAtMs;
-    if (singleton) singleton.setPlaygroundToken(token);
-    scheduleRefresh();
+    demoTokenState.token = token;
+    demoTokenState.expiresAtMs = expiresAtMs;
+    if (demoSingleton) demoSingleton.setPlaygroundToken(token);
+    scheduleDemoRefresh();
+    return token;
+  })()
+    .catch((error) => {
+      updateDebugState({
+        tokenStatus: "error",
+        lastError: describeError(error),
+        ready: false,
+      });
+      throw error;
+    })
+    .finally(() => {
+      demoTokenState.refreshInFlight = null;
+    });
+
+  return demoTokenState.refreshInFlight;
+}
+
+async function ensureHeroFreshToken(force = false): Promise<string> {
+  if (!force && heroTokenState.token && !needsTokenRefresh(heroTokenState))
+    return heroTokenState.token;
+  if (heroTokenState.refreshInFlight) return heroTokenState.refreshInFlight;
+
+  updateDebugState({ tokenStatus: "refreshing" });
+  heroTokenState.refreshInFlight = (async () => {
+    const { token, expires_in } = await issuePlaygroundToken({
+      endpoint: API_BASE,
+      sub: localSubId(),
+      ephemeral: true,
+    });
+    const expiresAtMs = readJwtExpiryMs(token) ?? Date.now() + expires_in * 1000;
+    heroTokenState.token = token;
+    heroTokenState.expiresAtMs = expiresAtMs;
+    if (heroSingleton) heroSingleton.setPlaygroundToken(token);
+    scheduleHeroRefresh();
     updateDebugState({
       tokenStatus: "ready",
       tokenExpiresAt: expiresAtMs,
@@ -135,10 +210,10 @@ async function ensureFreshToken(force = false): Promise<string> {
       throw error;
     })
     .finally(() => {
-      tokenState.refreshInFlight = null;
+      heroTokenState.refreshInFlight = null;
     });
 
-  return tokenState.refreshInFlight;
+  return heroTokenState.refreshInFlight;
 }
 
 function localSubId(): string {
@@ -161,9 +236,9 @@ export function uuidv7Timestamp(id: string): string {
   return new Date(ms).toISOString();
 }
 
-function installSocketHooks(client: HelaClient): void {
-  if (socketHooksInstalled) return;
-  socketHooksInstalled = true;
+function installHeroSocketHooks(client: HelaClient): void {
+  if (heroSocketHooksInstalled) return;
+  heroSocketHooksInstalled = true;
 
   client.onOpen(() => {
     const debug = debugState();
@@ -181,7 +256,7 @@ function installSocketHooks(client: HelaClient): void {
       ready: false,
       lastError: describeCloseEvent(event),
     });
-    if (needsTokenRefresh()) void ensureFreshToken(true);
+    if (needsTokenRefresh(heroTokenState)) void ensureHeroFreshToken(true);
   });
 
   client.onError((error: unknown) => {
@@ -191,7 +266,20 @@ function installSocketHooks(client: HelaClient): void {
       ready: false,
       lastError: describeError(error),
     });
-    if (needsTokenRefresh()) void ensureFreshToken(true);
+    if (needsTokenRefresh(heroTokenState)) void ensureHeroFreshToken(true);
+  });
+}
+
+function installDemoSocketHooks(client: HelaClient): void {
+  if (demoSocketHooksInstalled) return;
+  demoSocketHooksInstalled = true;
+
+  client.onClose(() => {
+    if (needsTokenRefresh(demoTokenState)) void ensureDemoFreshToken(true);
+  });
+
+  client.onError(() => {
+    if (needsTokenRefresh(demoTokenState)) void ensureDemoFreshToken(true);
   });
 }
 
@@ -200,8 +288,8 @@ function installLifecycleHooks(): void {
   lifecycleHooksInstalled = true;
 
   const refreshIfNeeded = () => {
-    if (!singleton) return;
-    if (needsTokenRefresh()) void ensureFreshToken(true);
+    if (heroSingleton && needsTokenRefresh(heroTokenState)) void ensureHeroFreshToken(true);
+    if (demoSingleton && needsTokenRefresh(demoTokenState)) void ensureDemoFreshToken(true);
   };
 
   window.addEventListener("focus", refreshIfNeeded);
@@ -211,26 +299,43 @@ function installLifecycleHooks(): void {
   });
 }
 
-function scheduleRefresh(): void {
+function scheduleHeroRefresh(): void {
   if (typeof window === "undefined") return;
-  clearRefreshTimer();
-  if (!tokenState.expiresAtMs) return;
+  clearHeroRefreshTimer();
+  if (!heroTokenState.expiresAtMs) return;
 
-  const waitMs = Math.max(1_000, tokenState.expiresAtMs - Date.now() - TOKEN_REFRESH_LEEWAY_MS);
-  tokenState.refreshTimer = window.setTimeout(() => {
-    void ensureFreshToken(true);
+  const waitMs = Math.max(1_000, heroTokenState.expiresAtMs - Date.now() - TOKEN_REFRESH_LEEWAY_MS);
+  heroTokenState.refreshTimer = window.setTimeout(() => {
+    void ensureHeroFreshToken(true);
   }, waitMs);
 }
 
-function clearRefreshTimer(): void {
-  if (!tokenState.refreshTimer) return;
-  clearTimeout(tokenState.refreshTimer);
-  tokenState.refreshTimer = null;
+function clearHeroRefreshTimer(): void {
+  if (!heroTokenState.refreshTimer) return;
+  clearTimeout(heroTokenState.refreshTimer);
+  heroTokenState.refreshTimer = null;
 }
 
-function needsTokenRefresh(now = Date.now()): boolean {
-  if (!tokenState.token) return true;
-  return now >= tokenState.expiresAtMs - TOKEN_REFRESH_LEEWAY_MS;
+function scheduleDemoRefresh(): void {
+  if (typeof window === "undefined") return;
+  clearDemoRefreshTimer();
+  if (!demoTokenState.expiresAtMs) return;
+
+  const waitMs = Math.max(1_000, demoTokenState.expiresAtMs - Date.now() - TOKEN_REFRESH_LEEWAY_MS);
+  demoTokenState.refreshTimer = window.setTimeout(() => {
+    void ensureDemoFreshToken(true);
+  }, waitMs);
+}
+
+function clearDemoRefreshTimer(): void {
+  if (!demoTokenState.refreshTimer) return;
+  clearTimeout(demoTokenState.refreshTimer);
+  demoTokenState.refreshTimer = null;
+}
+
+function needsTokenRefresh(state: TokenState, now = Date.now()): boolean {
+  if (!state.token) return true;
+  return now >= state.expiresAtMs - TOKEN_REFRESH_LEEWAY_MS;
 }
 
 function readJwtExpiryMs(jwt: string): number | null {
@@ -302,13 +407,13 @@ function debugState(): HelaDebugHandle {
       rttMs: null,
       lastError: null,
       forceTokenRefresh: async () => {
-        await ensureFreshToken(true);
+        await ensureHeroFreshToken(true);
       },
       forceReconnect: () => {
-        if (!singleton) return;
+        if (!heroSingleton) return;
         updateDebugState({ ready: false });
-        singleton.disconnect();
-        singleton.connect();
+        heroSingleton.disconnect();
+        heroSingleton.connect();
       },
     };
     window.__helaReady = false;

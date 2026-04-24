@@ -28,7 +28,14 @@ defmodule HelaWeb.ProjectChannel do
 
           true ->
             send(self(), :after_join)
-            {source, msgs} = Channels.history(project_id, channel_name, nil, 50)
+
+            {source, msgs} =
+              if ephemeral?(socket) do
+                Channels.ephemeral_history()
+              else
+                Channels.history(project_id, channel_name, nil, 50)
+              end
+
             nickname = params["nickname"] || socket.assigns.sub
 
             {:ok,
@@ -57,7 +64,8 @@ defmodule HelaWeb.ProjectChannel do
                channel: socket.assigns.channel,
                author: author,
                body: body,
-               reply_to_id: params["reply_to_id"]
+               reply_to_id: params["reply_to_id"],
+               ephemeral: ephemeral?(socket)
              }) do
           {:ok, wire, :ok} ->
             {:reply, {:ok, %{id: wire.id, quota: "ok"}}, socket}
@@ -79,7 +87,11 @@ defmodule HelaWeb.ProjectChannel do
     limit = min(params["limit"] || 50, 100)
 
     {source, msgs} =
-      Channels.history(socket.assigns.project_id, socket.assigns.channel, before, limit)
+      if ephemeral?(socket) do
+        Channels.ephemeral_history()
+      else
+        Channels.history(socket.assigns.project_id, socket.assigns.channel, before, limit)
+      end
 
     {:reply, {:ok, %{messages: msgs, source: source}}, socket}
   end
@@ -160,4 +172,6 @@ defmodule HelaWeb.ProjectChannel do
       _ -> :error
     end
   end
+
+  defp ephemeral?(socket), do: socket.assigns.claims["ephemeral"] == true
 end

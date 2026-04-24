@@ -37,6 +37,7 @@ async fn mint_token_sends_auth_header() {
             sub: "user-1".into(),
             chans: Some(vec![vec!["read".into(), "chat:*".into()]]),
             ttl_seconds: Some(600),
+            ephemeral: false,
         })
         .await
         .unwrap();
@@ -65,6 +66,7 @@ async fn maps_401_to_unauthorized() {
             sub: "u".into(),
             chans: None,
             ttl_seconds: None,
+            ephemeral: false,
         })
         .await
         .unwrap_err();

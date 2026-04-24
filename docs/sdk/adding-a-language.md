@@ -102,10 +102,10 @@ catch the whole surface in one clause.
 
 Wrap your language's HTTP client. Surface:
 
-- `mint_token(sub, chans, ttl_seconds)` → `/v1/tokens`
+- `mint_token(sub, chans, ttl_seconds, ephemeral?)` → `/v1/tokens` (optional `ephemeral` bool for broadcast-only JWTs)
 - `publish(channel, body, author?, reply_to_id?)` → `/v1/channels/:c/publish`
 - `history(channel, before?, limit?)` → `/v1/channels/:c/history`
-- `playground_token(sub?)` → `/playground/token` (no auth)
+- `playground_token(sub?, ephemeral?)` → `/playground/token` (no auth)
 
 401 → `UnauthorizedError`. 429 → `RateLimitedError(retry_after_ms)`
 (parse the JSON body, tolerate it being missing).

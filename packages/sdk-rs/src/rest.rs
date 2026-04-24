@@ -55,9 +55,21 @@ impl Rest {
     /// Issue a guest token for the public sandbox project. No API key
     /// required.
     pub async fn playground_token(&self, sub: Option<&str>) -> Result<PlaygroundToken, Error> {
+        self.playground_token_ephemeral(sub, false).await
+    }
+
+    /// Like [`Self::playground_token`], with optional broadcast-only `ephemeral` mode.
+    pub async fn playground_token_ephemeral(
+        &self,
+        sub: Option<&str>,
+        ephemeral: bool,
+    ) -> Result<PlaygroundToken, Error> {
         let mut body = serde_json::Map::new();
         if let Some(s) = sub {
             body.insert("sub".into(), s.into());
+        }
+        if ephemeral {
+            body.insert("ephemeral".into(), true.into());
         }
         self.post("/playground/token", &body, false).await
     }
