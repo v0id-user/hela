@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "bun run ../../scripts/prepare_static_assets.ts web",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
