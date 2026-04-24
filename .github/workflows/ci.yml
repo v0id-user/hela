@@ -2,8 +2,9 @@ name: ci
 
 # Scope:
 #   - Every PR runs lint + typecheck + tests.
-#   - PRs + non-main branches deploy to the `dev` environment (no review).
 #   - Pushes to `main` deploy to `production` (required reviewer).
+#   - PRs do not deploy. Dependabot/PR contexts do not get the Railway token,
+#     and the `dev` Railway environment is not bootstrapped yet.
 #
 # The difference is entirely which GitHub environment the deploy jobs
 # target; the same Railway services handle both, routed by
@@ -282,8 +283,11 @@ jobs:
   # ---------- deploy selector ------------------------------------------
   #
   # One set of deploy jobs, parameterised by the GitHub environment:
-  #   - PRs + non-main branches → `dev`   (auto-approved, dev Railway env)
-  #   - push to main             → `production` (reviewer-approved, prod Railway env)
+  #   - push to main → `production` (reviewer-approved, prod Railway env)
+  #
+  # PRs intentionally stop before deploy. The `dev` Railway environment is not
+  # wired yet, and PR contexts (including Dependabot) do not have a usable
+  # Railway token.
   #
   # The `RAILWAY_ENVIRONMENT` env var at runtime picks which Railway
   # environment `railway up` targets — so the same deploy steps run for
@@ -311,6 +315,7 @@ jobs:
   deploy-control:
     name: deploy · control (${{ needs.target.outputs.env }})
     needs: [test-control, target]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.target.outputs.env }}
@@ -363,6 +368,7 @@ jobs:
   deploy-gateway:
     name: deploy · gateway (${{ needs.target.outputs.env }})
     needs: [test-gateway, target, deploy-control]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.target.outputs.env }}
@@ -415,6 +421,7 @@ jobs:
   deploy-web:
     name: deploy · web (${{ needs.target.outputs.env }})
     needs: [build-js, target, deploy-gateway]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.target.outputs.env }}
@@ -471,6 +478,7 @@ jobs:
   deploy-app:
     name: deploy · app (${{ needs.target.outputs.env }})
     needs: [build-js, target, deploy-control]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.target.outputs.env }}
