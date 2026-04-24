@@ -431,7 +431,16 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
-      - run: cd apps/web && bun run build
+      - name: build web with commit stamp
+        # GITHUB_SHA is already set by the Actions runtime, but we
+        # pass it explicitly so prepare_static_assets.ts (invoked by
+        # vite's prebuild hook) picks it up on every runner. The
+        # stamped commit ends up in version.json → /version, which
+        # the post-deploy gate below matches against ${{ github.sha }}
+        # to catch stale deploys.
+        run: cd apps/web && bun run build
+        env:
+          GITHUB_SHA: ${{ github.sha }}
       - name: install Railway CLI
         shell: bash
         run: |
@@ -449,30 +458,52 @@ jobs:
 
           echo "::error::failed to install Railway CLI after retries"
           exit 1
-      - run: |
+      - name: railway up web
+        run: |
           railway up ./apps/web --service web --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      - name: wait for web /health
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: wait for web /health + /version commit match
         shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          url="${HELA_WEB_URL}/health"
+          hurl="${HELA_WEB_URL}/health"
+          vurl="${HELA_WEB_URL}/version"
 
+          # /health must return exactly "ok\n". A 200 with SPA index.html
+          # proves the deploy is stale (nginx SPA fallback caught /health)
+          # — that was the original silent-stale incident.
           for attempt in $(seq 1 60); do
-            status=$(curl --silent --show-error --location --output /dev/null --write-out "%{http_code}" "$url" || true)
-            if [ "$status" = "200" ]; then
-              echo "web healthy at $url"
+            body=$(curl --silent --show-error --location --max-time 8 "$hurl" || true)
+            if [ "$body" = "ok" ]; then
+              echo "web /health is ok"
+              break
+            fi
+            echo "web /health not ok yet ($attempt/60)"
+            sleep 5
+            if [ "$attempt" = "60" ]; then
+              echo "::error::web /health never returned the expected body (got: ${body:0:80}...)"
+              exit 1
+            fi
+          done
+
+          # /version must echo the commit we just shipped. If it doesn't,
+          # Railway is serving a cached older image and we should fail loud.
+          for attempt in $(seq 1 30); do
+            payload=$(curl --silent --show-error --location --max-time 8 "$vurl" || true)
+            got_sha=$(printf '%s' "$payload" | jq -r '.commit // empty' 2>/dev/null || true)
+            if [ "$got_sha" = "$EXPECTED_SHA" ]; then
+              echo "web /version commit matches $EXPECTED_SHA"
               exit 0
             fi
-
-            echo "web not healthy yet ($attempt/60, status=$status)"
+            echo "web /version commit mismatch (got=${got_sha:-unset}, want=$EXPECTED_SHA, $attempt/30)"
             sleep 5
           done
 
-          echo "::error::web never became healthy at $url"
+          echo "::error::web /version never reported commit $EXPECTED_SHA — Railway likely served a cached image"
           exit 1
 
   deploy-app:
@@ -488,7 +519,10 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
-      - run: cd apps/app && bun run build
+      - name: build app with commit stamp
+        run: cd apps/app && bun run build
+        env:
+          GITHUB_SHA: ${{ github.sha }}
       - name: install Railway CLI
         shell: bash
         run: |
@@ -506,30 +540,47 @@ jobs:
 
           echo "::error::failed to install Railway CLI after retries"
           exit 1
-      - run: |
+      - name: railway up app
+        run: |
           railway up ./apps/app --service app --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      - name: wait for app /health
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: wait for app /health + /version commit match
         shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          url="${HELA_APP_URL}/health"
+          hurl="${HELA_APP_URL}/health"
+          vurl="${HELA_APP_URL}/version"
 
           for attempt in $(seq 1 60); do
-            status=$(curl --silent --show-error --location --output /dev/null --write-out "%{http_code}" "$url" || true)
-            if [ "$status" = "200" ]; then
-              echo "app healthy at $url"
+            body=$(curl --silent --show-error --location --max-time 8 "$hurl" || true)
+            if [ "$body" = "ok" ]; then
+              echo "app /health is ok"
+              break
+            fi
+            echo "app /health not ok yet ($attempt/60)"
+            sleep 5
+            if [ "$attempt" = "60" ]; then
+              echo "::error::app /health never returned the expected body (got: ${body:0:80}...)"
+              exit 1
+            fi
+          done
+
+          for attempt in $(seq 1 30); do
+            payload=$(curl --silent --show-error --location --max-time 8 "$vurl" || true)
+            got_sha=$(printf '%s' "$payload" | jq -r '.commit // empty' 2>/dev/null || true)
+            if [ "$got_sha" = "$EXPECTED_SHA" ]; then
+              echo "app /version commit matches $EXPECTED_SHA"
               exit 0
             fi
-
-            echo "app not healthy yet ($attempt/60, status=$status)"
+            echo "app /version commit mismatch (got=${got_sha:-unset}, want=$EXPECTED_SHA, $attempt/30)"
             sleep 5
           done
 
-          echo "::error::app never became healthy at $url"
+          echo "::error::app /version never reported commit $EXPECTED_SHA — Railway likely served a cached image"
           exit 1
 
   # ---------- post-deploy smoke ----------------------------------------
