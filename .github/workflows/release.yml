@@ -1,0 +1,47 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: publish github release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: generate changelog
+        id: changelog
+        run: |
+          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo '')
+          if [ -z "$PREV" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="$PREV..HEAD"
+          fi
+          {
+            echo 'body<<EOF'
+            echo "## What's changed"
+            echo
+            git log --pretty=format:"- %s (%h)" "$RANGE"
+            echo
+            if [ -n "$PREV" ]; then
+              echo
+              echo "**Full diff**: https://github.com/${{ github.repository }}/compare/${PREV}...${{ github.ref_name }}"
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}

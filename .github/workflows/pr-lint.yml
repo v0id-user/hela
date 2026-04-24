@@ -1,0 +1,79 @@
+name: pr-lint
+
+# Runs on every PR event. Blocks the merge queue if the PR title
+# doesn't match the commit-message rule (squash merges use the PR
+# title as the commit subject, so the rule is enforced there).
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  title:
+    name: pr title follows commit-msg rule
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validate PR title
+        run: |
+          title=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
+          echo "PR title: $title"
+          ./scripts/check-commit-msg.sh "$title"
+
+  body:
+    name: pr description non-empty
+    runs-on: ubuntu-latest
+    steps:
+      - name: validate PR body
+        run: |
+          body=$(jq -r '.pull_request.body // ""' < "$GITHUB_EVENT_PATH")
+          stripped=$(printf '%s' "$body" | sed -E 's/<!--.*-->//g' | tr -d '[:space:]')
+          if [ -z "$stripped" ]; then
+            echo "::error::PR has an empty description. Fill in the template in .github/PULL_REQUEST_TEMPLATE.md."
+            exit 1
+          fi
+
+  size:
+    name: pr size sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: count changed lines
+        run: |
+          base=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
+          head=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
+          lines=$(git diff --shortstat "$base..$head" | awk '{print $4 + $6}')
+          echo "PR changes ${lines:-0} lines"
+          # Warn above 1000 (not fail) — discourage giant PRs.
+          if [ "${lines:-0}" -gt 1000 ]; then
+            echo "::warning::PR changes ${lines} lines — consider splitting into smaller reviewable chunks."
+          fi
+
+  commits:
+    name: every commit follows the rule
+    # Redundant with squash-merge but useful for authors working
+    # locally so bad commits surface before merge.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: check each commit subject
+        run: |
+          base=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
+          head=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
+          fail=0
+          while IFS= read -r subj; do
+            if ! ./scripts/check-commit-msg.sh "$subj"; then
+              fail=1
+            fi
+          done < <(git log --format=%s "$base..$head")
+          if [ "$fail" -eq 1 ]; then
+            echo "::error::One or more commits violate the commit-message rule."
+            echo "Rule: ^[A-Za-z0-9 ,]{4,72}\$"
+            exit 1
+          fi

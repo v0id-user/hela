@@ -1,0 +1,6 @@
+**/dist/
+**/_build/
+**/deps/
+**/node_modules/
+bun.lock
+*.tsbuildinfo

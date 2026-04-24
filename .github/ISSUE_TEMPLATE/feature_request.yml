@@ -1,0 +1,52 @@
+name: Feature request
+description: A new capability or improvement
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature request, check the README's
+        "What this brief is NOT" section and CONTRIBUTING.md's
+        "probably won't take" list.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Start with the user story, not the solution. "As a customer
+        running hela on [tier/region], I can't [thing] because [reason]".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you build? Sketches, API shapes, and
+        alternatives considered are all welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: |
+        Would this change the SDK's public surface? Affect billing?
+        Require a new database column? Change how auth works?
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which part would this change?
+      multiple: true
+      options:
+        - gateway
+        - control
+        - web
+        - app
+        - "@hela/sdk"
+        - infra
+        - docs

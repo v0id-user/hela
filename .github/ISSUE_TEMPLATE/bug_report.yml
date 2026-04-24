@@ -1,0 +1,64 @@
+name: Bug report
+description: A thing that's broken or behaves unexpectedly
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! The more reproducible this is, the faster
+        we can fix it. **Don't report security issues here** — use
+        [SECURITY.md](../blob/main/SECURITY.md).
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which part?
+      options:
+        - gateway (realtime WebSocket data plane)
+        - control (signup/billing/project API)
+        - web (marketing site + playground)
+        - app (customer dashboard)
+        - "@hela/sdk (the TypeScript SDK)"
+        - infra / deploy
+        - docs
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the error message or unexpected behavior verbatim.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How do I reproduce it?
+      description: |
+        Smallest possible steps. Curl commands, SDK snippets, screen
+        recordings are all great. If behavior is tied to a specific
+        tier or region, include those.
+      placeholder: |
+        1. signup as foo@bar.com
+        2. create a Starter project in iad
+        3. publish 20 messages in 500ms via REST
+        4. observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit SHA
+      description: |
+        `git rev-parse HEAD` for a checkout, `hela --version` output
+        for the SDK, or the date you hit the live deploy.

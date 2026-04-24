@@ -1,0 +1,32 @@
+#
+# CODEOWNERS — reviewers auto-assigned on PRs that touch these paths.
+# Later rules override earlier ones, so put per-path overrides below the
+# global fallback.
+#
+
+# Everything, fallback
+*                                       @v0id-user
+
+# Backend data plane
+/apps/gateway/                          @v0id-user
+
+# Control plane — billing, auth, tenant lifecycle. Be extra careful.
+/apps/control/                          @v0id-user
+
+# Public customer-facing surface. UX-sensitive.
+/apps/web/                              @v0id-user
+/apps/app/                              @v0id-user
+
+# SDK: any change is a public API change. Protect the surface.
+/packages/sdk-js/                       @v0id-user
+/packages/sdk-types/                    @v0id-user
+
+# Infra + CI/CD + secrets touchpoints. Changes here can take prod down.
+/infra/                                 @v0id-user
+/.github/                               @v0id-user
+/Makefile                               @v0id-user
+
+# Security / policy files — any change should be reviewed carefully.
+/SECURITY.md                            @v0id-user
+/LICENSE                                @v0id-user
+/CODE_OF_CONDUCT.md                     @v0id-user

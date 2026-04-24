@@ -1,24 +1,78 @@
 name: ci
 
+# Scope:
+#   - PRs run lint + typecheck + tests.
+#   - Pushes to main do everything PRs do, then deploy to Railway
+#     through a `production` environment. Enable required reviewers on
+#     that environment for human-in-the-loop safety.
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-# Every job tests first, deploy jobs depend on their tests + only fire on
-# main. The gateway gets deployed after control because a fresh gateway
-# needs control-pushed project config before it can serve traffic.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
 
 env:
   MIX_ENV: test
+  ELIXIR_VERSION: "1.17.3"
+  OTP_VERSION: "27.1.2"
+  # Build-time config for web + app. Swap to your own hostnames.
+  VITE_HELA_API:     https://gateway-production-bfdf.up.railway.app
+  VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
+  VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
 
 jobs:
-  # ---------- tests ------------------------------------------------------
+  # ---------- lint / format check (fast-fail) ---------------------------
+
+  lint-elixir:
+    name: elixir · format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with: { elixir-version: "${{ env.ELIXIR_VERSION }}", otp-version: "${{ env.OTP_VERSION }}" }
+      - name: gateway · mix format --check-formatted
+        run: mix format --check-formatted
+        working-directory: apps/gateway
+      - name: control · mix format --check-formatted
+        run: mix format --check-formatted
+        working-directory: apps/control
+
+  lint-js:
+    name: js · prettier + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: bun-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - name: prettier
+        run: bunx --bun prettier --check "apps/{web,app}/src/**/*.{ts,tsx,css}" "packages/**/src/**/*.{ts,tsx}" "scripts/**/*.ts"
+      - name: typecheck
+        run: |
+          cd packages/sdk-types && bunx --bun tsc -p tsconfig.json --noEmit && cd -
+          cd packages/sdk-js    && bunx --bun tsc -p tsconfig.json --noEmit && cd -
+
+  # ---------- tests -----------------------------------------------------
 
   test-gateway:
     name: gateway · test
     runs-on: ubuntu-latest
+    needs: [lint-elixir]
     services:
       postgres:
         image: postgres:16-alpine
@@ -32,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
-        with: { elixir-version: '1.17.3', otp-version: '27.1.2' }
+        with: { elixir-version: "${{ env.ELIXIR_VERSION }}", otp-version: "${{ env.OTP_VERSION }}" }
       - uses: actions/cache@v4
         with:
           path: |
@@ -43,12 +97,13 @@ jobs:
         working-directory: apps/gateway
       - run: mix compile --warnings-as-errors
         working-directory: apps/gateway
-      - run: mix test
+      - run: mix test --warnings-as-errors
         working-directory: apps/gateway
 
   test-control:
     name: control · test
     runs-on: ubuntu-latest
+    needs: [lint-elixir]
     services:
       postgres:
         image: postgres:16-alpine
@@ -62,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
-        with: { elixir-version: '1.17.3', otp-version: '27.1.2' }
+        with: { elixir-version: "${{ env.ELIXIR_VERSION }}", otp-version: "${{ env.OTP_VERSION }}" }
       - uses: actions/cache@v4
         with:
           path: |
@@ -73,12 +128,13 @@ jobs:
         working-directory: apps/control
       - run: mix compile --warnings-as-errors
         working-directory: apps/control
-      - run: mix test
+      - run: mix test --warnings-as-errors
         working-directory: apps/control
 
-  test-js:
-    name: js · typecheck + build
+  build-js:
+    name: js · build web + app
     runs-on: ubuntu-latest
+    needs: [lint-js]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -91,27 +147,35 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
       - run: cd apps/web && bun run build
-        env:
-          VITE_HELA_API: https://gateway-production-bfdf.up.railway.app
       - run: cd apps/app && bun run build
-        env:
-          VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
-          VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
 
-  # ---------- deploys — only on push to main -----------------------------
+  # ---------- terraform fmt check (drift prevention) --------------------
+
+  lint-terraform:
+    name: terraform · fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive infra/
+
+  # ---------- deploys — main only, gated by `production` environment ---
   #
-  # RAILWAY_TOKEN is a project-scoped token set as a repo secret.
-  # Rotate it: railway.com/account/tokens → delete, create, `gh secret set`.
+  # Set up the `production` environment in repo settings with at least
+  # one required reviewer — that forces a human to approve each deploy.
+  # RAILWAY_TOKEN should live in the environment's secrets, not repo-wide.
 
   deploy-control:
     name: deploy · control
     needs: [test-control]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://control-production-059e.up.railway.app
     concurrency: deploy-control
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/control --service control --path-as-root --ci --detach
         env:
@@ -122,10 +186,12 @@ jobs:
     needs: [test-gateway, deploy-control]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://gateway-production-bfdf.up.railway.app
     concurrency: deploy-gateway
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/gateway --service gateway --path-as-root --ci --detach
         env:
@@ -133,9 +199,12 @@ jobs:
 
   deploy-web:
     name: deploy · web
-    needs: [test-js, deploy-gateway]
+    needs: [build-js, deploy-gateway]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://web-production-f24fc.up.railway.app
     concurrency: deploy-web
     steps:
       - uses: actions/checkout@v4
@@ -143,8 +212,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
       - run: cd apps/web && bun run build
-        env:
-          VITE_HELA_API: https://gateway-production-bfdf.up.railway.app
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/web --service web --path-as-root --ci --detach
         env:
@@ -152,9 +219,12 @@ jobs:
 
   deploy-app:
     name: deploy · app
-    needs: [test-js, deploy-control]
+    needs: [build-js, deploy-control]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app-production-1716a.up.railway.app
     concurrency: deploy-app
     steps:
       - uses: actions/checkout@v4
@@ -162,10 +232,26 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
       - run: cd apps/app && bun run build
-        env:
-          VITE_HELA_CONTROL: https://control-production-059e.up.railway.app
-          VITE_HELA_GATEWAY: https://gateway-production-bfdf.up.railway.app
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
       - run: railway up ./apps/app --service app --path-as-root --ci --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  # ---------- post-deploy smoke test -----------------------------------
+
+  smoke:
+    name: smoke · e2e.py against live
+    needs: [deploy-gateway, deploy-control, deploy-web, deploy-app]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { python-version: "3.13" }
+      - name: wait for rolling deploys to land
+        run: sleep 30
+      - name: e2e.py
+        run: uv run scripts/e2e.py
+        env:
+          HELA_GATEWAY: ${{ env.VITE_HELA_GATEWAY }}
+          HELA_CONTROL: ${{ env.VITE_HELA_CONTROL }}

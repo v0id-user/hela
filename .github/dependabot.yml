@@ -1,0 +1,82 @@
+version: 2
+
+# Dependabot keeps deps fresh across every manifest we have. Grouped
+# where possible so we don't drown in one-line PRs.
+
+updates:
+  # ---- JavaScript workspace -------------------------------------------
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react*"]
+      tanstack:
+        patterns: ["@tanstack/*"]
+      dev-tooling:
+        patterns: ["typescript", "vite", "@vitejs/*", "prettier", "eslint*"]
+
+  # ---- apps/gateway (Elixir) ------------------------------------------
+  - package-ecosystem: mix
+    directory: /apps/gateway
+    schedule:
+      interval: weekly
+    groups:
+      phoenix:
+        patterns: ["phoenix*"]
+      ecto:
+        patterns: ["ecto*", "postgrex"]
+      observability:
+        patterns: ["telemetry*"]
+
+  # ---- apps/control (Elixir) ------------------------------------------
+  - package-ecosystem: mix
+    directory: /apps/control
+    schedule:
+      interval: weekly
+    groups:
+      phoenix:
+        patterns: ["phoenix*"]
+      ecto:
+        patterns: ["ecto*", "postgrex"]
+
+  # ---- Dockerfiles ----------------------------------------------------
+  - package-ecosystem: docker
+    directory: /apps/gateway
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /apps/control
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /apps/web
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /apps/app
+    schedule:
+      interval: weekly
+
+  # ---- GitHub Actions --------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # ---- Terraform --------------------------------------------------------
+  - package-ecosystem: terraform
+    directory: /infra/railway
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: terraform
+    directory: /infra/terraform
+    schedule:
+      interval: monthly

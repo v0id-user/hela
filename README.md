@@ -162,4 +162,11 @@ wherever.
 
 ## License
 
-MIT.
+[AGPL-3.0-or-later](LICENSE). If you run a modified version of hela as a
+public service, the AGPL requires you to make your modifications
+available to your users. This is deliberate — the point is that the
+backend is copyleft so the community benefits from anyone's
+improvements, even if those improvements only ship as a hosted service.
+
+If the AGPL isn't workable for your use case and you want a commercial
+license, email hey@v0id.me.

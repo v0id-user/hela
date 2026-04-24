@@ -62,18 +62,62 @@ build:
 	@docker build -t hela/gateway -f apps/gateway/Dockerfile apps/gateway
 	@docker build -t hela/control -f apps/control/Dockerfile apps/control
 
-# Per-region gateway rollouts. Add one target per region as the fleet grows.
-deploy.gateway.iad:
+# ---- railway (primary deploy target) ----------------------------------
+
+railway.plan:
+	@cd infra/railway && terraform plan
+
+railway.apply:
+	@cd infra/railway && terraform apply
+
+railway.up.gateway:
+	@railway up ./apps/gateway --service gateway --path-as-root --ci --detach
+
+railway.up.control:
+	@railway up ./apps/control --service control --path-as-root --ci --detach
+
+railway.up.web:
+	@cd apps/web && bun run build
+	@railway up ./apps/web --service web --path-as-root --ci --detach
+
+railway.up.app:
+	@cd apps/app && bun run build
+	@railway up ./apps/app --service app --path-as-root --ci --detach
+
+railway.up.all: railway.up.gateway railway.up.control railway.up.web railway.up.app
+
+# ---- fly (secondary / future) -----------------------------------------
+
+fly.deploy.gateway.iad:
 	@flyctl deploy --config infra/fly/gateway-iad.fly.toml \
 	               --app hela-gateway-iad \
 	               --dockerfile apps/gateway/Dockerfile \
 	               --remote-only .
 
-deploy.control:
+fly.deploy.control:
 	@flyctl deploy --config infra/fly/control.fly.toml \
 	               --app hela-control \
 	               --dockerfile apps/control/Dockerfile \
 	               --remote-only .
 
-stripe.listen:
-	@stripe listen --forward-to http://localhost:4000/webhooks/stripe
+# ---- billing (polar) --------------------------------------------------
+
+polar.listen:
+	@echo 'use Polar dashboard → webhook endpoint → copy URL to POLAR_WEBHOOK_SECRET'
+
+# ---- repo hygiene -----------------------------------------------------
+
+hooks:
+	@sh scripts/install-hooks.sh
+
+lint:
+	@cd apps/gateway && mix format --check-formatted
+	@cd apps/control && mix format --check-formatted
+	@cd apps/gateway && mix credo --strict 2>/dev/null || echo '(credo not installed — skipping)'
+	@bunx --bun tsc -b packages/sdk-js packages/sdk-types apps/web apps/app --noEmit
+
+e2e:
+	@uv run scripts/e2e.py
+
+e2e.sdk:
+	@echo 'run: bun run scripts/sdk_e2e.ts (needs scratch install — see scripts/README.md)'
