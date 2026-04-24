@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#     "datamodel-code-generator[http]>=0.26",
+#     "datamodel-code-generator[http,ruff]>=0.26",
 # ]
 # ///
 """
@@ -73,6 +73,13 @@ def gen_python() -> None:
             "--use-schema-description",
             "--use-title-as-name",
             "--disable-timestamp",
+            # Pin the formatter to ruff so output is stable across
+            # machines. Default (black + isort) drifts between
+            # versions and produced the CI failure we just fixed.
+            "--formatters",
+            "ruff-format",
+            "--formatters",
+            "ruff-check",
             "--custom-file-header",
             "# Auto-generated from packages/schemas/wire/. Do not edit.\n# Run `make sdk.gen` after changing a schema.",
         ]
@@ -97,6 +104,13 @@ def gen_python() -> None:
             "--use-field-description",
             "--use-schema-description",
             "--disable-timestamp",
+            # Pin the formatter to ruff so output is stable across
+            # machines. Default (black + isort) drifts between
+            # versions and produced the CI failure we just fixed.
+            "--formatters",
+            "ruff-format",
+            "--formatters",
+            "ruff-check",
             "--custom-file-header",
             "# Auto-generated from packages/schemas/openapi.yaml. Do not edit.\n# Run `make sdk.gen` after changing the spec.",
         ]
