@@ -1,5 +1,6 @@
 .PHONY: help dev dev.gateway dev.control dev.web dev.app setup test fmt \
-        build deploy.gateway.iad deploy.control stripe.listen
+        build deploy.gateway.iad deploy.control stripe.listen \
+        sdk.gen sdk.py.install-dev sdk.py.test sdk.py.lint sdk.py.fmt
 
 help:
 	@echo 'hela — managed real-time on BEAM'
@@ -17,6 +18,11 @@ help:
 	@echo ''
 	@echo 'make deploy.gateway.iad  roll a new gateway image to iad'
 	@echo 'make deploy.control      roll a new control image'
+	@echo ''
+	@echo 'make sdk.gen             regenerate SDK type modules from schemas'
+	@echo 'make sdk.py.test         run the Python SDK unit tests'
+	@echo 'make sdk.py.test.live    run the live-gateway integration suite'
+	@echo 'make sdk.py.lint         ruff check + format-check sdk-py'
 
 setup:
 	@echo '> starting postgres in docker'
@@ -115,9 +121,39 @@ lint:
 	@cd apps/control && mix format --check-formatted
 	@cd apps/gateway && mix credo --strict 2>/dev/null || echo '(credo not installed — skipping)'
 	@bunx --bun tsc -b packages/sdk-js packages/sdk-types apps/web apps/app --noEmit
+	@$(MAKE) sdk.py.lint
 
 e2e:
 	@uv run scripts/e2e.py
 
 e2e.sdk:
 	@echo 'run: bun run scripts/sdk_e2e.ts (needs scratch install — see scripts/README.md)'
+
+# ---- SDK codegen + per-language tasks --------------------------------
+
+# Regenerate every language's type module from packages/schemas/.
+# Run this after touching any JSON Schema or OpenAPI spec; commit the
+# generated files so diffs are reviewable.
+sdk.gen:
+	@uv run packages/sdk-gen/gen.py
+
+# Install sdk-py and its dev dependencies into its package venv.
+sdk.py.install-dev:
+	@cd packages/sdk-py && uv sync --all-extras
+
+sdk.py.test:
+	@cd packages/sdk-py && uv run pytest tests/ -q
+
+# Live-gateway integration suite. Signs up a throwaway account against
+# the deployed Railway stack; set HELA_GATEWAY / HELA_CONTROL to point
+# elsewhere.
+sdk.py.test.live:
+	@cd packages/sdk-py && HELA_LIVE=1 uv run pytest tests/ -v
+
+sdk.py.lint:
+	@cd packages/sdk-py && uv run ruff check src/ tests/
+	@cd packages/sdk-py && uv run ruff format --check src/ tests/
+
+sdk.py.fmt:
+	@cd packages/sdk-py && uv run ruff format src/ tests/
+	@cd packages/sdk-py && uv run ruff check --fix src/ tests/
