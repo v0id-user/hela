@@ -73,9 +73,9 @@ export function Pricing() {
   return (
     <section style={{ padding: "40px 20px", maxWidth: 1100, margin: "0 auto" }}>
       <SectionHeading
-        eyebrow="hosted product"
+        eyebrow="pricing"
         title="flat monthly. no per-message billing."
-        sub="these tiers are for the hosted regions only, self host means you set your own caps. annual = 2 months free. overage: $0.50/million messages above the tier cap. connection caps are hard."
+        sub="billed monthly. 2 months free on annual. overage $0.50 per million above the tier cap, connection caps are hard. full source on GitHub."
       />
 
       <div
