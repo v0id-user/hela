@@ -50,7 +50,7 @@ function Footer() {
         color: "#666",
       }}
     >
-      <span>hela · managed real-time on BEAM</span>
+      <span>hela · open source real time on BEAM</span>
       <span>
         <a href="/how" style={{ color: "#888" }}>
           how
