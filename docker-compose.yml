@@ -68,7 +68,9 @@ services:
       SECRET_KEY_BASE: dev-control-secret-key-base-000000000000000000000000000000000000000000000000000000000000
       GATEWAY_INTERNAL_SECRET: dev-only-internal-secret
       GATEWAYS: '{"iad":"http://gateway:4000","sjc":"http://gateway:4000","ams":"http://gateway:4000","sin":"http://gateway:4000","syd":"http://gateway:4000","dev":"http://gateway:4000"}'
-      STRIPE_SECRET_KEY: sk_test_replace_me
+      # Polar is the billing platform. Leave these unset locally — the
+      # Control.Billing facade is a no-op when POLAR_ACCESS_TOKEN is empty.
+      POLAR_ENV: sandbox
     depends_on:
       - postgres
     ports:

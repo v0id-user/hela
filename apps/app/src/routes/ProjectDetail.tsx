@@ -35,7 +35,7 @@ export function ProjectDetail() {
   }
 
   function deleteMe() {
-    if (confirm(`delete ${project_.name}? this cancels its Stripe subscription.`)) {
+    if (confirm(`delete ${project_.name}? this cancels its Polar subscription.`)) {
       deleteProject(project_.id);
       navigate({ to: "/" });
     }

@@ -1,7 +1,7 @@
 // The dashboard is a thin client over a REST API that lives behind login.
 // In dev we mock the account state in localStorage so the flow can be
-// exercised end-to-end without wiring Stripe. Swap these helpers for
-// real fetches against a /api/* surface in production.
+// exercised end-to-end without calling the Polar billing surface. Swap
+// these helpers for real fetches against a /api/* surface in production.
 
 const K_ACCOUNT = "hela.dash.account";
 const K_PROJECTS = "hela.dash.projects";
@@ -11,7 +11,7 @@ export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
 
 export interface Account {
   email: string;
-  stripe_customer_id: string | null;
+  polar_customer_id: string | null;
   github_id: string | null;
 }
 
@@ -24,7 +24,7 @@ export interface Project {
   jwt_registered: boolean;
   keys: { prefix: string; label: string | null; last_used_at: string | null }[];
   usage: { messages: number; connections: number; cap_messages: number; cap_connections: number };
-  stripe_price_per_month: number;
+  price_per_month: number;
 }
 
 export const TIER_PRICE: Record<Tier, number> = {
@@ -55,7 +55,8 @@ export function account(): Account | null {
 export function signup(email: string): Account {
   const a: Account = {
     email,
-    stripe_customer_id: "cus_" + Math.random().toString(36).slice(2, 10),
+    // Mock value shaped like a Polar customer id for the dev-only flow.
+    polar_customer_id: "cus_" + Math.random().toString(36).slice(2, 10),
     github_id: null,
   };
   localStorage.setItem(K_ACCOUNT, JSON.stringify(a));
@@ -103,7 +104,7 @@ export function createProject(attrs: { name: string; region: Region; tier: Tier 
       cap_messages: caps.messages,
       cap_connections: caps.connections,
     },
-    stripe_price_per_month: TIER_PRICE[attrs.tier],
+    price_per_month: TIER_PRICE[attrs.tier],
   };
   const all = projects();
   all.push(p);

@@ -1,8 +1,6 @@
 defmodule Control.Billing do
   @moduledoc """
-  Billing facade over `Control.Polar`. Kept intention-revealing so the
-  rest of the codebase doesn't need to know whether we're on Polar,
-  Stripe, or Lemon Squeezy.
+  Billing facade over `Control.Polar`.
 
     * `ensure_customer/1` — create a Polar customer the first time we
       see an account
@@ -27,9 +25,6 @@ defmodule Control.Billing do
       "scale" => System.get_env("POLAR_PRODUCT_SCALE")
     }
   end
-
-  # Legacy name kept for any call sites still written against Stripe.
-  def ensure_stripe_customer(account), do: ensure_customer(account)
 
   def ensure_customer(%Account{polar_customer_id: id} = a) when is_binary(id), do: {:ok, a}
 

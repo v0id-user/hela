@@ -4,7 +4,7 @@ import { Page, Panel, KV } from "../components/Layout";
 
 export function ProjectList() {
   const ps = projects();
-  const total = ps.reduce((a, p) => a + p.stripe_price_per_month, 0);
+  const total = ps.reduce((a, p) => a + p.price_per_month, 0);
 
   return (
     <Page>

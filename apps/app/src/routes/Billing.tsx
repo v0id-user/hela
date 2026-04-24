@@ -11,13 +11,13 @@ export function Billing() {
       <h1 style={{ fontSize: 22, marginBottom: 14 }}>billing</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-        <Panel title="stripe customer">
+        <Panel title="billing account">
           <KV k="email" v={a.email} />
-          <KV k="customer id" v={a.stripe_customer_id ?? "—"} />
+          <KV k="polar customer id" v={a.polar_customer_id ?? "—"} />
           <KV k="payment method" v="•••• 4242" />
           <div style={{ marginTop: 10 }}>
-            <a href="https://billing.stripe.com/p/demo" target="_blank" rel="noreferrer">
-              <button>[ open stripe portal ]</button>
+            <a href="https://polar.sh/" target="_blank" rel="noreferrer">
+              <button>[ open polar portal ]</button>
             </a>
           </div>
         </Panel>

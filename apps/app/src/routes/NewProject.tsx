@@ -98,7 +98,7 @@ export function NewProject() {
         </button>
         {tier !== "free" && (
           <span style={{ color: "#666", fontSize: 11, alignSelf: "center" }}>
-            &gt; Stripe will collect payment on first paid project; reused on subsequent ones.
+            &gt; Polar will collect payment on first paid project; reused on subsequent ones.
           </span>
         )}
       </div>
