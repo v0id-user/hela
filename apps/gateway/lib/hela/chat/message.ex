@@ -36,11 +36,11 @@ defmodule Hela.Chat.Message do
 
   def to_wire(%__MODULE__{} = m) do
     %{
-      id: Hela.ID.bin_to_string(m.id),
+      id: uuid_to_string(m.id),
       channel: m.channel,
       author: m.author,
       body: m.body,
-      reply_to_id: m.reply_to_id && Hela.ID.bin_to_string(m.reply_to_id),
+      reply_to_id: uuid_to_string(m.reply_to_id),
       node: m.node,
       inserted_at: DateTime.to_iso8601(m.inserted_at)
     }
@@ -48,12 +48,12 @@ defmodule Hela.Chat.Message do
 
   def to_row(%__MODULE__{} = m) do
     %{
-      id: Hela.ID.bin_to_string(m.id),
+      id: uuid_to_string(m.id),
       project_id: m.project_id,
       channel: m.channel,
       author: m.author,
       body: m.body,
-      reply_to_id: m.reply_to_id && Hela.ID.bin_to_string(m.reply_to_id),
+      reply_to_id: uuid_to_string(m.reply_to_id),
       node: m.node,
       inserted_at: m.inserted_at
     }
@@ -62,4 +62,8 @@ defmodule Hela.Chat.Message do
   defp normalize(nil), do: nil
   defp normalize(<<_::binary-size(16)>> = b), do: b
   defp normalize(<<_::binary-size(36)>> = s), do: Hela.ID.string_to_bin(s)
+
+  defp uuid_to_string(nil), do: nil
+  defp uuid_to_string(<<_::binary-size(16)>> = b), do: Hela.ID.bin_to_string(b)
+  defp uuid_to_string(<<_::binary-size(36)>> = s), do: s
 end
