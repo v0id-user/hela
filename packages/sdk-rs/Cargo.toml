@@ -1,0 +1,41 @@
+[package]
+name = "hela"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Rust SDK for hela — managed real-time on BEAM."
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/v0id-user/hela"
+homepage = "https://hela.dev"
+readme = "README.md"
+keywords = ["realtime", "websocket", "phoenix", "channels", "presence"]
+categories = ["network-programming", "asynchronous", "web-programming::websocket"]
+
+[dependencies]
+# Tokio WebSocket client. Pins via rustls so the wheel ships one
+# TLS stack rather than relying on the host's OpenSSL.
+tokio = { version = "1.40", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "net", "io-util"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+
+# HTTP client for the REST surface.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
+
+# JSON + error + time plumbing.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Base64 for JWT `pid` claim decoding (we don't verify — server does).
+base64 = "0.22"
+
+# Cheap atomics + tracing-friendly logging (optional to users).
+tracing = { version = "0.1", default-features = false }
+
+[dev-dependencies]
+tokio = { version = "1.40", features = ["full", "test-util"] }
+wiremock = "0.6"
+# integration test uses the real reqwest with cookie support to
+# talk to control's session-based endpoints.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-webpki-roots", "cookies"] }

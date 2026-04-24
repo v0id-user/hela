@@ -48,3 +48,11 @@ packages/sdk-py/.venv/
 packages/sdk-py/dist/
 packages/sdk-py/build/
 packages/sdk-py/*.egg-info/
+
+# rust
+packages/sdk-rs/target/
+packages/sdk-rs/Cargo.lock.bak
+
+# go
+packages/sdk-go/*.test
+packages/sdk-go/*.out
