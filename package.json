@@ -6,6 +6,7 @@
     "apps/web",
     "apps/app",
     "packages/sdk-js",
+    "packages/sdk-js-e2e",
     "packages/sdk-types",
     "packages/ui"
   ],
@@ -13,6 +14,8 @@
     "dev": "make dev",
     "build": "bun run --filter=* build",
     "build:sdk": "cd packages/sdk-types && bun run build && cd ../sdk-js && bun run build",
+    "test:e2e": "cd packages/sdk-js-e2e && bun run test",
+    "test:e2e:headed": "cd packages/sdk-js-e2e && bun run test:headed",
     "dev:web": "bun run build:sdk && bun run dev:web:raw",
     "dev:app": "bun run build:sdk && bun run dev:app:raw",
     "dev:web:raw": "cd apps/web && bun run dev",

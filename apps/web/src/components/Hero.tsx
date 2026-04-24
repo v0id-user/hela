@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ensureClient, uuidv7Timestamp } from "../lib/hela";
+import {
+  ensureClient,
+  noteHeroError,
+  noteHeroJoined,
+  noteHeroRTT,
+  uuidv7Timestamp,
+} from "../lib/hela";
 import type { HelaChannel, Message } from "@hela/sdk";
 import { signupUrl } from "../lib/urls";
 
@@ -18,13 +24,26 @@ export function Hero() {
   useEffect(() => {
     let active = true;
     let offMsg: (() => void) | null = null;
+    let offOpen: (() => void) | null = null;
+    let offClose: (() => void) | null = null;
+    let offError: (() => void) | null = null;
 
     (async () => {
       const client = await ensureClient();
+      offOpen = client.onOpen(() => {
+        if (active) setConnected(true);
+      });
+      offClose = client.onClose(() => {
+        if (active) setConnected(false);
+      });
+      offError = client.onError(() => {
+        if (active) setConnected(false);
+      });
       const ch = client.channel("hello:world");
       chRef.current = ch;
       const { messages: hist, region: r } = await ch.join();
       if (!active) return;
+      noteHeroJoined(r);
       setRegion(r);
       setConnected(true);
       setMessages(hist);
@@ -35,12 +54,21 @@ export function Hero() {
 
       // One ping to surface regional RTT under the input.
       const rt = await client.measureRTT(ch);
-      if (active) setRtt(rt);
-    })().catch((e) => console.error("[hero]", e));
+      if (active) {
+        noteHeroRTT(rt);
+        setRtt(rt);
+      }
+    })().catch((e) => {
+      noteHeroError(e);
+      console.error("[hero]", e);
+    });
 
     return () => {
       active = false;
       offMsg?.();
+      offOpen?.();
+      offClose?.();
+      offError?.();
       chRef.current?.leave();
       chRef.current = null;
     };
