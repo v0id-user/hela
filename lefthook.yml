@@ -1,0 +1,99 @@
+# lefthook — run format + lint + tests before every commit so CI
+# is mostly just a safety net, not the first line of defence.
+#
+# Install once:
+#   lefthook install
+# Uninstall:
+#   lefthook uninstall
+#
+# Skip a hook for one commit:
+#   LEFTHOOK=0 git commit ...
+#
+# Rules live next to the code they gate — Python in packages/sdk-py,
+# Go in packages/sdk-go, Rust in packages/sdk-rs. A hook only fires
+# when a staged file matches its glob, so editing Python docs does
+# not run the Go test suite.
+
+pre-commit:
+  parallel: true
+  commands:
+    # --- Python SDK ---------------------------------------------------
+    sdk-py-format:
+      tags: python format
+      glob: "packages/sdk-py/**/*.py"
+      root: "packages/sdk-py"
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
+
+    sdk-py-lint:
+      tags: python lint
+      glob: "packages/sdk-py/**/*.py"
+      root: "packages/sdk-py"
+      run: uv run ruff check {staged_files}
+
+    sdk-py-test:
+      tags: python test
+      glob: "packages/sdk-py/**/*.py"
+      root: "packages/sdk-py"
+      run: uv run pytest tests/ -q
+
+    # --- Go SDK -------------------------------------------------------
+    sdk-go-fmt:
+      tags: go format
+      glob: "packages/sdk-go/**/*.go"
+      root: "packages/sdk-go"
+      run: gofmt -l -w {staged_files}
+      stage_fixed: true
+
+    sdk-go-vet:
+      tags: go lint
+      glob: "packages/sdk-go/**/*.go"
+      root: "packages/sdk-go"
+      run: go vet ./...
+
+    sdk-go-test:
+      tags: go test
+      glob: "packages/sdk-go/**/*.go"
+      root: "packages/sdk-go"
+      run: go test ./...
+
+    # --- Rust SDK -----------------------------------------------------
+    sdk-rs-fmt:
+      tags: rust format
+      glob: "packages/sdk-rs/**/*.rs"
+      root: "packages/sdk-rs"
+      run: cargo fmt --
+      stage_fixed: true
+
+    sdk-rs-clippy:
+      tags: rust lint
+      glob: "packages/sdk-rs/**/*.rs"
+      root: "packages/sdk-rs"
+      run: cargo clippy --all-targets -- -D warnings
+
+    sdk-rs-test:
+      tags: rust test
+      glob: "packages/sdk-rs/**/*.rs"
+      root: "packages/sdk-rs"
+      run: cargo test --quiet
+
+    # --- schemas ------------------------------------------------------
+    # Any schema change has to regenerate or CI's drift guard fails.
+    # Run the same check locally so nobody pushes a broken commit.
+    schema-drift:
+      tags: schema
+      glob: "packages/schemas/**/*"
+      run: |
+        uv run packages/sdk-gen/gen.py >/dev/null
+        if ! git diff --quiet -- packages/sdk-py/src/hela/_generated packages/sdk-types packages/sdk-go packages/sdk-rs; then
+          echo "err: schema change did not regenerate SDK types" >&2
+          echo "     run: make sdk.gen && git add ." >&2
+          exit 1
+        fi
+
+# Enforce the subject-line rules from scripts/check-commit-msg.sh.
+# Same check CI runs, but locally so a violating commit never gets made.
+commit-msg:
+  commands:
+    subject:
+      run: scripts/check-commit-msg.sh "$(sed -E '/^#/d;/^$/d' {1} | head -n 1)"

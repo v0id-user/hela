@@ -16,9 +16,7 @@ class Message1(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: constr(
-        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-    )
+    id: constr(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
     """
     UUIDv7. First 48 bits are unix-ms; lexicographic order = chronological.
     """
@@ -35,9 +33,7 @@ class Message1(BaseModel):
     The payload. Up to 4KB.
     """
     reply_to_id: (
-        constr(
-            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-        )
+        constr(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
         | None
     ) = None
     """
@@ -70,9 +66,7 @@ class PublishRequest1(BaseModel):
     Optional author override. Defaults to the channel's joined nickname.
     """
     reply_to_id: (
-        constr(
-            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-        )
+        constr(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
         | None
     ) = None
     """
@@ -97,9 +91,7 @@ class PublishReply1(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: constr(
-        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-    )
+    id: constr(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
     """
     The UUIDv7 the server minted for this message.
     """
@@ -118,9 +110,7 @@ class HistoryRequest1(BaseModel):
         extra="forbid",
     )
     before: (
-        constr(
-            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-        )
+        constr(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
         | None
     ) = None
     """

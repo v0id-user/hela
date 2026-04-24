@@ -114,7 +114,8 @@ polar.listen:
 # ---- repo hygiene -----------------------------------------------------
 
 hooks:
-	@sh scripts/install-hooks.sh
+	@command -v lefthook >/dev/null 2>&1 || { echo 'err: lefthook missing. brew install lefthook'; exit 1; }
+	@lefthook install
 
 lint:
 	@cd apps/gateway && mix format --check-formatted
