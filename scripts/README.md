@@ -2,9 +2,11 @@
 
 Operational scripts for validating the deployed hela platform.
 
-## `e2e.py` — full end-to-end test (Python 3.14, stdlib + uv inline deps)
+## `e2e.py` — platform test (Python 3.13+, uv)
 
-Talks to the live Railway deploy over raw HTTP + Phoenix Channel v2 WebSocket protocol. Platform-level validation, no SDK.
+Talks to the live Railway deploy over raw HTTP + Phoenix Channel v2
+WebSocket protocol. **No SDK** — this validates the backend in
+isolation.
 
 ```
 uv run scripts/e2e.py                  # uses the deployed URLs
@@ -13,27 +15,52 @@ HELA_CONTROL=http://localhost:4000 \
   uv run scripts/e2e.py                # against local dev
 ```
 
-Exercises: signup → session cookies → project → API key → `/v1/tokens` → WS connect → channel join → publish → receive → history → second client → presence CRDT → rate limiter. Ten checkpoints, typically ≤10s wall-clock.
+Dependencies declared inline at the top of the script (PEP 723); `uv run`
+resolves them into a one-shot venv. Exercises: signup → session →
+project → API key → `/v1/tokens` → WS join → publish → receive →
+history → second client → presence CRDT → rate limiter. ≤10s wall-clock.
 
-Dependencies are declared inline at the top of the script (PEP 723 style); `uv run` resolves them into a one-shot venv.
+## `sdk_e2e.ts` — SDK surface test (TypeScript, Bun)
 
-## `sdk_e2e.mjs` — SDK shape test (JavaScript, Bun)
+Imports `@hela/sdk` the way a customer would and drives the flow through
+the SDK's typed API — `connect()`, `channel.publish()`, `channel.onMessage()`,
+`presence.onSync()`, `channel.history()`. Catches SDK-shape bugs a raw-
+protocol test can't (type surface regressions, missing timeout handlers,
+etc.).
 
-Installs `@hela/sdk` as a customer would (`file:` workspace link) and drives the flow with the SDK's typed surface — `connect()`, `channel()`, `channel.publish()`, `channel.onMessage()`, `channel.history()`, `presence.onSync()`.
-
-This one stays JavaScript on purpose: the SDK's job is to be a JS library, so the only way to validate its public API is from a JS consumer. Same reason you'd test a Rust crate in Rust.
+TypeScript instead of plain JS because Bun runs TS natively — no build
+step, real types imported from `@hela/sdk`.
 
 ```
-# One-time: copy the SDK packages into a scratch dir with file: deps
+# One-time: copy the SDK packages into a scratch dir with file: deps.
+# The monorepo's workspace: protocol doesn't resolve outside the repo,
+# so we rewrite sdk-js's dep on sdk-types to a plain file: link.
 mkdir /tmp/hela-sdk-test && cd /tmp/hela-sdk-test
 cp -r <repo>/packages/sdk-types ./sdk-types
-cp -r <repo>/packages/sdk-js ./sdk-js
-# Patch sdk-js/package.json so @hela/sdk-types resolves to ./sdk-types
-# (the workspace protocol only works inside the monorepo)
+cp -r <repo>/packages/sdk-js   ./sdk-js
+python3 -c "
+import json, pathlib
+p = pathlib.Path('sdk-js/package.json')
+d = json.loads(p.read_text())
+d['dependencies']['@hela/sdk-types'] = 'file:../sdk-types'
+p.write_text(json.dumps(d, indent=2))
+"
 bun init -y
 bun add file:./sdk-js file:./sdk-types phoenix
 
 # Run
-cp <repo>/scripts/sdk_e2e.mjs ./test.mjs
-bun run test.mjs
+cp <repo>/scripts/sdk_e2e.ts ./test.ts
+bun run test.ts
 ```
+
+## Why two tests
+
+| test | language | tests | catches |
+| --- | --- | --- | --- |
+| `e2e.py` | Python | backend wire protocol | server-side regressions |
+| `sdk_e2e.ts` | TypeScript | `@hela/sdk` public API | SDK-shape regressions |
+
+Raw-protocol tests don't notice when the SDK's `chat.history()` returns
+the wrong shape, and SDK tests don't notice when the control plane's
+/_internal/projects sync doesn't carry the jwt_signing_secret. Different
+façades, both need coverage.
