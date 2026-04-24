@@ -135,7 +135,7 @@ jobs:
     needs: [lint-elixir]
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: gateway_test
@@ -181,7 +181,7 @@ jobs:
     needs: [lint-elixir]
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: control_test
