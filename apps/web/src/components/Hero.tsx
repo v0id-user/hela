@@ -92,17 +92,17 @@ export function Hero() {
           marginBottom: 12,
         }}
       >
-        managed real-time on BEAM
+        open source real time on BEAM
       </div>
       <h1 style={{ fontSize: 34, lineHeight: 1.2, color: "#e0e0e0", marginBottom: 14 }}>
         pick a region. get sub-100ms channels, presence, and history.
         <br />
-        flat monthly pricing. no per-message billing.
+        on our hosted product: flat monthly pricing, no per-message billing.
       </h1>
       <p style={{ color: "#888", maxWidth: 720, marginBottom: 20 }}>
-        hela is a managed real-time backend built on Elixir/Phoenix. regional clusters in five
-        cities. JWT-authed WebSockets. the demo below is the product — type something, other
-        visitors see it.
+        hela is the open source stack on Elixir/Phoenix, the same monorepo you can self host. the
+        regions you pick here are the hosted service: clusters in five cities, JWT authed
+        WebSockets. the demo below is the product — type something, other visitors see it.
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
