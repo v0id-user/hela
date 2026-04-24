@@ -51,10 +51,24 @@ async function packageVersion(app: Target): Promise<string> {
   return pkg.version ?? "0.0.0";
 }
 
+async function commitFromFile(): Promise<string | undefined> {
+  // CI writes a plain `COMMIT` file at repo root before `railway up`
+  // so the Dockerfile can COPY it in. That covers the case where
+  // Railway doesn't forward `RAILWAY_GIT_COMMIT_SHA` as a build ARG
+  // (`railway up --detach` path, notably).
+  try {
+    const value = (await readFile(join(ROOT, "COMMIT"), "utf8")).trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function writeVersionFile(app: Target): Promise<void> {
   const publicDir = join(ROOT, "apps", app, "public");
   const commit =
     envFirst("RAILWAY_GIT_COMMIT_SHA", "SOURCE_VERSION", "GITHUB_SHA") ??
+    (await commitFromFile()) ??
     gitOutput("rev-parse", "HEAD");
   const payload: Record<string, string | boolean> = {
     ok: true,
