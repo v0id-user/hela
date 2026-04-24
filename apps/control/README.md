@@ -18,10 +18,10 @@ Public:
 
 | Method | Path                | Purpose                         |
 | ------ | ------------------- | ------------------------------- |
-| POST   | /auth/signup        | email signup (creates Stripe customer) |
+| POST   | /auth/signup        | email signup (creates Polar customer) |
 | POST   | /auth/login         | session cookie                  |
 | POST   | /auth/logout        | clear session                   |
-| POST   | /webhooks/stripe    | Stripe event handler            |
+| POST   | /webhooks/polar    | Polar event handler            |
 
 Session-gated (`/api/*`):
 
@@ -61,7 +61,7 @@ lib/
 │   │   ├── project.ex
 │   │   └── api_key.ex
 │   ├── accounts.ex          public context
-│   ├── billing.ex           Stripe wrapper
+│   ├── billing.ex           Polar wrapper
 │   └── sync.ex              push to regional gateways
 └── control_web/
     ├── endpoint.ex
@@ -72,6 +72,6 @@ lib/
         ├── auth_controller.ex
         ├── projects_controller.ex
         ├── keys_controller.ex
-        ├── stripe_webhook_controller.ex
+        ├── polar_webhook_controller.ex
         └── page_controller.ex
 ```

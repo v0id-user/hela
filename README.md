@@ -1,8 +1,12 @@
 <p align="center">
   <a href="https://github.com/v0id-user/hela">
-    <img src="apps/web/public/brand/png/banner.png"
-         alt="hela — managed real-time on BEAM"
-         width="100%"/>
+    <picture>
+      <source type="image/webp"
+              srcset="apps/web/public/brand/png/webp/banner@2x.webp"/>
+      <img src="apps/web/public/brand/png/banner@2x.png"
+           alt="hela — managed real-time on BEAM"
+           width="100%"/>
+    </picture>
   </a>
 </p>
 
@@ -82,27 +86,32 @@ You get:
 | app         | http://localhost:5174  | the customer dashboard        |
 | mailpit     | http://localhost:8025  | outbound email preview        |
 
-Stripe webhooks in dev:
+Polar webhooks in dev:
 
 ```
-make stripe.listen   # forwards to http://localhost:4000/webhooks/stripe
+make polar.listen   # prints setup hint for Polar webhook endpoint
 ```
+
+Billing runs on [Polar](https://polar.sh) (currently on the sandbox
+environment). Stripe was evaluated early and dropped — don't look
+for Stripe plumbing, there isn't any.
 
 ## The four apps, in one paragraph each
 
 **gateway** is the data plane. Phoenix 1.8 + Bandit, Channels + Presence
 + PubSub, ETS ring buffers per (project, channel), Broadway batching into
-a per-region Postgres. `dns_cluster` meshes replicas within a region over
-IPv6. One Fly app per region. Stateless except for ETS. Owns the `/socket`
-WebSocket surface, the public `/playground/*` endpoints, and a
-`/_internal/*` surface that the control plane pushes project + API-key
-state to.
+a per-region Postgres. `dns_cluster` meshes replicas within a region.
+One Railway service per region (single `ams` service in production
+today; other region slugs are reserved but not yet deployed). Stateless
+except for ETS. Owns the `/socket` WebSocket surface, the public
+`/playground/*` endpoints, and a `/_internal/*` surface that control
+pushes project + API-key state to.
 
-**control** is the control plane. Accounts, projects, API keys, Stripe
+**control** is the control plane. Accounts, projects, API keys, Polar
 customer + subscription management, JWT public-key registration. Single
-global deployment in iad. Knows about each region's gateway URL and
-fans out project upserts via `x-hela-internal` signed POSTs so the data
-plane's local mirror stays fresh without cross-region BEAM clustering.
+global deployment. Knows about each region's gateway URL and fans out
+project upserts via `x-hela-internal` signed POSTs so the data plane's
+local mirror stays fresh without cross-region BEAM clustering.
 
 **web** is the marketing site. Every demo on the page hits a real gateway:
 hero has a live `hello:world` channel, the five primitive demos each target
@@ -134,10 +143,10 @@ gateway and a matching demo on the landing page:
 
 ## Tenancy + billing shape
 
-- **account** — one per signup, one Stripe customer.
-- **project** — the billable unit, one Stripe subscription item. Fixed
-  region, fixed JWK. Different projects on the same account can be on
-  different tiers.
+- **account** — one per signup, one Polar customer.
+- **project** — the billable unit, one Polar subscription. Fixed
+  region, fixed JWK. Different projects on the same account can be
+  on different tiers.
 - **channel** — runtime only, namespaced by project. Topic is
   `chan:<project_id>:<channel_name>`; the JWT's `pid` claim is enforced
   against the topic on every join.
@@ -246,20 +255,22 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full guide.
 
 ## Brand
 
-Assets live in [`apps/web/public/brand/`](apps/web/public/brand/) and
-are mirrored as PNGs at 1× and 2× under `brand/png/`. They are served
-at `/brand/...` on the marketing site.
+Source SVGs live in [`apps/web/public/brand/`](apps/web/public/brand/).
+Rasterised PNGs (at 1×, 2×, and 4K where it matters) live under
+`brand/png/`. WebP copies of every 1× / 2× for the web-delivery path
+are under `brand/png/webp/`. Everything is served verbatim at
+`/brand/...` on the marketing site.
 
-| asset | what it is | SVG | PNG |
-| ----- | ---------- | --- | --- |
-| mark        | 3-dot presence roster in gold brackets (favicon-safe) | [`mark.svg`](apps/web/public/brand/mark.svg) | [`png/mark-{128,256,512,1024}.png`](apps/web/public/brand/png/) |
-| signal      | kinetic timeline mark — trailing events + live accent | [`signal.svg`](apps/web/public/brand/signal.svg) | `png/signal{,@2x}.png` |
-| wordmark    | `[ hela ]` in gold + silver mono | [`wordmark.svg`](apps/web/public/brand/wordmark.svg) | `png/wordmark{,@2x}.png` |
-| lockup      | mark + wordmark + tagline | [`lockup.svg`](apps/web/public/brand/lockup.svg) | `png/lockup{,@2x}.png` |
-| banner      | 1280×320 hero strip, used at the top of this README | [`banner.svg`](apps/web/public/brand/banner.svg) | `png/banner{,@2x}.png` |
-| avatar      | 400×400 profile picture for GitHub / Twitter / Discord | [`avatar.svg`](apps/web/public/brand/avatar.svg) | `png/avatar{,@2x}.png` |
-| og          | 1200×630 social share card | [`og.svg`](apps/web/public/brand/og.svg) | `png/og{,@2x}.png` |
-| favicon     | simplified 2-dot mark tuned for ≤32 px | [`favicon.svg`](apps/web/public/brand/favicon.svg) | `png/favicon-{32,180}.png` |
+| asset | what it is | SVG | PNG sizes | WebP |
+| ----- | ---------- | --- | --------- | ---- |
+| mark     | 3-dot presence roster in gold brackets (favicon-safe) | [`mark.svg`](apps/web/public/brand/mark.svg) | 128 · 256 · 512 · 1024 · 2048 · 4096 (square) | `mark.webp` · `mark@2x.webp` |
+| signal   | kinetic timeline mark — trailing events + live accent | [`signal.svg`](apps/web/public/brand/signal.svg) | 512×256 · 1024×512 · 2048×1024 · 2560×1280 | `signal.webp` · `signal@2x.webp` |
+| wordmark | `[ hela ]` in gold + silver mono | [`wordmark.svg`](apps/web/public/brand/wordmark.svg) | 720×160 · 1440×320 · 2880×640 | `wordmark.webp` |
+| lockup   | mark + wordmark + tagline | [`lockup.svg`](apps/web/public/brand/lockup.svg) | 960×160 · 1920×320 · 3840×640 | `lockup.webp` |
+| banner   | hero strip, used at the top of this README | [`banner.svg`](apps/web/public/brand/banner.svg) | 1280×320 · 2560×640 · 3840×960 (4K) | `banner.webp` · `banner@2x.webp` |
+| avatar   | profile picture for GitHub / Twitter / Discord | [`avatar.svg`](apps/web/public/brand/avatar.svg) | 400² · 800² · 2048² · 4096² | `avatar.webp` · `avatar@2x.webp` |
+| og       | social share card | [`og.svg`](apps/web/public/brand/og.svg) | 1200×630 · 2400×1260 · 3840×2016 (4K) | `og.webp` · `og@2x.webp` |
+| favicon  | simplified 2-dot mark tuned for ≤32 px | [`favicon.svg`](apps/web/public/brand/favicon.svg) | 32 · 180 · 512 (maskable) | — |
 
 Colour palette:
 
@@ -270,13 +281,16 @@ Colour palette:
 
 Typography stack: `"SF Mono", "JetBrains Mono", "Menlo", "DejaVu Sans Mono", monospace`.
 
-To re-rasterize after editing an SVG:
+To re-render everything after editing any SVG:
 
 ```sh
-cd apps/web/public/brand
-rsvg-convert banner.svg -w 1280 -h 320 -o png/banner.png
-rsvg-convert banner.svg -w 2560 -h 640 -o png/banner@2x.png
+bash scripts/brand_render.sh
 ```
+
+That script rasterises every SVG at every documented size, runs
+`oxipng -o 4` to shrink the PNGs without loss, and emits a WebP at
+1× for each asset. Requires `rsvg-convert`, `oxipng`, and `cwebp`
+(`brew install librsvg oxipng webp` on macOS).
 
 ### Brand assets are not AGPL
 

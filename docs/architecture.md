@@ -1,8 +1,8 @@
 # architecture
 
-Canonical notes for anyone new to the codebase. The live-rendered version
-is at [hela.dev/how](https://hela.dev/how); this file is the written
-source of record.
+Canonical notes for anyone new to the codebase. A rendered version
+will live at `/how` on the marketing site once a real domain is
+registered; for now this file is the written source of record.
 
 ## Data plane / control plane split
 
@@ -33,7 +33,7 @@ Gateway never originates project rows. It reads from `projects_cache` and
 Global singleton. Slow path, so optimised for correctness.
 
 - `Control.Accounts` — accounts, projects, API keys (canonical)
-- `Control.Billing` — Stripe wrapper (Customer, Subscription,
+- `Control.Billing` — Polar wrapper (Customer, Subscription,
   SubscriptionItem, webhook dispatch)
 - `Control.Sync` — fans out project/key mutations to every gateway in the
   project's region over HTTP, with an `x-hela-internal` header secret
@@ -60,9 +60,10 @@ grows the Broadway queue, which is visible on the dashboard.
 ## Cluster topology
 
 Within one region, N gateway machines auto-mesh via `dns_cluster`
-resolving `top1.nearest.of.hela-gateway-<region>.internal` over Fly's
-IPv6. `Phoenix.PubSub` rides that mesh. Presence is CRDT-replicated so
-join/leave ordering is conflict-free across nodes.
+over the platform's private network (Railway's internal DNS today,
+Fly's IPv6 mesh when we switch back to it). `Phoenix.PubSub` rides
+that mesh. Presence is CRDT-replicated so join/leave ordering is
+conflict-free across nodes.
 
 Regions are **otherwise isolated** — no cross-region BEAM mesh. A
 customer on Scale tier who enables multi-region gets a lightweight relay:
@@ -72,7 +73,7 @@ PubSub. UUIDv7 ids sort globally so merged histories stay in time order.
 ## Tenancy
 
 ```
-account (1 signup, 1 stripe customer)
+account (1 signup, 1 polar customer)
   └─ project (billable unit, owns api keys + region + JWK)
        └─ channel (runtime, `chan:<project_id>:<name>`)
 ```

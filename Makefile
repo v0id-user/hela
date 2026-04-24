@@ -1,5 +1,5 @@
 .PHONY: help dev dev.gateway dev.control dev.web dev.app setup test fmt \
-        build deploy.gateway.iad deploy.control stripe.listen \
+        build deploy.gateway.iad deploy.control polar.listen \
         sdk.gen sdk.py.install-dev sdk.py.test sdk.py.lint sdk.py.fmt \
         sdk.go.test sdk.go.test.live sdk.go.lint sdk.go.fmt \
         sdk.rs.test sdk.rs.test.live sdk.rs.lint sdk.rs.fmt
@@ -16,7 +16,7 @@ help:
 	@echo 'make test             run test suites across apps'
 	@echo 'make fmt              format everything'
 	@echo 'make build            build all production bundles + docker images'
-	@echo 'make stripe.listen    forward stripe test webhooks to control'
+	@echo 'make polar.listen     setup hint for Polar webhook endpoint'
 	@echo ''
 	@echo 'make deploy.gateway.iad  roll a new gateway image to iad'
 	@echo 'make deploy.control      roll a new control image'

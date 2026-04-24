@@ -35,65 +35,94 @@ maps, web meta tags, hosted schema path, and the schema `$id` values in
 
 ## a region is down
 
-1. Check Fly status: `flyctl status --app hela-gateway-<region>`.
-2. If machines are fine but metrics stopped: `flyctl logs --app ...`.
-   Almost always either Postgres unreachable or BEAM distribution bounce.
-3. Restart the region's machines: `flyctl machine restart --app ...`.
-4. If Postgres is the problem, `flyctl postgres connect -a hela-gw-db-<region>`
-   and check connection count / locks.
+1. Check Railway service status:
+   `railway status --service gateway --environment production`.
+2. If the service is up but metrics stopped:
+   `railway logs --service gateway --environment production`.
+   Almost always either Postgres unreachable or BEAM distribution
+   bounce.
+3. Redeploy the region: `railway redeploy --service gateway
+   --environment production --yes`. Dashboard → service → rollback
+   to a specific deployment if the bad commit isn't obvious from
+   the logs.
+4. If Postgres is the problem, pull the `DATABASE_URL` env var from
+   the gateway service and `psql "$DATABASE_URL"`; check connection
+   count + locks from there.
 
-Customers on single-region projects see a hard outage during the restart
-(~15s). Scale-tier projects with multi-region replication keep working
-in peer regions; their traffic routes via the SDK's region failover
-(v1.1 — flag in `HelaConfig.fallback_regions`).
+Customers on single-region projects see a hard outage during the
+redeploy (~15-30 s on Railway). Multi-region replication is not
+live today — all production traffic lands on the single `ams`
+gateway until the `iad`, `sjc`, `sin`, `syd` slugs get real
+services (see `RESUME.md` → P1).
 
 ## a JWK didn't propagate
 
-Control pushed an upsert, gateway didn't ack. Check control's logs for
-the warning; the Sync call returns `{:error, ...}` and the mutation in
-control's DB proceeds anyway (we favour availability over strict sync).
+Control pushed an upsert, gateway didn't ack. Check control's logs
+for the warning; the `Control.Sync` call returns `{:error, ...}`
+and the mutation in control's DB proceeds anyway (we favour
+availability over strict sync).
 
 To reconcile manually:
 
-```
-flyctl ssh console --app hela-control
+```sh
+railway ssh --service control --environment production
+# then inside the container:
 bin/control remote
 > Control.Accounts.get_project("proj_xyz") |> Control.Sync.push_project()
 ```
 
-## stripe webhook stopped firing
+## polar webhook stopped firing
 
-1. Check signing secret matches: `flyctl secrets list --app hela-control`.
-2. Test the endpoint directly:
-   `stripe trigger invoice.payment_succeeded`.
-3. If signature verification is the issue, the Stripe CLI shows exact
-   comparisons; usually a trailing newline got into the secret.
+1. Check the signing secret matches on the control service:
+   `railway variables --service control --environment production`
+   (look for `POLAR_WEBHOOK_SECRET`).
+2. Trigger a test event from the Polar dashboard → Webhooks → the
+   endpoint pointed at `<control-url>/webhooks/polar`. The dashboard
+   surfaces the HMAC comparison on delivery failure.
+3. If signature verification is the issue it's usually a trailing
+   newline that got pasted into the secret. Rotate the webhook
+   secret in Polar, copy the new value, and `railway variables --set
+   POLAR_WEBHOOK_SECRET=...` on the control service.
 
 ## someone's over their monthly cap and complaining
 
 Check their usage:
 
-```
-flyctl postgres connect -a hela-gw-db-<their-region>
-select * from usage_daily where project_id = 'proj_xyz' order by date desc limit 30;
+```sh
+# Pull the gateway's DATABASE_URL from Railway, then open psql:
+export PGURL=$(railway variables \
+  --service gateway --environment production --json \
+  | jq -r .DATABASE_URL)
+psql "$PGURL" -c "select * from usage_daily \
+  where project_id = 'proj_xyz' order by date desc limit 30;"
 ```
 
 Over-cap publishes aren't rejected — they're delivered with an
-`over_quota` flag on the reply and metered into Stripe for overage. If
-the customer didn't notice, the dashboard usage chart should have been
-screaming amber; link them to it.
+`over_quota` flag on the reply and metered into Polar for overage.
+If the customer didn't notice, the dashboard usage chart should
+have been screaming amber; link them to it.
 
 ## rolling back a bad gateway deploy
 
-```
-flyctl releases --app hela-gateway-iad
-flyctl deploy --image <previous-image-ref> --app hela-gateway-iad
+Railway keeps every deployment. To revert:
+
+```sh
+# List recent deployments for the gateway service (most-recent first).
+railway status --service gateway --environment production --json \
+  | jq '.latestDeployments // .deployments'
+
+# Roll back via the dashboard → service → deployments → pick a
+# previous successful one → Redeploy. There is no stable CLI
+# rollback command today; `railway redeploy` always fires the
+# latest commit.
 ```
 
-Gateway deploys are one-region-at-a-time. If the region that rolled is
-the only broken one, rollback just that region and investigate before
-proceeding. CI workflow blocks on the current region before the next
-fires.
+Each `deploy-*` CI job now gates on `/health` for up to 5 minutes,
+so a broken build fails CI and won't replace the good image. If a
+deploy still made it through and is now misbehaving, roll it back
+manually from the dashboard while the next fix PR works through
+CI. Gateway deploys are per-service, so rolling back gateway
+doesn't affect control / app / web.
 
 ## bringing up a new region
 
