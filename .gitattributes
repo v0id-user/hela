@@ -1,0 +1,24 @@
+# GitHub Linguist: this monorepo ships Elixir/BEAM servers plus many client
+# and tooling languages. The language bar is meant to reflect the platform
+# runtime (Elixir) rather than the aggregate of SDKs, web apps, and
+# generated specs. Tracked first-party code is unchanged, only the stats.
+
+# Web and dashboard (TypeScript, React, CSS)
+apps/web/**                        linguist-detectable=false
+apps/app/**                        linguist-detectable=false
+
+# Client SDKs and design system
+packages/sdk-js/**                 linguist-detectable=false
+packages/sdk-js-e2e/**             linguist-detectable=false
+packages/sdk-types/**              linguist-detectable=false
+packages/ui/**                     linguist-detectable=false
+packages/sdk-py/**                 linguist-detectable=false
+packages/sdk-go/**                 linguist-detectable=false
+packages/sdk-rs/**                 linguist-detectable=false
+
+# Schema and codegen (JSON, TypeScript) — not the server runtime
+packages/schemas/**                linguist-detectable=false
+packages/sdk-gen/**                linguist-detectable=false
+
+# Infrastructure as code
+infra/**                           linguist-detectable=false
