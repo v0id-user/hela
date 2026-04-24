@@ -3,8 +3,11 @@ terraform {
 
   required_providers {
     railway = {
-      source  = "terraform-community-providers/railway"
-      version = "~> 0.5"
+      source = "terraform-community-providers/railway"
+      # Pin 0.5.2+: earlier 0.5.x had an "inconsistent result after
+      # apply" bug on the nested `volume` block on railway_service
+      # (see upstream issue 61).
+      version = "~> 0.5.2"
     }
     random = {
       source  = "hashicorp/random"

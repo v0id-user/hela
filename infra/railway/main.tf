@@ -38,11 +38,31 @@ locals {
 }
 
 ## ---- postgres ----------------------------------------------------------
+##
+## PostgreSQL 18 (GA 2025-09-25). We run the Alpine image on Railway.
+## Alpine is built without liburing, so the PG 18 async I/O subsystem
+## uses the `worker` method (default); `io_uring` would require the
+## Debian-based image. Worker pool is 3 by default — leave it until we
+## observe contention.
+##
+## The persistent volume is mounted under PGDATA's parent. PGDATA itself
+## points at a *subdirectory* of the mount so the postgres entrypoint
+## can chown it on first boot — Railway volumes mount as root, and the
+## postgres image runs as uid 999 (no write permission on the mount
+## root). Using a subdirectory is the documented workaround and lets
+## us keep the container unprivileged.
 
 resource "railway_service" "postgres" {
   name         = "postgres"
   project_id   = railway_project.hela.id
-  source_image = "postgres:16-alpine"
+  source_image = "postgres:18-alpine"
+
+  # One volume per service on Railway. Mount path is the PGDATA parent.
+  # Size is plan-managed (not settable here) and grows automatically.
+  volume = {
+    name       = "pgdata"
+    mount_path = "/var/lib/postgresql/data"
+  }
 }
 
 resource "railway_variable" "postgres_env" {
@@ -50,6 +70,12 @@ resource "railway_variable" "postgres_env" {
     POSTGRES_USER     = "hela"
     POSTGRES_PASSWORD = var.postgres_password
     POSTGRES_DB       = "hela"
+    # Subdirectory of the mount — see rationale above.
+    PGDATA = "/var/lib/postgresql/data/pgdata"
+    # Opt in to data checksums on initdb. PG 18 made this the default
+    # anyway; setting it explicitly documents intent and keeps the
+    # behavior stable if we ever pin a different initdb flag set.
+    POSTGRES_INITDB_ARGS = "--data-checksums"
   }
 
   environment_id = local.env_id
