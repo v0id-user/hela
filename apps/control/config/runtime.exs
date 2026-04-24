@@ -17,7 +17,7 @@ if config_env() == :prod do
     System.get_env("SECRET_KEY_BASE") ||
       raise "SECRET_KEY_BASE is missing"
 
-  host = System.get_env("PHX_HOST") || "app.hela.dev"
+  host = System.get_env("PHX_HOST") || "app-production-1716a.up.railway.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :control, ControlWeb.Endpoint,

@@ -13,6 +13,18 @@ defmodule HelaWeb.Router do
     plug HelaWeb.Plugs.InternalAuth
   end
 
+  # Per-IP rate limits for the public playground. Token issuance has
+  # its own bucket (tighter — one mint per second, 30 per hour) so a
+  # noisy publisher can't starve other visitors from getting a token
+  # in the first place.
+  pipeline :playground_token_rl do
+    plug HelaWeb.Plugs.PlaygroundRateLimit, action: :token
+  end
+
+  pipeline :playground_publish_rl do
+    plug HelaWeb.Plugs.PlaygroundRateLimit, action: :publish
+  end
+
   scope "/", HelaWeb do
     pipe_through :api
 
@@ -21,14 +33,24 @@ defmodule HelaWeb.Router do
     get "/regions", RegionController, :index
     get "/regions/:slug/ping", RegionController, :ping
 
-    # Landing-page playground only — free, heavily rate-limited, public.
-    post "/playground/token", PlaygroundController, :token
-    get "/playground/history/:channel", PlaygroundController, :history
-    post "/playground/publish", PlaygroundController, :publish
-
     # Aggregate cluster metrics — powers the public /dashboard page.
     get "/cluster/snapshot", ClusterController, :snapshot
     post "/cluster/reset", ClusterController, :reset
+  end
+
+  # Landing-page playground — free, public, IP-rate-limited on top of
+  # the shared proj_public project's per-second quota.
+  scope "/playground", HelaWeb do
+    pipe_through [:api, :playground_token_rl]
+
+    post "/token", PlaygroundController, :token
+  end
+
+  scope "/playground", HelaWeb do
+    pipe_through [:api, :playground_publish_rl]
+
+    get "/history/:channel", PlaygroundController, :history
+    post "/publish", PlaygroundController, :publish
   end
 
   # Customer-facing REST surface. Scoped to a single project by the

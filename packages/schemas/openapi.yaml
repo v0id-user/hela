@@ -24,15 +24,15 @@ info:
     identifier: AGPL-3.0-or-later
 
 servers:
-  - url: https://iad.hela.dev
+  - url: https://gateway-production-bfdf.up.railway.app
     description: US East (Ashburn)
-  - url: https://sjc.hela.dev
+  - url: https://gateway-production-bfdf.up.railway.app
     description: US West (San Jose)
-  - url: https://ams.hela.dev
+  - url: https://gateway-production-bfdf.up.railway.app
     description: EU (Amsterdam)
-  - url: https://sin.hela.dev
+  - url: https://gateway-production-bfdf.up.railway.app
     description: Asia (Singapore)
-  - url: https://syd.hela.dev
+  - url: https://gateway-production-bfdf.up.railway.app
     description: Australia (Sydney)
   - url: http://localhost:4001
     description: Local dev
@@ -69,11 +69,11 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [regions, you_are_on]
+                required: [regions, region]
                 properties:
-                  you_are_on:
+                  region:
                     type: string
-                    description: Region slug of the gateway that answered.
+                    description: Region slug of the gateway that answered. Same shape as `HELA_REGION` and `JoinReply.region`.
                   regions:
                     type: array
                     items: { $ref: "#/components/schemas/Region" }

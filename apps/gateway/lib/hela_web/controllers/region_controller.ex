@@ -3,15 +3,18 @@ defmodule HelaWeb.RegionController do
 
   # The landing page uses this to populate the region selector.
   @regions [
-    %{slug: "iad", city: "Ashburn, US East", host: "iad.hela.dev"},
-    %{slug: "sjc", city: "San Jose, US West", host: "sjc.hela.dev"},
-    %{slug: "ams", city: "Amsterdam, EU", host: "ams.hela.dev"},
-    %{slug: "sin", city: "Singapore, Asia", host: "sin.hela.dev"},
-    %{slug: "syd", city: "Sydney, AU", host: "syd.hela.dev"}
+    %{slug: "iad", city: "Ashburn, US East", host: "gateway-production-bfdf.up.railway.app"},
+    %{slug: "sjc", city: "San Jose, US West", host: "gateway-production-bfdf.up.railway.app"},
+    %{slug: "ams", city: "Amsterdam, EU", host: "gateway-production-bfdf.up.railway.app"},
+    %{slug: "sin", city: "Singapore, Asia", host: "gateway-production-bfdf.up.railway.app"},
+    %{slug: "syd", city: "Sydney, AU", host: "gateway-production-bfdf.up.railway.app"}
   ]
 
   def index(conn, _) do
-    json(conn, %{regions: @regions, you_are_on: Hela.region()})
+    # `region` is the slug this gateway reports as — same field name
+    # used in JoinReply and the HELA_REGION env var. Keep the noun
+    # consistent everywhere the gateway names its own identity.
+    json(conn, %{regions: @regions, region: Hela.region()})
   end
 
   def ping(conn, %{"slug" => slug}) do

@@ -15,6 +15,7 @@ defmodule Hela.Application do
       Hela.Projects,
       Hela.Chat.Cache,
       Hela.Quota,
+      Hela.PlaygroundLimiter,
       Hela.Metrics,
       Hela.Chat.Pipeline,
       HelaWeb.Endpoint

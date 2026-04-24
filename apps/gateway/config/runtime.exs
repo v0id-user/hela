@@ -23,7 +23,7 @@ if config_env() == :prod do
     System.get_env("SECRET_KEY_BASE") ||
       raise "environment variable SECRET_KEY_BASE is missing."
 
-  host = System.get_env("PHX_HOST") || "hela.dev"
+  host = System.get_env("PHX_HOST") || "web-production-f24fc.up.railway.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :hela, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
