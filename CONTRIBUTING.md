@@ -33,11 +33,12 @@ make dev         # all four apps in one terminal (concurrently)
 
 Every commit subject and every PR title must match:
 
-    ^[A-Za-z0-9 ,]{4,72}$
+    ^[A-Za-z0-9 ,:]{4,72}$
 
-In plain English: **ASCII only. Letters, digits, spaces, and commas.
-4 to 72 characters.** No colons, no parens, no emoji, no
-Conventional-Commits prefixes. The rule is the rule because:
+In plain English: **ASCII only. Letters, digits, spaces, commas, and
+colons. 4 to 72 characters.** Unscoped Conventional-Commits prefixes
+like `fix:` / `feat:` / `docs:` work. Parens, hyphens, and emoji do
+not. The rule exists because:
 
 - All PRs are squash-merged, so the PR title becomes the commit
   subject verbatim. One rule, one enforcement point.
@@ -48,12 +49,18 @@ Conventional-Commits prefixes. The rule is the rule because:
 Examples:
 
     ok:  add per project signing secret
-    ok:  fix rate limit window drift, again
-    ok:  bump elixir to 1 17 3
-    bad: fix: stop leaking ports        (colon)
-    bad: feat(auth): JWK rotation        (parens + colon)
+    ok:  fix: rate limit window drift
+    ok:  feat: per project signing secret
+    ok:  docs: flesh out contributing guide
+    bad: fix(auth): JWK rotation         (parens)
+    bad: bump deps to 1.17.3             (dots)
+    bad: rate-limit the publish path     (hyphen)
     bad: update 🚀                       (non-ASCII)
     bad: x                               (too short)
+
+Bot PRs (Dependabot, etc) are exempted — their generated titles use
+shapes we don't impose on humans. Since every PR is squash-merged,
+the reviewer rewrites the squash subject at merge time if they want.
 
 Install the local hook so you find out at commit time, not on push:
 
