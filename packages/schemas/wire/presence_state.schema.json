@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hela.dev/schemas/wire/presence_state.schema.json",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/presence_state.schema.json",
   "title": "PresenceState",
   "description": "Full roster emitted once after join. Keys are nicknames; values hold one metadata record per live connection that user has (same user connected twice = two metas).",
   "type": "object",

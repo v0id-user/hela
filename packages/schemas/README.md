@@ -25,8 +25,10 @@ catch drift.
 
 - **One file per event**: `publish_request.schema.json`, `message.schema.json`,
   etc. Keeps diffs reviewable.
-- **`$id` is a URL under `https://hela.dev/schemas/wire/`**: stable,
-  human-readable, resolvable someday when we host a spec page.
+- **`$id` is a URL under
+  `https://web-production-f24fc.up.railway.app/schemas/wire/`**:
+  temporary testing-phase host, human-readable, and resolvable from the
+  deployed web app. Swap this to the real domain once it exists.
 - **All schemas are JSON Schema draft-07**: widest tool compatibility
   (quicktype, datamodel-codegen, ajv, everything).
 - **Additional properties disallowed**: `"additionalProperties": false`

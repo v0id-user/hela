@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hela.dev/schemas/wire/history_reply.schema.json",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/history_reply.schema.json",
   "title": "HistoryReply",
   "description": "Ordered oldest → newest. `source` tells the client where the page came from so it can show cache-hit rate in dashboards or switch strategy.",
   "type": "object",

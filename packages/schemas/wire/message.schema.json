@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hela.dev/schemas/wire/message.schema.json",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/message.schema.json",
   "title": "Message",
   "description": "A single published message, as it arrives on a subscriber. Canonical shape emitted by Hela.Chat.Message.to_wire/1.",
   "type": "object",

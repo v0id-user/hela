@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hela.dev/schemas/wire/join_request.schema.json",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/join_request.schema.json",
   "title": "JoinRequest",
   "description": "Payload for `phx_join` on a `chan:<project>:<channel>` topic.",
   "type": "object",

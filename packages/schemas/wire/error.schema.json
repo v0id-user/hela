@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hela.dev/schemas/wire/error.schema.json",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/error.schema.json",
   "title": "ErrorReply",
   "description": "Generic shape for error replies on the channel (status=\"error\" phx_reply).",
   "type": "object",
