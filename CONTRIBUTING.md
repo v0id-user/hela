@@ -1,8 +1,10 @@
 # Contributing to hela
 
-Thanks for looking at the code. Please read this before sending a PR —
-the goal is to keep signal-to-noise high so the project stays
-maintainable as it grows.
+Thanks for looking at the code. hela is an open source project
+first: the goal is a credible, inspectable alternative to closed
+cloud realtime, with clear docs and a codebase contributors can
+navigate. Please read this before sending a PR, and keep
+signal-to-noise high so the project stays maintainable as it grows.
 
 ## Development environment
 

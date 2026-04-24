@@ -1,8 +1,10 @@
 # architecture
 
-Canonical notes for anyone new to the codebase. A rendered version
-will live at `/how` on the marketing site once a real domain is
-registered; for now this file is the written source of record.
+Canonical notes for anyone new to the codebase, including people
+evaluating hela as an open source alternative to hosted realtime
+vendors. A rendered version will live at `/how` on the marketing
+site once a real domain is registered; for now this file is the
+written source of record.
 
 ## Data plane / control plane split
 

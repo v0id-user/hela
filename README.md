@@ -4,15 +4,16 @@
       <source type="image/webp"
               srcset="apps/web/public/brand/png/webp/banner@2x.webp"/>
       <img src="apps/web/public/brand/png/banner@2x.png"
-           alt="hela — managed real-time on BEAM"
+           alt="hela — open source real-time on BEAM"
            width="100%"/>
     </picture>
   </a>
 </p>
 
 <p align="center">
-  <strong>Managed real-time infrastructure on BEAM.</strong><br/>
-  Regional clusters · channels · presence · history · sub-100ms · flat monthly pricing.
+  <strong>Open source real time platform on BEAM first.</strong><br/>
+  Clone and run the full stack, then ship: channels, presence, history, sub-100ms.<br/>
+  <em>Hosted product second: the public regions are the same code with flat monthly pricing, not a fork.</em>
 </p>
 
 <p align="center">
@@ -25,9 +26,23 @@
 
 ---
 
+**OSS first, hosted second:** the product is the repo. The supported
+way to get running is to clone, `make dev`, and own the stack. The
+**hosted** clusters exist so you can skip operations if you want the
+same primitives on someone else's regions, not a different product
+line.
+
 This repo is the whole thing: the data plane, the control plane, four
 SDKs, the marketing site, and the customer dashboard — one monorepo,
 four independently deployable apps.
+
+Competing on realtime with well funded incumbents is unforgiving. **hela
+is the open source alternative** for teams that want the same
+primitives without a black box: read the server, run your own
+regions, diff the wire protocol, and own the whole stack under the
+AGPL, or a commercial license if that fits your situation. The
+runtime you can audit here is what powers the public regions too, not
+a separate enterprise edition.
 
 ```
 hela/
@@ -64,7 +79,7 @@ hela/
     ██║  ██║███████╗███████╗██║  ██║
     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝
 
-    [ · · · ● ]   managed real-time on BEAM
+    [ · · · ● ]   open source real time on BEAM
 ```
 
 </details>
@@ -92,9 +107,9 @@ Polar webhooks in dev:
 make polar.listen   # prints setup hint for Polar webhook endpoint
 ```
 
-Billing runs on [Polar](https://polar.sh) (currently on the sandbox
-environment). Stripe was evaluated early and dropped — don't look
-for Stripe plumbing, there isn't any.
+The **hosted** control plane bills through [Polar](https://polar.sh)
+(sandbox in dev). Self hosted installs bring their own policy here.
+Stripe was evaluated early and dropped, there is no Stripe plumbing.
 
 ## The four apps, in one paragraph each
 
@@ -107,11 +122,12 @@ except for ETS. Owns the `/socket` WebSocket surface, the public
 `/playground/*` endpoints, and a `/_internal/*` surface that control
 pushes project + API-key state to.
 
-**control** is the control plane. Accounts, projects, API keys, Polar
-customer + subscription management, JWT public-key registration. Single
-global deployment. Knows about each region's gateway URL and fans out
-project upserts via `x-hela-internal` signed POSTs so the data plane's
-local mirror stays fresh without cross-region BEAM clustering.
+**control** is the control plane. Accounts, projects, API keys, JWT
+public key registration, and on the **hosted** product, Polar customer
+and subscription management. Single global deployment. Knows about each
+region's gateway URL and fans out project upserts via
+`x-hela-internal` signed POSTs so the data plane's local mirror stays
+fresh without cross region BEAM clustering.
 
 **web** is the marketing site. Every demo on the page hits a real gateway:
 hero has a live `hello:world` channel, the five primitive demos each target
@@ -120,10 +136,10 @@ sockets. Also hosts `/how` (architecture, inline SVG diagrams) and
 `/dashboard` (live state of the public gateway, same panels a customer
 gets for their project).
 
-**app** is the customer dashboard. List/create projects, pick a region,
-register a JWK, rotate API keys, view billing and usage. Talks to control
-for state, talks to whatever gateway region their project is in for live
-metrics.
+**app** is the customer dashboard for the **hosted** product: list and
+create projects, pick a region, register a JWK, rotate API keys, view
+billing and usage. Talks to control for state, talks to the gateway
+region the project is in for live metrics.
 
 ## The five primitives
 
@@ -141,7 +157,14 @@ gateway and a matching demo on the landing page:
 5. **auth** — short-lived JWT grants verified against customer-registered
    JWKs. `Hela.Auth.JWT`, playground HS256 via `Hela.Auth.Playground`.
 
-## Tenancy + billing shape
+## Tenancy + billing on the hosted product
+
+If you are **self hosting**, you bring your own limits, accounts, and
+whether any payment system exists. When you use **our** public
+regions, hosted billing and quotas apply, and the software models
+workloads the same on both paths.
+
+On the **hosted** product, roughly:
 
 - **account** — one per signup, one Polar customer.
 - **project** — the billable unit, one Polar subscription. Fixed
@@ -151,11 +174,15 @@ gateway and a matching demo on the landing page:
   `chan:<project_id>:<channel_name>`; the JWT's `pid` claim is enforced
   against the topic on every join.
 
-Tier caps in `packages/sdk-types` and `Hela.Quota`. Monthly messages over
-the tier cap are billed as overage at $0.50 per million. Connection caps
-are hard.
+On hosted, tier caps in `packages/sdk-types` and `Hela.Quota` apply.
+Monthly messages over the tier cap are billed as overage at $0.50 per
+million. Connection caps are hard.
 
-## Pricing
+## Hosted product pricing
+
+These **monthly** tiers and caps apply **only** when you run on hela
+**hosted** clusters. They are not the price of cloning the repo, self
+hosting, or using the software under the AGPL in your own environment.
 
 | Tier        | $/mo    | Connections | Messages/mo | Regions             | History  | SLA    |
 | ----------- | ------- | ----------- | ----------- | ------------------- | -------- | ------ |
@@ -165,9 +192,12 @@ are hard.
 | Scale       | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs  | 99.95% |
 | Enterprise  | contact | custom      | custom      | all                 | custom   | 99.99% |
 
-## Deploy
+## Public hosted deploy
 
-**Currently deployed on Railway.** Live URLs:
+**This** is the optional **hosted** stack we run on Railway, so you
+can use hela without operating regions yourself. The same `Dockerfile`
+and Terraform under `infra/` is what you would use to run the stack
+elsewhere. Live URLs today:
 
 - web:     https://web-production-f24fc.up.railway.app
 - app:     https://app-production-1716a.up.railway.app
