@@ -6,7 +6,7 @@ primary_region = "iad"
 
 [env]
   VITE_HELA_CONTROL = "https://app-api.hela.dev"
-  VITE_HELA_GATEWAY = "https://iad.hela.dev"
+  VITE_HELA_GATEWAY = "https://gateway-production-bfdf.up.railway.app"
 
 [[services]]
   internal_port = 80

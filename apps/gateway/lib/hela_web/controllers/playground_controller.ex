@@ -1,10 +1,13 @@
 defmodule HelaWeb.PlaygroundController do
   @moduledoc """
-  Public, no-auth endpoints the hela.dev landing page uses to drive its
-  live demos. Everything here writes into the `proj_public` sandbox.
+  Public, no-auth endpoints the marketing site's landing page uses to
+  drive its live demos. Everything here writes into the `proj_public`
+  sandbox.
 
-  Rate limiting is on the project's `Hela.Quota` counters plus TCP-level
-  connection caps on the load balancer — no per-IP limiter in this layer.
+  Rate limiting is two layers: `Hela.Quota` enforces the per-project
+  cap (shared across all playground visitors), and the per-route plug
+  `HelaWeb.Plugs.PlaygroundRateLimit` adds per-IP buckets so one noisy
+  visitor cannot starve the project's whole quota.
   """
 
   use HelaWeb, :controller

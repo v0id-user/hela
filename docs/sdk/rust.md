@@ -43,7 +43,7 @@ Mint tokens server-side via the REST client:
 ```rust
 use hela::{Rest, RestOptions, TokenRequest};
 
-let rest = Rest::new("https://iad.hela.dev", RestOptions {
+let rest = Rest::new("https://gateway-production-bfdf.up.railway.app", RestOptions {
     api_key: Some(api_key),
     ..Default::default()
 });
@@ -117,7 +117,7 @@ so standard `?` propagation from `serde_json` / `reqwest` /
 ## REST client
 
 ```rust
-let rest = hela::Rest::new("https://iad.hela.dev", hela::RestOptions {
+let rest = hela::Rest::new("https://gateway-production-bfdf.up.railway.app", hela::RestOptions {
     api_key: Some(api_key),
     ..Default::default()
 });

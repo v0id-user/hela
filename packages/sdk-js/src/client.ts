@@ -12,9 +12,10 @@ export interface HelaConfig {
    */
   token?: string | (() => Promise<string> | string);
   /**
-   * For the public `hela.dev` landing-page playground only. HS256
-   * token signed by `hela`'s playground secret, scoped to the
-   * public sandbox project.
+   * For the public landing-page playground only. HS256 token signed
+   * by hela's playground secret, scoped to the `proj_public` sandbox.
+   * Minted anonymously via `POST /playground/token`; see
+   * `issuePlaygroundToken()` in this package.
    */
   playgroundToken?: string;
   /** Override the WS/HTTP endpoint. Useful for local dev and tests. */

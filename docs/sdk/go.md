@@ -61,7 +61,7 @@ hela.Connect(ctx, hela.Config{Region: hela.RegionIAD, PlaygroundToken: guest})
 Mint user JWTs via the REST client:
 
 ```go
-rest := hela.NewREST("https://iad.hela.dev", hela.RESTOptions{APIKey: apiKey})
+rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.RESTOptions{APIKey: apiKey})
 resp, err := rest.MintToken(ctx, hela.TokenRequest{
     Sub:        user.ID,
     Chans:      [][]string{{"read", fmt.Sprintf("chat:room:%s", roomID)},
@@ -133,7 +133,7 @@ case errors.Is(err, hela.ErrHela):
 ## REST client
 
 ```go
-rest := hela.NewREST("https://iad.hela.dev", hela.RESTOptions{APIKey: apiKey})
+rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.RESTOptions{APIKey: apiKey})
 
 t, _   := rest.MintToken(ctx, hela.TokenRequest{Sub: "user-1", TTLSeconds: 300})
 pub, _ := rest.Publish(ctx, "chat:lobby", hela.PublishRequest{Body: "hi"})

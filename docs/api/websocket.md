@@ -10,7 +10,7 @@ byte-for-byte, and every SDK's type module is generated from them.
 ## endpoint
 
 ```
-wss://<region>.hela.dev/socket/websocket?vsn=2.0.0&token=<jwt>
+wss://gateway-production-bfdf.up.railway.app/socket/websocket?vsn=2.0.0&token=<jwt>
 ```
 
 Required query params:

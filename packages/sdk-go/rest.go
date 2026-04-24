@@ -20,7 +20,7 @@ import (
 // Bring your own http.Client if you want retries, metrics, or shared
 // pooling:
 //
-//	rest := hela.NewREST("https://iad.hela.dev", hela.RESTOptions{
+//	rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.RESTOptions{
 //	    APIKey: os.Getenv("HELA_API_KEY"),
 //	    HTTP:   myClient,
 //	})

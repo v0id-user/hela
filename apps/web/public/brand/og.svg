@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Open Graph / social card. 1200 × 630 — the standard for Twitter,
+  LinkedIn, Facebook, Discord previews. Deliberately dense with
+  typography rather than an illustration: the product is a terminal
+  thing, not an abstract-cloud-with-lightning thing.
+
+  Composition (top to bottom):
+    • hairline rule + tiny caption "managed real-time on BEAM"
+    • the [ hela ] wordmark, centred left
+    • one-line positioning statement in silver
+    • an ASCII-style data-flow strip underneath, faded, like a log tail
+    • bottom-right: the mark + the domain "hela.dev"
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <title>hela — managed real-time on BEAM</title>
+
+  <!-- Background + subtle vignette so corners don't feel empty. -->
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="40%" r="85%">
+      <stop offset="0%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#vignette)"/>
+
+  <!-- Top hairline. -->
+  <line x1="80" y1="90" x2="1120" y2="90" stroke="#222" stroke-width="1"/>
+
+  <!-- Top caption — uppercased, wide tracking. -->
+  <text x="80" y="78"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="16" letter-spacing="4" fill="#c9a76a">
+    MANAGED REAL-TIME ON BEAM
+  </text>
+  <text x="1120" y="78" text-anchor="end"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="14" letter-spacing="2" fill="#555">
+    elixir · phoenix · presence · ets · broadway
+  </text>
+
+  <!-- Wordmark, oversized. -->
+  <text x="80" y="260"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="150" font-weight="500" letter-spacing="6">
+    <tspan fill="#c9a76a">[&#160;</tspan>
+    <tspan fill="#c0c0c0">hela</tspan>
+    <tspan fill="#c9a76a">&#160;]</tspan>
+  </text>
+
+  <!-- Positioning statement. Two lines, tight leading. -->
+  <text x="80" y="340"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="32" fill="#c0c0c0">
+    channels · presence · history · regions
+  </text>
+  <text x="80" y="385"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="32" fill="#888">
+    sub-100ms. flat pricing. no per-message billing.
+  </text>
+
+  <!-- Log tail — suggests "this is what the wire actually looks like".
+       Domain omitted on purpose: the project hasn't claimed a custom
+       domain yet, so pointing people at a specific hostname on a card
+       they can't copy-paste would be a tease. -->
+  <g font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+     font-size="14" fill="#3a3a3a">
+    <text x="80" y="475">$ curl $HELA_GATEWAY/regions</text>
+    <text x="80" y="500">{"region":"ams", "regions":[…]}</text>
+    <text x="80" y="525">→ chat:lobby · join · ams · node gw@ams-1</text>
+    <text x="80" y="550">→ message 01901234-abcd-7def-… · rtt 42ms</text>
+  </g>
+
+  <!-- Bottom strip: version on the left, GitHub on the right. -->
+  <line x1="80" y1="580" x2="1120" y2="580" stroke="#222" stroke-width="1"/>
+
+  <text x="80" y="608"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="13" letter-spacing="1" fill="#555">
+    v1 · wire 1.0 · AGPL-3.0
+  </text>
+
+  <text x="1120" y="612" text-anchor="end"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', monospace"
+        font-size="17" letter-spacing="2" fill="#c0c0c0">
+    github.com/v0id-user/hela
+  </text>
+</svg>

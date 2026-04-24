@@ -13,11 +13,11 @@ from it. If the examples here ever drift from the spec, the spec wins.
 One per region. Pick the region where your project lives:
 
 ```
-https://iad.hela.dev
-https://sjc.hela.dev
-https://ams.hela.dev
-https://sin.hela.dev
-https://syd.hela.dev
+https://gateway-production-bfdf.up.railway.app
+https://gateway-production-bfdf.up.railway.app
+https://gateway-production-bfdf.up.railway.app
+https://gateway-production-bfdf.up.railway.app
+https://gateway-production-bfdf.up.railway.app
 ```
 
 For local dev: `http://localhost:4001`.

@@ -10,11 +10,11 @@
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd" | "dev";
 
 export const REGIONS: Record<Region, { city: string; host: string }> = {
-  iad: { city: "Ashburn, US East", host: "iad.hela.dev" },
-  sjc: { city: "San Jose, US West", host: "sjc.hela.dev" },
-  ams: { city: "Amsterdam, EU", host: "ams.hela.dev" },
-  sin: { city: "Singapore, Asia", host: "sin.hela.dev" },
-  syd: { city: "Sydney, AU", host: "syd.hela.dev" },
+  iad: { city: "Ashburn, US East", host: "gateway-production-bfdf.up.railway.app" },
+  sjc: { city: "San Jose, US West", host: "gateway-production-bfdf.up.railway.app" },
+  ams: { city: "Amsterdam, EU", host: "gateway-production-bfdf.up.railway.app" },
+  sin: { city: "Singapore, Asia", host: "gateway-production-bfdf.up.railway.app" },
+  syd: { city: "Sydney, AU", host: "gateway-production-bfdf.up.railway.app" },
   dev: { city: "local dev", host: "localhost:4001" },
 };
 

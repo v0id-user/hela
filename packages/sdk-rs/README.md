@@ -62,7 +62,7 @@ Mint user JWTs via the REST client:
 ```rust
 use hela::{Rest, RestOptions, TokenRequest};
 
-let rest = Rest::new("https://iad.hela.dev", RestOptions {
+let rest = Rest::new("https://gateway-production-bfdf.up.railway.app", RestOptions {
     api_key: Some(std::env::var("HELA_API_KEY").unwrap()),
     ..Default::default()
 });

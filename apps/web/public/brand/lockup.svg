@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  hela lockup: mark + wordmark side by side, for places that need
+  both (nav bars on wide screens, pitch decks, the OG card header).
+
+  Dimensions: 480 × 80. Mark takes the left 80 px, wordmark fills
+  the remaining 400 × 80 minus a 16 px gap.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 80" width="480" height="80">
+  <title>hela</title>
+  <rect width="480" height="80" fill="#0a0a0a"/>
+
+  <!-- Mark (inlined copy of mark.svg, shifted + padded). -->
+  <g transform="translate(8,8)">
+    <path d="M 13 18 L 9 18 L 9 46 L 13 46"
+          fill="none" stroke="#c9a76a" stroke-width="2.5" stroke-linecap="square"/>
+    <path d="M 51 18 L 55 18 L 55 46 L 51 46"
+          fill="none" stroke="#c9a76a" stroke-width="2.5" stroke-linecap="square"/>
+    <circle cx="19" cy="32" r="4" fill="#c0c0c0"/>
+    <circle cx="32" cy="32" r="4" fill="#c0c0c0"/>
+    <circle cx="45" cy="32" r="3.25" fill="none" stroke="#666" stroke-width="1.5"/>
+  </g>
+
+  <!-- Subtle divider between mark and wordmark. -->
+  <line x1="96" y1="22" x2="96" y2="58" stroke="#222" stroke-width="1"/>
+
+  <!-- Wordmark. -->
+  <text x="112" y="52"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', 'Consolas', monospace"
+        font-size="40" font-weight="500" letter-spacing="2">
+    <tspan fill="#c9a76a">[&#160;</tspan>
+    <tspan fill="#c0c0c0">hela</tspan>
+    <tspan fill="#c9a76a">&#160;]</tspan>
+  </text>
+
+  <!-- Right-aligned system caption — tiny, same idea as the nav's
+       "elixir · phoenix · pubsub · ets · presence" strip. -->
+  <text x="472" y="72" text-anchor="end"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', 'Consolas', monospace"
+        font-size="9" letter-spacing="1.2" fill="#555">
+    managed real-time on BEAM
+  </text>
+</svg>

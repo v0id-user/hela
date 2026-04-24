@@ -29,7 +29,7 @@ class Hela:
     """
     REST client. One per base URL.
 
-        async with Hela(base_url="https://iad.hela.dev", api_key=key) as hela:
+        async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_key=key) as hela:
             token = await hela.mint_token(sub="user-42", chans=[["read","chat:*"]])
             await hela.publish("chat:lobby", "hi", author="server")
     """

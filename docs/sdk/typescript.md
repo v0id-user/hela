@@ -52,7 +52,7 @@ Mint user JWTs from your backend via the REST surface; there's no
 dedicated REST wrapper in `@hela/sdk` yet, but `fetch` is fine:
 
 ```ts
-const r = await fetch(`https://iad.hela.dev/v1/tokens`, {
+const r = await fetch(`https://gateway-production-bfdf.up.railway.app/v1/tokens`, {
   method: "POST",
   headers: {
     "content-type": "application/json",
@@ -153,7 +153,7 @@ await connect({ region: "iad", token });
 await connect({ region: "dev", endpoint: "http://localhost:4001", token });
 
 console.log(REGIONS);
-// { iad: { city: "Ashburn, US East", host: "iad.hela.dev" }, ... }
+// { iad: { city: "Ashburn, US East", host: "gateway-production-bfdf.up.railway.app" }, ... }
 ```
 
 ## reference

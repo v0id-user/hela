@@ -1,6 +1,6 @@
 //! # hela
 //!
-//! Rust SDK for [hela](https://hela.dev) — managed real-time on BEAM.
+//! Rust SDK for [hela](https://github.com/v0id-user/hela) — managed real-time on BEAM.
 //!
 //! ```no_run
 //! use hela::{Config, Region};

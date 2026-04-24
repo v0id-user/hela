@@ -23,11 +23,11 @@ pub enum Region {
 impl Region {
     fn host(self) -> &'static str {
         match self {
-            Region::Iad => "iad.hela.dev",
-            Region::Sjc => "sjc.hela.dev",
-            Region::Ams => "ams.hela.dev",
-            Region::Sin => "sin.hela.dev",
-            Region::Syd => "syd.hela.dev",
+            Region::Iad => "gateway-production-bfdf.up.railway.app",
+            Region::Sjc => "gateway-production-bfdf.up.railway.app",
+            Region::Ams => "gateway-production-bfdf.up.railway.app",
+            Region::Sin => "gateway-production-bfdf.up.railway.app",
+            Region::Syd => "gateway-production-bfdf.up.railway.app",
             Region::Dev => "localhost:4001",
         }
     }
@@ -220,11 +220,11 @@ mod tests {
     #[test]
     fn http_url_per_region() {
         for (region, want) in [
-            (Region::Iad, "https://iad.hela.dev"),
-            (Region::Sjc, "https://sjc.hela.dev"),
-            (Region::Ams, "https://ams.hela.dev"),
-            (Region::Sin, "https://sin.hela.dev"),
-            (Region::Syd, "https://syd.hela.dev"),
+            (Region::Iad, "https://gateway-production-bfdf.up.railway.app"),
+            (Region::Sjc, "https://gateway-production-bfdf.up.railway.app"),
+            (Region::Ams, "https://gateway-production-bfdf.up.railway.app"),
+            (Region::Sin, "https://gateway-production-bfdf.up.railway.app"),
+            (Region::Syd, "https://gateway-production-bfdf.up.railway.app"),
             (Region::Dev, "http://localhost:4001"),
         ] {
             let cfg = Config {
@@ -251,7 +251,7 @@ mod tests {
             region: Region::Iad,
             ..Default::default()
         };
-        assert_eq!(ws_url(&cfg), "wss://iad.hela.dev/socket/websocket");
+        assert_eq!(ws_url(&cfg), "wss://gateway-production-bfdf.up.railway.app/socket/websocket");
 
         let cfg = Config {
             region: Region::Dev,

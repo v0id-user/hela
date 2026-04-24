@@ -55,7 +55,7 @@ func main() {
 Your backend mints tokens via `hela.REST`:
 
 ```go
-rest := hela.NewREST("https://iad.hela.dev", hela.RESTOptions{
+rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.RESTOptions{
     APIKey: os.Getenv("HELA_API_KEY"),
 })
 resp, err := rest.MintToken(ctx, hela.TokenRequest{

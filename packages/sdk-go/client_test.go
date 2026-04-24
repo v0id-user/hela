@@ -62,11 +62,11 @@ func TestPeekProjectIDNonStringPID(t *testing.T) {
 
 func TestHTTPURLForEachHostedRegion(t *testing.T) {
 	for region, host := range map[Region]string{
-		RegionIAD: "https://iad.hela.dev",
-		RegionSJC: "https://sjc.hela.dev",
-		RegionAMS: "https://ams.hela.dev",
-		RegionSIN: "https://sin.hela.dev",
-		RegionSYD: "https://syd.hela.dev",
+		RegionIAD: "https://gateway-production-bfdf.up.railway.app",
+		RegionSJC: "https://gateway-production-bfdf.up.railway.app",
+		RegionAMS: "https://gateway-production-bfdf.up.railway.app",
+		RegionSIN: "https://gateway-production-bfdf.up.railway.app",
+		RegionSYD: "https://gateway-production-bfdf.up.railway.app",
 	} {
 		c := &Client{cfg: Config{Region: region}}
 		if got := c.HTTPURL(); got != host {
@@ -91,7 +91,7 @@ func TestHTTPURLCustomEndpointWins(t *testing.T) {
 
 func TestWSURL(t *testing.T) {
 	c := &Client{cfg: Config{Region: RegionIAD}}
-	if got := c.wsURL(); got != "wss://iad.hela.dev/socket/websocket" {
+	if got := c.wsURL(); got != "wss://gateway-production-bfdf.up.railway.app/socket/websocket" {
 		t.Fatalf("iad ws url: %s", got)
 	}
 	c = &Client{cfg: Config{Region: RegionDEV}}

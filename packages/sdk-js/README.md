@@ -48,7 +48,7 @@ const token = await new SignJWT({
 Or have hela sign for you via `POST /v1/tokens` with an API key:
 
 ```ts
-const res = await fetch("https://iad.hela.dev/v1/tokens", {
+const res = await fetch("https://gateway-production-bfdf.up.railway.app/v1/tokens", {
   method: "POST",
   headers: { authorization: `Bearer ${process.env.HELA_API_KEY}` },
   body: JSON.stringify({

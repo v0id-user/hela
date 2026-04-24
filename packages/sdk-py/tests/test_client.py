@@ -68,11 +68,11 @@ def test_peek_project_id_non_string_pid():
 def test_http_url_for_each_hosted_region():
     # hosted regions use https
     for region, host in [
-        ("iad", "iad.hela.dev"),
-        ("sjc", "sjc.hela.dev"),
-        ("ams", "ams.hela.dev"),
-        ("sin", "sin.hela.dev"),
-        ("syd", "syd.hela.dev"),
+        ("iad", "gateway-production-bfdf.up.railway.app"),
+        ("sjc", "gateway-production-bfdf.up.railway.app"),
+        ("ams", "gateway-production-bfdf.up.railway.app"),
+        ("sin", "gateway-production-bfdf.up.railway.app"),
+        ("syd", "gateway-production-bfdf.up.railway.app"),
     ]:
         c = HelaClient(region=region)
         assert c.http_url() == f"https://{host}"
@@ -90,7 +90,7 @@ def test_http_url_custom_endpoint_wins():
 
 def test_ws_url_swaps_scheme_and_appends_websocket_path():
     c = HelaClient(region="iad")
-    assert c._ws_url() == "wss://iad.hela.dev/socket/websocket"
+    assert c._ws_url() == "wss://gateway-production-bfdf.up.railway.app/socket/websocket"
 
     c = HelaClient(region="dev")
     assert c._ws_url() == "ws://localhost:4001/socket/websocket"

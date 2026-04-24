@@ -38,7 +38,7 @@ Your backend can mint tokens via the REST client:
 ```python
 from hela.rest import Hela
 
-async with Hela(base_url="https://iad.hela.dev", api_key=os.environ["HELA_API_KEY"]) as hela:
+async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_key=os.environ["HELA_API_KEY"]) as hela:
     resp = await hela.mint_token(
         sub=str(user.id),
         chans=[["read", f"chat:room:{room.id}"], ["write", f"chat:room:{room.id}"]],

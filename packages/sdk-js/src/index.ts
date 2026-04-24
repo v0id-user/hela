@@ -18,7 +18,7 @@ export async function issuePlaygroundToken(opts?: {
   endpoint?: string;
   sub?: string;
 }): Promise<{ token: string; project_id: string; expires_in: number }> {
-  const base = opts?.endpoint ?? "https://iad.hela.dev";
+  const base = opts?.endpoint ?? "https://gateway-production-bfdf.up.railway.app";
   const res = await fetch(`${base}/playground/token`, {
     method: "POST",
     headers: { "content-type": "application/json" },

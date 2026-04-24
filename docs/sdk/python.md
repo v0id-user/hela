@@ -49,7 +49,7 @@ Your backend mints user JWTs via the REST client:
 ```python
 from hela.rest import Hela
 
-async with Hela(base_url="https://iad.hela.dev", api_key=API_KEY) as h:
+async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_key=API_KEY) as h:
     resp = await h.mint_token(
         sub=str(user.id),
         chans=[["read", f"chat:room:{room.id}"], ["write", f"chat:room:{room.id}"]],
@@ -178,7 +178,7 @@ out-of-band. See [`hela.rest.Hela`](../../packages/sdk-py/src/hela/rest.py):
 ```python
 from hela.rest import Hela
 
-async with Hela(base_url="https://iad.hela.dev", api_key=API_KEY) as h:
+async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_key=API_KEY) as h:
     # mint a token for an end-user
     t = await h.mint_token(sub="user-42", ttl_seconds=300)
 

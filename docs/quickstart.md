@@ -10,7 +10,7 @@ Send your first message in five minutes. You'll:
 ## 1. sign up
 
 ```sh
-curl -sS https://control.hela.dev/auth/signup \
+curl -sS https://control-production-059e.up.railway.app/auth/signup \
   -H 'content-type: application/json' \
   -d '{"email":"you@example.com"}' \
   -c cookies.txt
@@ -22,7 +22,7 @@ The response carries a session cookie (stored in `cookies.txt`). All
 ## 2. create a project
 
 ```sh
-curl -sS https://control.hela.dev/api/projects \
+curl -sS https://control-production-059e.up.railway.app/api/projects \
   -H 'content-type: application/json' \
   -b cookies.txt \
   -d '{"name":"my-app","region":"iad","tier":"starter"}'
@@ -33,7 +33,7 @@ Response includes `project.id` (e.g. `proj_01j9abc…`). Keep it.
 ## 3. issue an API key
 
 ```sh
-curl -sS https://control.hela.dev/api/projects/PROJECT_ID/keys \
+curl -sS https://control-production-059e.up.railway.app/api/projects/PROJECT_ID/keys \
   -H 'content-type: application/json' \
   -b cookies.txt \
   -d '{"label":"server-side"}'
@@ -50,7 +50,7 @@ Never ship the API key to the browser. Your backend calls
 ```python
 from hela.rest import Hela
 
-async with Hela(base_url="https://iad.hela.dev", api_key=API_KEY) as h:
+async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_key=API_KEY) as h:
     token = (await h.mint_token(
         sub="end-user-alice",
         chans=[["read", "chat:*"], ["write", "chat:*"]],

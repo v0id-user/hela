@@ -5,7 +5,7 @@ primary_region = "iad"
   dockerfile = "apps/web/Dockerfile"
 
 [env]
-  VITE_HELA_API = "https://iad.hela.dev"
+  VITE_HELA_API = "https://gateway-production-bfdf.up.railway.app"
 
 [[services]]
   internal_port = 80
