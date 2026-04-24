@@ -224,6 +224,29 @@ jobs:
       - name: pytest
         run: uv run pytest tests/ -v
 
+  test-sdk-go:
+    name: sdk-go · vet + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-go
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with: { go-version: "1.23" }
+      - name: gofmt
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "::error::gofmt violations:"
+            echo "$out"
+            exit 1
+          fi
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test -race ./...
+
   # ---------- deploy selector ------------------------------------------
   #
   # One set of deploy jobs, parameterised by the GitHub environment:
@@ -262,7 +285,7 @@ jobs:
     concurrency: deploy-control-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v6
-      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
       - run: |
           railway up ./apps/control --service control --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}
@@ -278,7 +301,7 @@ jobs:
     concurrency: deploy-gateway-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v6
-      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
       - run: |
           railway up ./apps/gateway --service gateway --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}
@@ -298,7 +321,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
       - run: cd apps/web && bun run build
-      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
       - run: |
           railway up ./apps/web --service web --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}
@@ -318,7 +341,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build:sdk
       - run: cd apps/app && bun run build
-      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
+      - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
       - run: |
           railway up ./apps/app --service app --path-as-root --ci --detach \
             --environment ${{ needs.target.outputs.railway_env }}

@@ -1,6 +1,8 @@
 .PHONY: help dev dev.gateway dev.control dev.web dev.app setup test fmt \
         build deploy.gateway.iad deploy.control stripe.listen \
-        sdk.gen sdk.py.install-dev sdk.py.test sdk.py.lint sdk.py.fmt
+        sdk.gen sdk.py.install-dev sdk.py.test sdk.py.lint sdk.py.fmt \
+        sdk.go.test sdk.go.test.live sdk.go.lint sdk.go.fmt \
+        sdk.rs.test sdk.rs.test.live sdk.rs.lint sdk.rs.fmt
 
 help:
 	@echo 'hela — managed real-time on BEAM'
@@ -158,3 +160,33 @@ sdk.py.lint:
 sdk.py.fmt:
 	@cd packages/sdk-py && uv run ruff format src/ tests/
 	@cd packages/sdk-py && uv run ruff check --fix src/ tests/
+
+# ---- Go SDK -----------------------------------------------------
+
+sdk.go.test:
+	@cd packages/sdk-go && go test ./...
+
+sdk.go.test.live:
+	@cd packages/sdk-go && HELA_LIVE=1 go test -v -run Live ./...
+
+sdk.go.lint:
+	@cd packages/sdk-go && gofmt -l . | tee /dev/stderr | (! grep -q .)
+	@cd packages/sdk-go && go vet ./...
+
+sdk.go.fmt:
+	@cd packages/sdk-go && gofmt -w .
+
+# ---- Rust SDK ---------------------------------------------------
+
+sdk.rs.test:
+	@cd packages/sdk-rs && cargo test --quiet
+
+sdk.rs.test.live:
+	@cd packages/sdk-rs && HELA_LIVE=1 cargo test --quiet -- --nocapture
+
+sdk.rs.lint:
+	@cd packages/sdk-rs && cargo fmt --check
+	@cd packages/sdk-rs && cargo clippy --all-targets -- -D warnings
+
+sdk.rs.fmt:
+	@cd packages/sdk-rs && cargo fmt
