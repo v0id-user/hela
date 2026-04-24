@@ -1,0 +1,12 @@
+# See apps/web/.railwayignore — same fix. Railway respects the
+# repo-root .gitignore, which excludes dist/. That silently
+# caused the host-built vite dist to be dropped from the upload,
+# falling back to a cached Docker layer. Re-include dist for this
+# service's upload.
+!dist
+!dist/**
+
+node_modules
+.vite
+*.tsbuildinfo
+.DS_Store

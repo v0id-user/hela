@@ -1,0 +1,16 @@
+# Railway respects .gitignore by default. The repo-root .gitignore
+# lists `dist/` (it's a build artefact, not source-of-truth). But
+# Railway deploys *need* the fresh dist from CI's `bun run build` —
+# without this file Railway silently uploaded an empty apps/web,
+# the Dockerfile's `COPY dist` picked up a cached layer from an
+# earlier deploy, and production served yesterday's bundle while
+# the health gate flashed green. This file re-includes dist for
+# the upload only.
+!dist
+!dist/**
+
+# Still exclude what we don't want to ship.
+node_modules
+.vite
+*.tsbuildinfo
+.DS_Store
