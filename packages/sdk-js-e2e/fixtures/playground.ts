@@ -112,7 +112,16 @@ export function trackBrowserSignals(page: Page): {
   const webSocketUrls: string[] = [];
 
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() === "error") {
+      const text = message.text();
+      // Chromium auto-logs every non-2xx response as "Failed to load
+      // resource: the server responded with a status of N". That is
+      // not an actionable error when the SDK retries the request
+      // (e.g. 429 from the playground rate limiter), so filter those
+      // out and keep the signal focused on real breakage.
+      if (/Failed to load resource: .*status of (429|503|504)/.test(text)) return;
+      consoleErrors.push(text);
+    }
     if (/reconnect/i.test(message.text())) reconnectLogs.push(message.text());
   });
 

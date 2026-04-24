@@ -32,12 +32,32 @@ export async function issuePlaygroundToken(opts?: {
   ephemeral?: boolean;
 }): Promise<{ token: string; project_id: string; expires_in: number; ephemeral?: boolean }> {
   const base = opts?.endpoint ?? "https://gateway-production-bfdf.up.railway.app";
-  const res = await fetch(`${base}/playground/token`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sub: opts?.sub, ephemeral: opts?.ephemeral }),
-  });
+  const body = JSON.stringify({ sub: opts?.sub, ephemeral: opts?.ephemeral });
 
-  if (!res.ok) throw new Error(`playground/token failed: ${res.status}`);
-  return res.json();
+  // The gateway rate-limits /playground/token at 1 req/sec per IP
+  // (see Hela.PlaygroundLimiter). A fast page load + a forced refresh,
+  // or two tabs minting at once, races that limit. Retry on 429 with
+  // a short backoff so the browser never surfaces it as a connection
+  // failure.
+  const maxAttempts = 4;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const res = await fetch(`${base}/playground/token`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+    });
+
+    if (res.ok) return res.json();
+
+    if (res.status === 429 && attempt < maxAttempts) {
+      const retryAfter = Number(res.headers.get("retry-after")) || 0;
+      const backoffMs = retryAfter > 0 ? retryAfter * 1000 : 1100 * attempt;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      continue;
+    }
+
+    throw new Error(`playground/token failed: ${res.status}`);
+  }
+
+  throw new Error("playground/token failed: retry budget exhausted");
 }
