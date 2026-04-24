@@ -3,6 +3,36 @@
 Playbook for ops scenarios. Keep this short; anything that appears here
 more than twice should become an alert.
 
+## current Railway inventory (testing phase)
+
+Refresh from repo root:
+
+```sh
+railway status --json
+```
+
+Snapshot captured 2026-04-24:
+
+- `production` environment: `6fb79cd1-6483-42ac-908d-29be10e8e314`
+- `dev` environment: `ca81e3ec-1685-4fbf-bb23-c7336f9a79a0`
+  - currently empty: no service instances yet
+- `gateway` service `7f7dd41d-43bb-4c7a-92b8-c372ef01a044`
+  - `https://gateway-production-bfdf.up.railway.app`
+- `control` service `d47abc5c-f6dd-4923-afc5-36ce799c4145`
+  - `https://control-production-059e.up.railway.app`
+- `app` service `387e5f18-c2b7-43a1-8677-46eb469ad212`
+  - `https://app-production-1716a.up.railway.app`
+- `web` service `2e0ecb92-1b72-4f37-8efb-98549051ed7c`
+  - `https://web-production-f24fc.up.railway.app`
+
+Temporary testing-phase hosted schemas live under:
+
+- `https://web-production-f24fc.up.railway.app/schemas/wire/`
+
+Once the real domain is bought, update the Railway env vars, SDK region
+maps, web meta tags, hosted schema path, and the schema `$id` values in
+`packages/schemas/wire/`.
+
 ## a region is down
 
 1. Check Fly status: `flyctl status --app hela-gateway-<region>`.
