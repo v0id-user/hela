@@ -1,22 +1,37 @@
-# hela
+<p align="center">
+  <a href="https://github.com/v0id-user/hela">
+    <img src="apps/web/public/brand/png/banner.png"
+         alt="hela — managed real-time on BEAM"
+         width="100%"/>
+  </a>
+</p>
 
-**Managed real-time infrastructure on BEAM.** Regional clusters, sub-100ms
-channels/presence/history, flat monthly pricing. No per-message billing.
+<p align="center">
+  <strong>Managed real-time infrastructure on BEAM.</strong><br/>
+  Regional clusters · channels · presence · history · sub-100ms · flat monthly pricing.
+</p>
 
-> pick a region, get sub-100ms channels, presence, and history. flat monthly
-> pricing, no per-message billing.
+<p align="center">
+  <a href="https://github.com/v0id-user/hela/actions/workflows/ci.yml"><img alt="ci" src="https://img.shields.io/github/actions/workflow/status/v0id-user/hela/ci.yml?branch=main&style=flat-square&label=ci&labelColor=0a0a0a&color=c9a76a"/></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-c9a76a?style=flat-square&labelColor=0a0a0a"/></a>
+  <img alt="wire" src="https://img.shields.io/badge/wire-1.0-c0c0c0?style=flat-square&labelColor=0a0a0a"/>
+  <img alt="runtime" src="https://img.shields.io/badge/runtime-elixir%20%2B%20phoenix-c0c0c0?style=flat-square&labelColor=0a0a0a"/>
+  <img alt="sdks" src="https://img.shields.io/badge/sdks-ts%20%C2%B7%20py%20%C2%B7%20go%20%C2%B7%20rs-c0c0c0?style=flat-square&labelColor=0a0a0a"/>
+</p>
 
-This repo is the whole thing: the data plane, the control plane, the SDK,
-the marketing site, and the customer dashboard — one monorepo, four
-independently deployable apps.
+---
+
+This repo is the whole thing: the data plane, the control plane, four
+SDKs, the marketing site, and the customer dashboard — one monorepo,
+four independently deployable apps.
 
 ```
 hela/
 ├── apps/
-│   ├── gateway/      Elixir · the realtime data plane (per-region Fly app)
-│   ├── control/      Elixir · signup, billing, project CRUD, Stripe webhook
-│   ├── web/          React · hela.dev — landing page + live playground
-│   └── app/          React · app.hela.dev — customer dashboard
+│   ├── gateway/      Elixir · the realtime data plane (per-region Railway service)
+│   ├── control/      Elixir · signup, billing, project CRUD, Polar webhook
+│   ├── web/          React · marketing site + live playground
+│   └── app/          React · customer dashboard
 ├── packages/
 │   ├── schemas/      JSON Schema + OpenAPI — single source of truth
 │   ├── sdk-gen/      codegen: schemas → SDK type modules
@@ -27,12 +42,28 @@ hela/
 │   ├── sdk-rs/       hela (crates.io) — Rust SDK, tokio
 │   └── ui/           @hela/ui — shared design system (silver on black)
 ├── infra/
-│   ├── fly/          per-region gateway fly.toml + control/web/app configs
-│   └── terraform/    Fly apps + Stripe products/prices
-├── docs/             architecture notes, runbooks
+│   ├── railway/      primary deploy target: Railway Terraform
+│   └── fly/          secondary: per-region gateway fly.toml (standby)
+├── docs/             architecture notes, runbooks, SDK guides
 ├── docker-compose.yml  local dev (postgres + gateway + control + mailpit)
 └── Makefile          one-liners for everyday work
 ```
+
+<details>
+<summary><strong>ASCII banner</strong> (for terminal READMEs, release notes, Discord embeds)</summary>
+
+```
+    ██╗  ██╗███████╗██╗      █████╗
+    ██║  ██║██╔════╝██║     ██╔══██╗
+    ███████║█████╗  ██║     ███████║
+    ██╔══██║██╔══╝  ██║     ██╔══██║
+    ██║  ██║███████╗███████╗██║  ██║
+    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝
+
+    [ · · · ● ]   managed real-time on BEAM
+```
+
+</details>
 
 ## Quick start (local)
 
@@ -155,21 +186,22 @@ push to main
 
 ### Environments
 
-Two GitHub environments, each with its own `RAILWAY_TOKEN` scoped to a
-matching Railway environment:
+PRs run the full lint + test + build surface but do **not** deploy.
+Only pushes to `main` roll to production:
 
-| GitHub env   | Railway env  | Triggers                    | Review required |
-| ------------ | ------------ | --------------------------- | --------------- |
-| `dev`        | `dev`        | PRs + non-main branch pushes | no              |
-| `production` | `production` | push to `main`              | yes             |
+| GitHub env   | Railway env  | Triggers           | Review required |
+| ------------ | ------------ | ------------------ | --------------- |
+| `production` | `production` | push to `main`     | admin-bypass    |
 
-PRs auto-deploy a preview to the Railway `dev` environment so the smoke
-test runs against the exact commit. Merging to `main` kicks off a
-production rollout that pauses for a reviewer's ack before each of the
-four services rolls.
+The Railway `dev` environment exists but has no live service
+instances, so PR / Dependabot contexts (which don't get a Railway
+token) skip deploy jobs entirely.
 
-Each deploy job has a `concurrency:` group scoped by environment, so
-overlapping pushes to dev never race a production rollout.
+Each deploy job has a `concurrency:` group scoped by service so
+overlapping pushes never race each other. After `railway up`, each
+job polls the service's `/health` endpoint for 60×5s before the job
+is allowed to go green — a failed Railway build now fails CI instead
+of silently looking healthy.
 
 ### Platform-agnostic
 
@@ -212,13 +244,65 @@ agentic or human contributor. Key points:
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full guide.
 
+## Brand
+
+Assets live in [`apps/web/public/brand/`](apps/web/public/brand/) and
+are mirrored as PNGs at 1× and 2× under `brand/png/`. They are served
+at `/brand/...` on the marketing site.
+
+| asset | what it is | SVG | PNG |
+| ----- | ---------- | --- | --- |
+| mark        | 3-dot presence roster in gold brackets (favicon-safe) | [`mark.svg`](apps/web/public/brand/mark.svg) | [`png/mark-{128,256,512,1024}.png`](apps/web/public/brand/png/) |
+| signal      | kinetic timeline mark — trailing events + live accent | [`signal.svg`](apps/web/public/brand/signal.svg) | `png/signal{,@2x}.png` |
+| wordmark    | `[ hela ]` in gold + silver mono | [`wordmark.svg`](apps/web/public/brand/wordmark.svg) | `png/wordmark{,@2x}.png` |
+| lockup      | mark + wordmark + tagline | [`lockup.svg`](apps/web/public/brand/lockup.svg) | `png/lockup{,@2x}.png` |
+| banner      | 1280×320 hero strip, used at the top of this README | [`banner.svg`](apps/web/public/brand/banner.svg) | `png/banner{,@2x}.png` |
+| avatar      | 400×400 profile picture for GitHub / Twitter / Discord | [`avatar.svg`](apps/web/public/brand/avatar.svg) | `png/avatar{,@2x}.png` |
+| og          | 1200×630 social share card | [`og.svg`](apps/web/public/brand/og.svg) | `png/og{,@2x}.png` |
+| favicon     | simplified 2-dot mark tuned for ≤32 px | [`favicon.svg`](apps/web/public/brand/favicon.svg) | `png/favicon-{32,180}.png` |
+
+Colour palette:
+
+- background `#0a0a0a`
+- accent (brackets, live dot) `#c9a76a`
+- type / main marks `#c0c0c0`
+- muted / trailing dots `#333`, `#555`, `#888`
+
+Typography stack: `"SF Mono", "JetBrains Mono", "Menlo", "DejaVu Sans Mono", monospace`.
+
+To re-rasterize after editing an SVG:
+
+```sh
+cd apps/web/public/brand
+rsvg-convert banner.svg -w 1280 -h 320 -o png/banner.png
+rsvg-convert banner.svg -w 2560 -h 640 -o png/banner@2x.png
+```
+
+### Brand assets are not AGPL
+
+The code in this repo is AGPL-3.0-or-later. The **brand assets**
+under `apps/web/public/brand/` are a trademark carve-out — see
+[`apps/web/public/brand/LICENSE.md`](apps/web/public/brand/LICENSE.md)
+and the repo-level [`NOTICE.md`](NOTICE.md) for the full terms.
+
+TL;DR: you can link the assets unmodified to refer to hela. You
+can't redraw them, use them as your own product's identity, imply
+endorsement, or ship merchandise without written permission. If
+you're running a public fork, please pick your own name and
+replace everything in the brand directory. Permission requests:
+`hey@v0id.me`.
+
 ## License
 
-[AGPL-3.0-or-later](LICENSE). If you run a modified version of hela as a
-public service, the AGPL requires you to make your modifications
-available to your users. This is deliberate — the point is that the
+Code is [AGPL-3.0-or-later](LICENSE). If you run a modified version
+of hela as a public service, the AGPL requires you to make your
+modifications available to your users. This is deliberate — the
 backend is copyleft so the community benefits from anyone's
-improvements, even if those improvements only ship as a hosted service.
+improvements, even if those improvements only ship as a hosted
+service.
 
-If the AGPL isn't workable for your use case and you want a commercial
-license, email hey@v0id.me.
+Brand assets under `apps/web/public/brand/` are **not** AGPL — see
+[`NOTICE.md`](NOTICE.md).
+
+If the AGPL isn't workable for your use case and you want a
+commercial license, email `hey@v0id.me`.
