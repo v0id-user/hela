@@ -53,6 +53,10 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# _generated/ is emitted by datamodel-code-generator; formatting is its
+# business, not ours. Lint + format both skip it. The schema-drift guard
+# in CI still catches real semantic changes.
+extend-exclude = ["src/hela/_generated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -60,6 +64,3 @@ ignore = [
     "E501",    # pyright/ruff format handles lines
     "RUF022",  # __all__ is grouped by category (top-level / types / errors), not alphabetical
 ]
-
-[tool.ruff.lint.per-file-ignores]
-"src/hela/_generated/*.py" = ["ALL"]  # don't lint generated code
