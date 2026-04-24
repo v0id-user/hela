@@ -14,7 +14,8 @@ config :hela, HelaWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "dev-secret-key-base-replace-me-with-mix-phx-gen-secret-in-prod-0123456789abcdef",
+  secret_key_base:
+    "dev-secret-key-base-replace-me-with-mix-phx-gen-secret-in-prod-0123456789abcdef",
   watchers: []
 
 config :hela, dev_routes: true

@@ -97,15 +97,11 @@ function ChannelsDemo() {
   }
 
   return (
-    <Panel
-      title="1. channels"
-      right="two clients · one topic"
-    >
+    <Panel title="1. channels" right="two clients · one topic">
       <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-        type in one pane, watch it arrive in the other. both panes subscribe
-        to the same topic on the same hela cluster. the number shows measured
-        round-trip from the publishing browser back through Phoenix.PubSub to
-        the receiving one.
+        type in one pane, watch it arrive in the other. both panes subscribe to the same topic on
+        the same hela cluster. the number shows measured round-trip from the publishing browser back
+        through Phoenix.PubSub to the receiving one.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <ChannelPane
@@ -172,8 +168,7 @@ function ChannelPane({
           msgs.map((m) => (
             <div key={m.id} style={{ fontSize: 12, padding: "1px 0" }}>
               <span style={{ color: "#c9a76a" }}>@{m.author}</span>{" "}
-              <span style={{ color: "#666", fontSize: 10 }}>{m.id.slice(0, 8)}</span>{" "}
-              {m.body}
+              <span style={{ color: "#666", fontSize: 10 }}>{m.id.slice(0, 8)}</span> {m.body}
             </div>
           ))
         )}
@@ -251,15 +246,13 @@ function PresenceDemo() {
   return (
     <Panel title="2. presence" right={`${entries.length} online`}>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-        every visitor on this page is in the same `demo:presence` channel.
-        Phoenix.Presence is CRDT-backed, so joins/leaves on any node in the
-        region merge without a coordinator. try opening another tab.
+        every visitor on this page is in the same `demo:presence` channel. Phoenix.Presence is
+        CRDT-backed, so joins/leaves on any node in the region merge without a coordinator. try
+        opening another tab.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>
-            YOUR NICKNAME
-          </div>
+          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>YOUR NICKNAME</div>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               value={nickname}
@@ -268,8 +261,8 @@ function PresenceDemo() {
             />
           </div>
           <div style={{ marginTop: 6, fontSize: 11, color: "#666" }}>
-            server broadcasts the change via the presence CRDT — other tabs
-            update without a refresh.
+            server broadcasts the change via the presence CRDT — other tabs update without a
+            refresh.
           </div>
         </div>
         <div>
@@ -369,15 +362,11 @@ function HistoryDemo() {
   }
 
   return (
-    <Panel
-      title="3. history"
-      right={`source: ${source} · ${msgs.length} in view`}
-    >
+    <Panel title="3. history" right={`source: ${source} · ${msgs.length} in view`}>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-        each channel keeps its last N messages in a per-node ETS ring buffer.
-        the `load older` button cursor-paginates backward with `id &lt; ?` on
-        the UUIDv7 primary key. the panel badge tells you whether the page
-        came from cache, a mix, or Postgres.
+        each channel keeps its last N messages in a per-node ETS ring buffer. the `load older`
+        button cursor-paginates backward with `id &lt; ?` on the UUIDv7 primary key. the panel badge
+        tells you whether the page came from cache, a mix, or Postgres.
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
         <button onClick={loadOlder} disabled={loading || done}>
@@ -451,18 +440,14 @@ function SequencingDemo() {
 
   const sorted = useMemo(() => msgs.slice().sort((a, b) => a.id.localeCompare(b.id)), [msgs]);
   const monotone =
-    sorted.length === msgs.length &&
-    sorted.every((m, i) => msgs[i] && m.id === msgs[i].id);
+    sorted.length === msgs.length && sorted.every((m, i) => msgs[i] && m.id === msgs[i].id);
 
   return (
-    <Panel
-      title="4. sequencing"
-      right={monotone ? "ids monotonic ✓" : "out of order"}
-    >
+    <Panel title="4. sequencing" right={monotone ? "ids monotonic ✓" : "out of order"}>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-        every message gets a UUIDv7 at ingest. the first 48 bits are unix-ms,
-        so ids sort by creation time. click `burst` to fire 5 publishes in
-        parallel; watch them arrive with strictly increasing ids.
+        every message gets a UUIDv7 at ingest. the first 48 bits are unix-ms, so ids sort by
+        creation time. click `burst` to fire 5 publishes in parallel; watch them arrive with
+        strictly increasing ids.
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
         <button onClick={burst}>[ burst 5 parallel ]</button>
@@ -479,9 +464,7 @@ function SequencingDemo() {
           <thead>
             <tr style={{ color: "#666", borderBottom: "1px solid #222" }}>
               <th style={{ textAlign: "left", padding: "4px 8px" }}>uuidv7 prefix</th>
-              <th style={{ textAlign: "left", padding: "4px 8px" }}>
-                decoded ts (ms from id)
-              </th>
+              <th style={{ textAlign: "left", padding: "4px 8px" }}>decoded ts (ms from id)</th>
               <th style={{ textAlign: "left", padding: "4px 8px" }}>body</th>
             </tr>
           </thead>
@@ -495,9 +478,7 @@ function SequencingDemo() {
             ) : (
               msgs.map((m) => (
                 <tr key={m.id}>
-                  <td style={{ padding: "2px 8px", color: "#c9a76a" }}>
-                    {m.id.slice(0, 13)}
-                  </td>
+                  <td style={{ padding: "2px 8px", color: "#c9a76a" }}>{m.id.slice(0, 13)}</td>
                   <td style={{ padding: "2px 8px", color: "#888" }}>
                     {uuidv7Timestamp(m.id).slice(11, 23)}
                   </td>
@@ -543,24 +524,19 @@ function AuthDemo() {
   return (
     <Panel title="5. auth" right="short-lived JWTs · RS256 or HS256">
       <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-        hela verifies tokens signed by your backend against the public key
-        you register in the dashboard. grants are scoped: a token's `chans`
-        claim lists the read/write patterns it may act on. short TTL, no
-        refresh round-trip — just re-sign. click below to ask hela for a
+        hela verifies tokens signed by your backend against the public key you register in the
+        dashboard. grants are scoped: a token's `chans` claim lists the read/write patterns it may
+        act on. short TTL, no refresh round-trip — just re-sign. click below to ask hela for a
         5-minute guest token on the public playground project.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>
-            YOUR BACKEND (node)
-          </div>
+          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>YOUR BACKEND (node)</div>
           <pre style={{ fontSize: 11, margin: 0, lineHeight: 1.5 }}>{SNIPPET_NODE}</pre>
         </div>
 
         <div>
-          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>
-            LIVE PLAYGROUND TOKEN
-          </div>
+          <div style={{ fontSize: 10, color: "#666", marginBottom: 4 }}>LIVE PLAYGROUND TOKEN</div>
           <button onClick={fetchToken} disabled={loading}>
             [ {loading ? "requesting..." : "request a guest token"} ]
           </button>

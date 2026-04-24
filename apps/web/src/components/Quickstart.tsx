@@ -83,9 +83,7 @@ export function Quickstart() {
           </div>
         }
       >
-        <pre style={{ margin: 0, fontSize: 12, lineHeight: 1.5, maxHeight: 340 }}>
-          {TABS[tab]}
-        </pre>
+        <pre style={{ margin: 0, fontSize: 12, lineHeight: 1.5, maxHeight: 340 }}>{TABS[tab]}</pre>
       </Panel>
     </section>
   );

@@ -52,10 +52,21 @@ function Footer() {
     >
       <span>hela · managed real-time on BEAM</span>
       <span>
-        <a href="/how" style={{ color: "#888" }}>how</a>{" · "}
-        <a href="/dashboard" style={{ color: "#888" }}>dashboard</a>{" · "}
-        <a href={SIGNIN_URL} style={{ color: "#888" }}>sign in</a>{" · "}
-        <a href="mailto:hello@hela.dev" style={{ color: "#888" }}>contact</a>
+        <a href="/how" style={{ color: "#888" }}>
+          how
+        </a>
+        {" · "}
+        <a href="/dashboard" style={{ color: "#888" }}>
+          dashboard
+        </a>
+        {" · "}
+        <a href={SIGNIN_URL} style={{ color: "#888" }}>
+          sign in
+        </a>
+        {" · "}
+        <a href="mailto:hello@hela.dev" style={{ color: "#888" }}>
+          contact
+        </a>
       </span>
     </footer>
   );

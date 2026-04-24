@@ -45,7 +45,10 @@ async function ctrl<T = unknown>(path: string, opts: FetchOpts = {}): Promise<T>
   const r = await fetch(CT + path, {
     ...opts,
     headers,
-    body: opts.body && typeof opts.body !== "string" ? JSON.stringify(opts.body) : (opts.body as BodyInit | undefined),
+    body:
+      opts.body && typeof opts.body !== "string"
+        ? JSON.stringify(opts.body)
+        : (opts.body as BodyInit | undefined),
   });
 
   const setCookie = r.headers.get("set-cookie");
@@ -95,7 +98,10 @@ const start = Date.now();
 
 // 1. signup
 console.log("\n1. SIGNUP");
-const { account } = await ctrl<{ account: Account }>("/auth/signup", { method: "POST", body: { email } });
+const { account } = await ctrl<{ account: Account }>("/auth/signup", {
+  method: "POST",
+  body: { email },
+});
 note("account created", { id: account.id, email: account.email });
 
 // 2. logout + login
@@ -103,7 +109,10 @@ console.log("\n2. LOGOUT + LOGIN (exercise session cookie flow)");
 await ctrl("/auth/logout", { method: "POST" });
 note("logout");
 jar.clear();
-const { account: me2 } = await ctrl<{ account: Account }>("/auth/login", { method: "POST", body: { email } });
+const { account: me2 } = await ctrl<{ account: Account }>("/auth/login", {
+  method: "POST",
+  body: { email },
+});
 if (me2.id !== account.id) throw new Error("logged in as wrong account");
 note("logged back in", me2.id);
 
@@ -160,7 +169,10 @@ const userToken = tokenResp.token;
 
 // 6. use @hela/sdk
 console.log("\n6. USE THE @hela/sdk");
-console.log("   regions known to SDK:", (Object.keys(REGIONS) as (keyof typeof REGIONS)[]).join(", "));
+console.log(
+  "   regions known to SDK:",
+  (Object.keys(REGIONS) as (keyof typeof REGIONS)[]).join(", "),
+);
 
 const alice: HelaClient = connect({ region: "dev", endpoint: GW, token: userToken });
 note("client created", { region: alice.config.region, http: alice.httpUrl() });
@@ -240,7 +252,10 @@ const lastRoster = rosters[rosters.length - 1] ?? [];
 // not "end-user-bob".
 const sawBob = lastRoster.some((e) => e.id === "bob");
 if (!sawBob) {
-  console.log("    alice sees roster:", lastRoster.map((e) => e.id));
+  console.log(
+    "    alice sees roster:",
+    lastRoster.map((e) => e.id),
+  );
   throw new Error("presence CRDT did not propagate bob to alice");
 }
 note("alice sees bob in roster", { count: lastRoster.length, ids: lastRoster.map((e) => e.id) });

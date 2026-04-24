@@ -83,8 +83,11 @@ defmodule Hela.Chat.Cache do
   @impl true
   def init(_) do
     :ets.new(@table, [
-      :ordered_set, :public, :named_table,
-      read_concurrency: true, write_concurrency: true
+      :ordered_set,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
     ])
 
     :ets.new(@counts, [:set, :public, :named_table, write_concurrency: true])

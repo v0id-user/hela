@@ -14,7 +14,8 @@ config :control, ControlWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "dev-control-secret-key-base-replace-me-0123456789abcdef0123456789abcdef0123456789",
+  secret_key_base:
+    "dev-control-secret-key-base-replace-me-0123456789abcdef0123456789abcdef0123456789",
   watchers: []
 
 config :logger, :default_formatter, format: "[$level] $message\n", metadata: [:request_id]

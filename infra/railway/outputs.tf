@@ -25,7 +25,7 @@ output "postgres_internal" {
 
 output "next_steps" {
   description = "What to do after `terraform apply`."
-  value = <<-EOT
+  value       = <<-EOT
 
     Terraform has provisioned the project. Still to do:
 

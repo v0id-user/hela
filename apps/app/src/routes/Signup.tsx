@@ -20,9 +20,8 @@ export function Signup() {
       <div style={{ maxWidth: 420, margin: "40px auto" }}>
         <Panel title="sign up">
           <div style={{ fontSize: 12, color: "#888", marginBottom: 14 }}>
-            one account per person. you'll pick the project name, region, and
-            tier on the next screen. payment method only collected for paid
-            tiers.
+            one account per person. you'll pick the project name, region, and tier on the next
+            screen. payment method only collected for paid tiers.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <label>
@@ -50,8 +49,8 @@ export function Signup() {
         </Panel>
 
         <div style={{ marginTop: 14, fontSize: 11, color: "#666", textAlign: "center" }}>
-          this demo dashboard persists your account locally. real signup is a
-          normal email + github flow; no magic.
+          this demo dashboard persists your account locally. real signup is a normal email + github
+          flow; no magic.
         </div>
       </div>
     </Page>

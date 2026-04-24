@@ -26,7 +26,9 @@ defmodule Control.Accounts do
   # --- projects -------------------------------------------------------
 
   def list_projects(account_id) do
-    Repo.all(from p in Project, where: p.account_id == ^account_id, order_by: [asc: p.inserted_at])
+    Repo.all(
+      from p in Project, where: p.account_id == ^account_id, order_by: [asc: p.inserted_at]
+    )
   end
 
   def get_project(id), do: Repo.get(Project, id)
@@ -91,5 +93,4 @@ defmodule Control.Accounts do
         {:ok, updated}
     end
   end
-
 end

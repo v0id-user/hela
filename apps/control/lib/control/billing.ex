@@ -23,8 +23,8 @@ defmodule Control.Billing do
   defp product_ids do
     %{
       "starter" => System.get_env("POLAR_PRODUCT_STARTER"),
-      "growth"  => System.get_env("POLAR_PRODUCT_GROWTH"),
-      "scale"   => System.get_env("POLAR_PRODUCT_SCALE")
+      "growth" => System.get_env("POLAR_PRODUCT_GROWTH"),
+      "scale" => System.get_env("POLAR_PRODUCT_SCALE")
     }
   end
 

@@ -13,9 +13,7 @@ export function ProjectUsage() {
     const seed = Array.from(p.id).reduce((a, c) => a + c.charCodeAt(0), 0) + i;
     const v = ((seed * 113) % 100) / 100;
     return {
-      label: new Date(Date.now() - (11 - i) * 30 * 86400_000)
-        .toISOString()
-        .slice(0, 7),
+      label: new Date(Date.now() - (11 - i) * 30 * 86400_000).toISOString().slice(0, 7),
       messages: Math.floor(p.usage.cap_messages * v),
     };
   });

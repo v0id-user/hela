@@ -50,7 +50,9 @@ function SessionChip() {
   const a = account();
   if (!a) return null;
   return (
-    <span style={{ padding: "6px 12px", color: "#888", fontSize: 11, borderLeft: "1px solid #333" }}>
+    <span
+      style={{ padding: "6px 12px", color: "#888", fontSize: 11, borderLeft: "1px solid #333" }}
+    >
       {a.email}
       <button
         onClick={() => {

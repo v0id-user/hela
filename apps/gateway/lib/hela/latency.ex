@@ -15,16 +15,37 @@ defmodule Hela.Latency do
   # 64µs to ~8s, doubling each step. Fine enough to see p99 kicks, wide
   # enough to catch Postgres slowpath timeouts.
   @buckets [
-    64, 128, 256, 512, 1_024, 2_048, 4_096, 8_192,
-    16_384, 32_768, 65_536, 131_072, 262_144, 524_288,
-    1_048_576, 2_097_152, 4_194_304, 8_388_608
+    64,
+    128,
+    256,
+    512,
+    1_024,
+    2_048,
+    4_096,
+    8_192,
+    16_384,
+    32_768,
+    65_536,
+    131_072,
+    262_144,
+    524_288,
+    1_048_576,
+    2_097_152,
+    4_194_304,
+    8_388_608
   ]
 
   @spans [:broadcast, :persist]
 
   def init do
     if :ets.info(@table) == :undefined do
-      :ets.new(@table, [:set, :public, :named_table, write_concurrency: true, read_concurrency: true])
+      :ets.new(@table, [
+        :set,
+        :public,
+        :named_table,
+        write_concurrency: true,
+        read_concurrency: true
+      ])
 
       for span <- @spans do
         for edge <- @buckets do
@@ -111,7 +132,8 @@ defmodule Hela.Latency do
     target = ceil(count * p)
 
     {_, hit} =
-      Enum.reduce_while(buckets, {0, List.last(@buckets)}, fn %{le_us: edge, count: c}, {acc, _} ->
+      Enum.reduce_while(buckets, {0, List.last(@buckets)}, fn %{le_us: edge, count: c},
+                                                              {acc, _} ->
         next = acc + c
 
         if next >= target do

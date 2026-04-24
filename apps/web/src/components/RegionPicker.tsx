@@ -65,7 +65,9 @@ export function RegionPicker() {
           </label>
 
           <div style={{ fontSize: 12, color: "#888" }}>
-            <div>host: <span style={{ color: "#c0c0c0" }}>{region.host}</span></div>
+            <div>
+              host: <span style={{ color: "#c0c0c0" }}>{region.host}</span>
+            </div>
             <div>
               rtt:{" "}
               <span style={{ color: probe?.rtt != null ? "#c9a76a" : "#666" }}>
@@ -76,8 +78,8 @@ export function RegionPicker() {
           </div>
         </div>
         <div style={{ marginTop: 10, fontSize: 11, color: "#666" }}>
-          each probe opens a cold WebSocket (no warm pool) so you see the full
-          TLS + Phoenix handshake + ping round-trip.
+          each probe opens a cold WebSocket (no warm pool) so you see the full TLS + Phoenix
+          handshake + ping round-trip.
         </div>
       </Panel>
     </section>
@@ -87,9 +89,7 @@ export function RegionPicker() {
 async function runProbe(slug: RegionSlug): Promise<number> {
   // In local dev we short-circuit to the dev server regardless of slug.
   // In prod, each region gets its own host.
-  const base = API_BASE.includes("localhost")
-    ? API_BASE
-    : `https://${slug}.hela.dev`;
+  const base = API_BASE.includes("localhost") ? API_BASE : `https://${slug}.hela.dev`;
 
   const t0 = performance.now();
   const r = await fetch(`${base}/regions/${slug}/ping`, { cache: "no-store" });

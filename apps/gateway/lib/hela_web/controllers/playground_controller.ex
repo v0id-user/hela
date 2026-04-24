@@ -20,9 +20,9 @@ defmodule HelaWeb.PlaygroundController do
       project_id: Playground.project_id(),
       expires_in: 300,
       scopes: [
-        %{scope: "read",  pattern: "hello:**"},
+        %{scope: "read", pattern: "hello:**"},
         %{scope: "write", pattern: "hello:**"},
-        %{scope: "read",  pattern: "demo:**"},
+        %{scope: "read", pattern: "demo:**"},
         %{scope: "write", pattern: "demo:**"}
       ]
     })

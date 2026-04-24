@@ -8,7 +8,14 @@ export function ProjectList() {
 
   return (
     <Page>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, alignItems: "baseline" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 14,
+          alignItems: "baseline",
+        }}
+      >
         <h1 style={{ fontSize: 22 }}>projects</h1>
         <Link to="/projects/new">
           <button className="cta">[ new project ]</button>

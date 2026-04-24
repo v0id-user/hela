@@ -1,10 +1,4 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Link,
-  Outlet,
-} from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, Link, Outlet } from "@tanstack/react-router";
 import { Home } from "./routes/Home";
 import { How } from "./routes/How";
 import { Dashboard } from "./routes/Dashboard";
@@ -47,10 +41,7 @@ const rootRoute = createRootRoute({
         <Link to="/dashboard" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
           dashboard
         </Link>
-        <a
-          href={SIGNIN_URL}
-          style={{ ...linkStyle, marginLeft: 0 }}
-        >
+        <a href={SIGNIN_URL} style={{ ...linkStyle, marginLeft: 0 }}>
           sign in
         </a>
         <span

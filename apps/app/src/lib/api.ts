@@ -36,11 +36,11 @@ export const TIER_PRICE: Record<Tier, number> = {
 };
 
 const TIER_CAPS: Record<Tier, { messages: number; connections: number }> = {
-  free:    { messages: 1_000_000,     connections: 100 },
-  starter: { messages: 10_000_000,    connections: 1_000 },
-  growth:  { messages: 100_000_000,   connections: 10_000 },
-  scale:   { messages: 1_000_000_000, connections: 100_000 },
-  ent:     { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
+  free: { messages: 1_000_000, connections: 100 },
+  starter: { messages: 10_000_000, connections: 1_000 },
+  growth: { messages: 100_000_000, connections: 10_000 },
+  scale: { messages: 1_000_000_000, connections: 100_000 },
+  ent: { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
 };
 
 export function isSignedIn(): boolean {
@@ -97,7 +97,12 @@ export function createProject(attrs: { name: string; region: Region; tier: Tier 
         last_used_at: null,
       },
     ],
-    usage: { messages: 0, connections: 0, cap_messages: caps.messages, cap_connections: caps.connections },
+    usage: {
+      messages: 0,
+      connections: 0,
+      cap_messages: caps.messages,
+      cap_connections: caps.connections,
+    },
     stripe_price_per_month: TIER_PRICE[attrs.tier],
   };
   const all = projects();
@@ -126,7 +131,11 @@ export function rotateKey(id: string): { prefix: string; secret: string } {
   const prefix = randomId(6);
   const secret = randomId(32);
   p.keys = p.keys.map((k) => ({ ...k, last_used_at: null }));
-  p.keys.unshift({ prefix, label: "rotated " + new Date().toISOString().slice(0, 10), last_used_at: null });
+  p.keys.unshift({
+    prefix,
+    label: "rotated " + new Date().toISOString().slice(0, 10),
+    last_used_at: null,
+  });
   updateProject(id, { keys: p.keys });
   return { prefix, secret };
 }
@@ -134,7 +143,7 @@ export function rotateKey(id: string): { prefix: string; secret: string } {
 function fillUsage(p: Project): Project {
   // Deterministic fake usage between 10% and 80% of cap, for visual-dev.
   const seed = Array.from(p.id).reduce((a, c) => a + c.charCodeAt(0), 0);
-  const pct = 0.1 + ((seed % 70) / 100);
+  const pct = 0.1 + (seed % 70) / 100;
   if (p.usage.cap_messages === Number.POSITIVE_INFINITY) return p;
   return {
     ...p,
@@ -149,5 +158,7 @@ function fillUsage(p: Project): Project {
 function randomId(n: number): string {
   const bytes = new Uint8Array(n);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("").slice(0, n);
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, n);
 }

@@ -54,8 +54,7 @@ export function ProjectDetail() {
         <div>
           <h1 style={{ fontSize: 22 }}>{p.name}</h1>
           <div style={{ fontSize: 12, color: "#666" }}>
-            {p.id} · region {p.region} · tier {p.tier} · since{" "}
-            {p.created_at.slice(0, 10)}
+            {p.id} · region {p.region} · tier {p.tier} · since {p.created_at.slice(0, 10)}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -73,7 +72,10 @@ export function ProjectDetail() {
           <KV k="connections" v={p.usage.connections + " / " + p.usage.cap_connections} />
           <Bar value={p.usage.connections} max={p.usage.cap_connections} />
           <div style={{ height: 10 }} />
-          <KV k="messages this month" v={fmt(p.usage.messages) + " / " + fmt(p.usage.cap_messages)} />
+          <KV
+            k="messages this month"
+            v={fmt(p.usage.messages) + " / " + fmt(p.usage.cap_messages)}
+          />
           <Bar value={p.usage.messages} max={p.usage.cap_messages} />
         </Panel>
 
@@ -85,15 +87,18 @@ export function ProjectDetail() {
             k="jwt public key"
             v={p.jwt_registered ? "registered" : <span style={{ color: "#c9a76a" }}>not set</span>}
           />
-          <KV k="multi-region" v={p.tier === "scale" || p.tier === "ent" ? "eligible" : "upgrade to enable"} />
+          <KV
+            k="multi-region"
+            v={p.tier === "scale" || p.tier === "ent" ? "eligible" : "upgrade to enable"}
+          />
         </Panel>
       </div>
 
       <div style={{ marginTop: 12 }}>
         <Panel title="jwt public key · register">
           <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
-            paste the JWK (public half) your backend signs grants with. we
-            use this to verify tokens on every channel join.
+            paste the JWK (public half) your backend signs grants with. we use this to verify tokens
+            on every channel join.
           </div>
           <textarea
             value={jwkInput}

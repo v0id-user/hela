@@ -12,10 +12,10 @@ const REGIONS: { slug: Region; label: string }[] = [
 ];
 
 const TIERS: { slug: Tier; title: string; blurb: string }[] = [
-  { slug: "free",    title: "Free",    blurb: "100 conns · 1M msgs/mo" },
+  { slug: "free", title: "Free", blurb: "100 conns · 1M msgs/mo" },
   { slug: "starter", title: "Starter", blurb: "1k conns · 10M msgs/mo" },
-  { slug: "growth",  title: "Growth",  blurb: "10k conns · 100M msgs/mo · 99.9% SLA" },
-  { slug: "scale",   title: "Scale",   blurb: "100k conns · 1B msgs/mo · multi-region" },
+  { slug: "growth", title: "Growth", blurb: "10k conns · 100M msgs/mo · 99.9% SLA" },
+  { slug: "scale", title: "Scale", blurb: "100k conns · 1B msgs/mo · multi-region" },
 ];
 
 export function NewProject() {
@@ -45,8 +45,8 @@ export function NewProject() {
 
       <Panel title="2. pick a region" style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
-          region is fixed after creation. pick whichever is closest to most
-          of your users — sub-100ms is easy in-region.
+          region is fixed after creation. pick whichever is closest to most of your users —
+          sub-100ms is easy in-region.
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
           {REGIONS.map((r) => (
@@ -84,9 +84,7 @@ export function NewProject() {
             >
               <div style={{ fontSize: 13 }}>{t.title}</div>
               <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>{t.blurb}</div>
-              <div
-                style={{ fontSize: 14, color: "#e0e0e0", marginTop: 6 }}
-              >
+              <div style={{ fontSize: 14, color: "#e0e0e0", marginTop: 6 }}>
                 ${TIER_PRICE[t.slug]}/mo
               </div>
             </button>
@@ -100,8 +98,7 @@ export function NewProject() {
         </button>
         {tier !== "free" && (
           <span style={{ color: "#666", fontSize: 11, alignSelf: "center" }}>
-            &gt; Stripe will collect payment on first paid project; reused on
-            subsequent ones.
+            &gt; Stripe will collect payment on first paid project; reused on subsequent ones.
           </span>
         )}
       </div>

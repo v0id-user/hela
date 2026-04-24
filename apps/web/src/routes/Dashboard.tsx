@@ -138,19 +138,29 @@ export function Dashboard() {
       </div>
 
       <StatGrid>
-        <Stat label="msgs/sec in" value={fmt(agg?.rate_in)}
+        <Stat
+          label="msgs/sec in"
+          value={fmt(agg?.rate_in)}
           tip="messages/sec the cluster is INGESTING (sum across replicas)."
         />
-        <Stat label="msgs/sec persisted" value={fmt(agg?.rate_persisted)}
+        <Stat
+          label="msgs/sec persisted"
+          value={fmt(agg?.rate_persisted)}
           tip="rows/sec Broadway is flushing to Postgres. Tracks ingest in steady state."
         />
-        <Stat label="queue depth" value={agg?.queue_depth ?? "-"}
+        <Stat
+          label="queue depth"
+          value={agg?.queue_depth ?? "-"}
           tip="messages waiting for the batcher. Stays near 0 when persist is keeping up."
         />
-        <Stat label="ws connections" value={agg?.connections ?? "-"}
+        <Stat
+          label="ws connections"
+          value={agg?.connections ?? "-"}
           tip="live channel processes = live WS clients across the cluster."
         />
-        <Stat label="cached" value={agg?.cache_total ?? "-"}
+        <Stat
+          label="cached"
+          value={agg?.cache_total ?? "-"}
           tip="ring buffer entries held across all per-node ETS tables."
         />
         <Stat
@@ -162,10 +172,16 @@ export function Dashboard() {
         <Stat
           label="memory"
           value={agg ? `${agg.memory_mb.toFixed(0)}mb` : "-"}
-          sub={agg ? `proc ${agg.memory_processes_mb.toFixed(0)} · bin ${agg.memory_binary_mb.toFixed(0)}` : ""}
+          sub={
+            agg
+              ? `proc ${agg.memory_processes_mb.toFixed(0)} · bin ${agg.memory_binary_mb.toFixed(0)}`
+              : ""
+          }
           tip="resident BEAM heap cluster-wide."
         />
-        <Stat label="run queue" value={agg?.run_queue ?? "-"}
+        <Stat
+          label="run queue"
+          value={agg?.run_queue ?? "-"}
           tip="processes waiting for a scheduler. sustained >0 = CPU-bound."
         />
       </StatGrid>
@@ -173,30 +189,47 @@ export function Dashboard() {
       <div style={{ height: 1 }} />
 
       <StatGrid>
-        <Stat label="atoms" value={agg ? fmt(agg.atoms) : "-"}
+        <Stat
+          label="atoms"
+          value={agg ? fmt(agg.atoms) : "-"}
           sub={agg ? `of ${fmt(agg.atoms_limit)}` : ""}
           tip="atom table size. Atoms are never GC'd — should stay flat."
         />
-        <Stat label="ports" value={agg ? `${agg.ports}` : "-"}
-          sub={agg ? `of ${fmt(agg.ports_limit)}` : ""} tip="open ports cluster-wide."
+        <Stat
+          label="ports"
+          value={agg ? `${agg.ports}` : "-"}
+          sub={agg ? `of ${fmt(agg.ports_limit)}` : ""}
+          tip="open ports cluster-wide."
         />
-        <Stat label="ets tables" value={agg ? `${agg.ets_tables}` : "-"}
+        <Stat
+          label="ets tables"
+          value={agg ? `${agg.ets_tables}` : "-"}
           sub={agg ? `${agg.memory_ets_mb.toFixed(1)}mb` : ""}
           tip="ETS table count + total ETS memory."
         />
-        <Stat label="binary mem" value={agg ? `${agg.memory_binary_mb.toFixed(1)}mb` : "-"}
+        <Stat
+          label="binary mem"
+          value={agg ? `${agg.memory_binary_mb.toFixed(1)}mb` : "-"}
           tip="reference-counted binary heap."
         />
-        <Stat label="code mem" value={agg ? `${agg.memory_code_mb.toFixed(1)}mb` : "-"}
+        <Stat
+          label="code mem"
+          value={agg ? `${agg.memory_code_mb.toFixed(1)}mb` : "-"}
           tip="loaded BEAM bytecode."
         />
-        <Stat label="schedulers" value={agg ? `${agg.schedulers}` : "-"}
+        <Stat
+          label="schedulers"
+          value={agg ? `${agg.schedulers}` : "-"}
           tip="normal schedulers online per node."
         />
-        <Stat label="channels open" value={fmt(agg?.channels_open)}
+        <Stat
+          label="channels open"
+          value={fmt(agg?.channels_open)}
           tip="active channel processes (per-node sum)."
         />
-        <Stat label="total msgs" value={fmt(agg?.ingest_total)}
+        <Stat
+          label="total msgs"
+          value={fmt(agg?.ingest_total)}
           tip="cumulative messages ingested since last reset."
         />
       </StatGrid>
@@ -235,9 +268,8 @@ export function Dashboard() {
           fontSize: 12,
         }}
       >
-        &gt; this dashboard is the same shape we give customers for their own
-        project on app.hela.dev — just scoped to one project instead of the
-        whole cluster.
+        &gt; this dashboard is the same shape we give customers for their own project on
+        app.hela.dev — just scoped to one project instead of the whole cluster.
       </div>
     </div>
   );
@@ -290,8 +322,7 @@ function Stat({
 
 const NodeTable = memo(function NodeTable({ byNode }: { byNode: NodeMap }) {
   const nodes = Object.entries(byNode).sort();
-  if (nodes.length === 0)
-    return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
+  if (nodes.length === 0) return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
 
   return (
     <div style={{ fontSize: 11 }}>
@@ -335,9 +366,7 @@ const NodeTable = memo(function NodeTable({ byNode }: { byNode: NodeMap }) {
           <span style={{ textAlign: "right", color: "#a0a0a0" }}>
             {fmt(s.rates?.ingest_received)}
           </span>
-          <span style={{ textAlign: "right", color: "#a0a0a0" }}>
-            {s.system?.processes ?? 0}
-          </span>
+          <span style={{ textAlign: "right", color: "#a0a0a0" }}>{s.system?.processes ?? 0}</span>
           <span style={{ textAlign: "right", color: "#a0a0a0" }}>
             {s.system?.memory_mb?.toFixed(0) ?? 0}mb
           </span>
@@ -348,11 +377,7 @@ const NodeTable = memo(function NodeTable({ byNode }: { byNode: NodeMap }) {
   );
 });
 
-function Chart({
-  history,
-}: {
-  history: { at: number; in: number; persisted: number }[];
-}) {
+function Chart({ history }: { history: { at: number; in: number; persisted: number }[] }) {
   const w = 600;
   const h = 180;
   if (history.length < 2)
@@ -368,15 +393,7 @@ function Chart({
     <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
       <rect x={0} y={0} width={w} height={h} fill="none" stroke="#222" />
       {[0.25, 0.5, 0.75].map((p) => (
-        <line
-          key={p}
-          x1={0}
-          x2={w}
-          y1={h * p}
-          y2={h * p}
-          stroke="#1a1a1a"
-          strokeDasharray="2,3"
-        />
+        <line key={p} x1={0} x2={w} y1={h * p} y2={h * p} stroke="#1a1a1a" strokeDasharray="2,3" />
       ))}
       {series.map((s) => {
         const pts = history.map((snap, i) => {
@@ -409,8 +426,7 @@ function Chart({
 
 function LatencyPanel({ byNode, kind }: { byNode: NodeMap; kind: "broadcast" | "persist" }) {
   const nodes = Object.values(byNode);
-  if (nodes.length === 0)
-    return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
+  if (nodes.length === 0) return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
 
   const bucketMap = new Map<number, number>();
   let count = 0,
@@ -483,8 +499,7 @@ function LatencyPanel({ byNode, kind }: { byNode: NodeMap; kind: "broadcast" | "
 
 function IngestHeatmap({ byNode }: { byNode: NodeMap }) {
   const nodes = Object.entries(byNode).sort();
-  if (nodes.length === 0)
-    return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
+  if (nodes.length === 0) return <div style={{ color: "#555", fontSize: 11 }}>... waiting</div>;
 
   const keys = new Set<string>();
   for (const [, s] of nodes) Object.keys(s.ingest_by_channel || {}).forEach((k) => keys.add(k));
@@ -499,8 +514,7 @@ function IngestHeatmap({ byNode }: { byNode: NodeMap }) {
 
   let max = 0;
   for (const [, s] of nodes)
-    for (const v of Object.values(s.ingest_by_channel || {}))
-      if (v > max) max = v;
+    for (const v of Object.values(s.ingest_by_channel || {})) if (v > max) max = v;
   max = Math.max(1, max);
 
   return (
@@ -552,8 +566,7 @@ function IngestHeatmap({ byNode }: { byNode: NodeMap }) {
                 const pct = v / max;
                 const lightness = 6 + Math.round(pct * 22);
                 const saturation = Math.round(pct * 45);
-                const bg =
-                  v === 0 ? "#0f0f0f" : `hsl(120, ${saturation}%, ${lightness}%)`;
+                const bg = v === 0 ? "#0f0f0f" : `hsl(120, ${saturation}%, ${lightness}%)`;
                 return (
                   <td
                     key={g}
@@ -615,8 +628,7 @@ function aggregate(byNode: NodeMap) {
   if (nodes.length === 0) return null;
 
   const sum = (f: (s: Snapshot) => number) => nodes.reduce((a, s) => a + (f(s) || 0), 0);
-  const max = (f: (s: Snapshot) => number) =>
-    nodes.reduce((a, s) => Math.max(a, f(s) || 0), 0);
+  const max = (f: (s: Snapshot) => number) => nodes.reduce((a, s) => Math.max(a, f(s) || 0), 0);
 
   const last = nodes.reduce((a, s) => (s.at_ms > a.at_ms ? s : a), nodes[0]);
 

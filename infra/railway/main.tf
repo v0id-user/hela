@@ -12,14 +12,14 @@
 ##
 
 resource "railway_project" "hela" {
-  name                 = var.project_name
-  team_id              = var.workspace_id
-  default_environment  = {
+  name    = var.project_name
+  team_id = var.workspace_id
+  default_environment = {
     name = "production"
   }
-  description          = "managed real-time on BEAM — auto-provisioned via terraform"
-  has_pr_deploys       = false
-  private              = true
+  description    = "managed real-time on BEAM — auto-provisioned via terraform"
+  has_pr_deploys = false
+  private        = true
 }
 
 locals {

@@ -16,6 +16,11 @@ jobs:
   title:
     name: pr title follows commit-msg rule
     runs-on: ubuntu-latest
+    # Bot PRs get an exemption — their subject lines follow their own
+    # conventions (e.g. Dependabot uses Conventional Commits). Since
+    # every PR is squash-merged, the reviewer can rewrite the squash
+    # subject to match our rule at merge time if they want.
+    if: ${{ !contains(fromJson('["dependabot[bot]", "github-actions[bot]", "renovate[bot]"]'), github.event.pull_request.user.login) }}
     steps:
       - uses: actions/checkout@v4
       - name: validate PR title
@@ -59,6 +64,7 @@ jobs:
     # Redundant with squash-merge but useful for authors working
     # locally so bad commits surface before merge.
     runs-on: ubuntu-latest
+    if: ${{ !contains(fromJson('["dependabot[bot]", "github-actions[bot]", "renovate[bot]"]'), github.event.pull_request.user.login) }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }

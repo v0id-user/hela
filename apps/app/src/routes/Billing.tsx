@@ -16,11 +16,7 @@ export function Billing() {
           <KV k="customer id" v={a.stripe_customer_id ?? "—"} />
           <KV k="payment method" v="•••• 4242" />
           <div style={{ marginTop: 10 }}>
-            <a
-              href="https://billing.stripe.com/p/demo"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href="https://billing.stripe.com/p/demo" target="_blank" rel="noreferrer">
               <button>[ open stripe portal ]</button>
             </a>
           </div>
@@ -30,7 +26,10 @@ export function Billing() {
           <KV k="projects" v={ps.length} />
           <KV k="subscription total" v={"$" + total} />
           <KV k="overage est." v="$0" />
-          <KV k="next invoice" v={new Date(Date.now() + 86400 * 10 * 1000).toISOString().slice(0, 10)} />
+          <KV
+            k="next invoice"
+            v={new Date(Date.now() + 86400 * 10 * 1000).toISOString().slice(0, 10)}
+          />
         </Panel>
       </div>
 
@@ -57,9 +56,7 @@ export function Billing() {
               <td colSpan={2} style={{ padding: "6px 8px", color: "#888" }}>
                 total
               </td>
-              <td style={{ padding: "6px 8px", textAlign: "right", color: "#c9a76a" }}>
-                ${total}
-              </td>
+              <td style={{ padding: "6px 8px", textAlign: "right", color: "#c9a76a" }}>${total}</td>
             </tr>
           </tbody>
         </table>

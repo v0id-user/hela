@@ -31,7 +31,8 @@ defmodule HelaWeb.ProjectChannel do
             {source, msgs} = Channels.history(project_id, channel_name, nil, 50)
             nickname = params["nickname"] || socket.assigns.sub
 
-            {:ok, %{messages: msgs, source: source, node: to_string(node()), region: Hela.region()},
+            {:ok,
+             %{messages: msgs, source: source, node: to_string(node()), region: Hela.region()},
              socket
              |> assign(:channel, channel_name)
              |> assign(:nickname, nickname)}
@@ -65,9 +66,7 @@ defmodule HelaWeb.ProjectChannel do
             {:reply, {:ok, %{id: wire.id, quota: "over"}}, socket}
 
           {:error, {:rate_limited, retry_ms}} ->
-            {:reply,
-             {:error, %{reason: "rate_limited", retry_after_ms: retry_ms}},
-             socket}
+            {:reply, {:error, %{reason: "rate_limited", retry_after_ms: retry_ms}}, socket}
 
           {:error, reason} ->
             {:reply, {:error, %{reason: reason}}, socket}

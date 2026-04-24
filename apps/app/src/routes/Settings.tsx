@@ -20,10 +20,9 @@ export function Settings() {
 
         <Panel title="danger zone" right="irreversible">
           <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
-            deleting your account cancels all project subscriptions
-            immediately, revokes all API keys, and removes all message
-            history. the refund for the remainder of the billing period
-            prorates automatically.
+            deleting your account cancels all project subscriptions immediately, revokes all API
+            keys, and removes all message history. the refund for the remainder of the billing
+            period prorates automatically.
           </div>
           <button
             onClick={() => {

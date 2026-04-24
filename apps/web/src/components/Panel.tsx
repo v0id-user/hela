@@ -58,11 +58,7 @@ export function SectionHeading({
         {eyebrow}
       </div>
       <h2>{title}</h2>
-      {sub && (
-        <div style={{ marginTop: 6, color: "#888", fontSize: 13, maxWidth: 720 }}>
-          {sub}
-        </div>
-      )}
+      {sub && <div style={{ marginTop: 6, color: "#888", fontSize: 13, maxWidth: 720 }}>{sub}</div>}
     </div>
   );
 }

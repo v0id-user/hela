@@ -39,9 +39,13 @@ export class HelaChannel {
   /** Publish a message to this channel. Resolves with the server-assigned id. */
   publish(
     body: string,
-    opts?: { author?: string; replyTo?: string; timeoutMs?: number }
+    opts?: { author?: string; replyTo?: string; timeoutMs?: number },
   ): Promise<{ id: string; quota: "ok" | "over" }> {
-    return this.pushP("publish", { body, author: opts?.author, reply_to_id: opts?.replyTo }, opts?.timeoutMs);
+    return this.pushP(
+      "publish",
+      { body, author: opts?.author, reply_to_id: opts?.replyTo },
+      opts?.timeoutMs,
+    );
   }
 
   /** Fetch older messages. `before` is a message id returned by the server. */
@@ -72,7 +76,7 @@ export class HelaChannel {
         .receive("ok", (r: T) => resolve(r))
         .receive("error", (e) => reject(e))
         .receive("timeout", () =>
-          reject(Object.assign(new Error(`${event} timeout`), { reason: "timeout", event }))
+          reject(Object.assign(new Error(`${event} timeout`), { reason: "timeout", event })),
         );
     });
   }

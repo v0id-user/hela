@@ -72,9 +72,9 @@ export function Hero() {
         flat monthly pricing. no per-message billing.
       </h1>
       <p style={{ color: "#888", maxWidth: 720, marginBottom: 20 }}>
-        hela is a managed real-time backend built on Elixir/Phoenix. regional
-        clusters in five cities. JWT-authed WebSockets. the demo below is the
-        product — type something, other visitors see it.
+        hela is a managed real-time backend built on Elixir/Phoenix. regional clusters in five
+        cities. JWT-authed WebSockets. the demo below is the product — type something, other
+        visitors see it.
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>

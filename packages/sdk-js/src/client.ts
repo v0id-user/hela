@@ -82,7 +82,10 @@ export class HelaClient {
    */
   async measureRTT(channel: HelaChannel): Promise<number> {
     const t0 = performance.now();
-    await channel.raw.push("ping", { t: t0 }).receive("ok", () => {}).receive("error", () => {});
+    await channel.raw
+      .push("ping", { t: t0 })
+      .receive("ok", () => {})
+      .receive("error", () => {});
     return performance.now() - t0;
   }
 

@@ -25,9 +25,10 @@ if config_env() == :prod do
     http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: port],
     secret_key_base: secret_key_base
 
-  config :control, :internal_secret,
-    System.get_env("GATEWAY_INTERNAL_SECRET") ||
-      raise "GATEWAY_INTERNAL_SECRET is missing"
+  config :control,
+         :internal_secret,
+         System.get_env("GATEWAY_INTERNAL_SECRET") ||
+           raise("GATEWAY_INTERNAL_SECRET is missing")
 
   # Per-region gateway endpoints come from env as a JSON map, e.g.:
   #   GATEWAYS={"iad":"https://iad-gateway.internal","fra":"https://..."}

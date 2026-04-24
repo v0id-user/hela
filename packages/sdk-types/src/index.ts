@@ -21,11 +21,11 @@ export const REGIONS: Record<Region, { city: string; host: string }> = {
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 
 export const TIER_CAPS: Record<Tier, { messages: number; connections: number }> = {
-  free:    { messages: 1_000_000,      connections: 100 },
-  starter: { messages: 10_000_000,     connections: 1_000 },
-  growth:  { messages: 100_000_000,    connections: 10_000 },
-  scale:   { messages: 1_000_000_000,  connections: 100_000 },
-  ent:     { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
+  free: { messages: 1_000_000, connections: 100 },
+  starter: { messages: 10_000_000, connections: 1_000 },
+  growth: { messages: 100_000_000, connections: 10_000 },
+  scale: { messages: 1_000_000_000, connections: 100_000 },
+  ent: { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
 };
 
 export const TIER_PRICE: Record<Tier, number> = {

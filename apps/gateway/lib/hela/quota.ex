@@ -27,11 +27,11 @@ defmodule Hela.Quota do
   @rate :hela_quota_rate
   @tiers %{
     # msgs: monthly cap  ·  conns: hard live-connection cap  ·  rate: publishes/sec
-    "free"    => %{msgs: 1_000_000,       conns: 100,      rate: 5},
-    "starter" => %{msgs: 10_000_000,      conns: 1_000,    rate: 15},
-    "growth"  => %{msgs: 100_000_000,     conns: 10_000,   rate: 100},
-    "scale"   => %{msgs: 1_000_000_000,   conns: 100_000,  rate: 1_000},
-    "ent"     => %{msgs: :infinity,       conns: :infinity, rate: :infinity}
+    "free" => %{msgs: 1_000_000, conns: 100, rate: 5},
+    "starter" => %{msgs: 10_000_000, conns: 1_000, rate: 15},
+    "growth" => %{msgs: 100_000_000, conns: 10_000, rate: 100},
+    "scale" => %{msgs: 1_000_000_000, conns: 100_000, rate: 1_000},
+    "ent" => %{msgs: :infinity, conns: :infinity, rate: :infinity}
   }
 
   def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)

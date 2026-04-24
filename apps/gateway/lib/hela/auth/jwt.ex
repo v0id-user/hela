@@ -153,10 +153,14 @@ defmodule Hela.Auth.JWT do
 
   defp validate_claims(claims, project_id) do
     cond do
-      claims["pid"] != project_id -> {:error, :pid_mismatch}
+      claims["pid"] != project_id ->
+        {:error, :pid_mismatch}
+
       is_integer(claims["exp"]) and claims["exp"] < System.system_time(:second) ->
         {:error, :expired}
-      true -> :ok
+
+      true ->
+        :ok
     end
   end
 

@@ -91,7 +91,8 @@ defmodule Hela.Projects do
 
   @impl true
   def handle_call({:upsert, attrs}, _, state) do
-    row = struct(Row, Map.put(attrs, :updated_at, DateTime.utc_now() |> DateTime.truncate(:second)))
+    row =
+      struct(Row, Map.put(attrs, :updated_at, DateTime.utc_now() |> DateTime.truncate(:second)))
 
     Repo.insert!(row,
       on_conflict:
@@ -119,7 +120,9 @@ defmodule Hela.Projects do
 
   defp reload(project_id) do
     case Repo.get(Row, project_id) do
-      nil -> nil
+      nil ->
+        nil
+
       row ->
         :ets.insert(@table, {row.id, row})
         row

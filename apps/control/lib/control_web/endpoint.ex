@@ -8,7 +8,12 @@ defmodule ControlWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  plug Plug.Static, at: "/", from: :control, gzip: not code_reloading?, only: ControlWeb.static_paths()
+  plug Plug.Static,
+    at: "/",
+    from: :control,
+    gzip: not code_reloading?,
+    only: ControlWeb.static_paths()
+
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 

@@ -124,9 +124,7 @@ export function Pricing() {
             </div>
             <div style={{ fontSize: 28, color: "#e0e0e0", marginTop: 4 }}>
               {t.price}
-              {t.price !== "contact" && (
-                <span style={{ fontSize: 11, color: "#666" }}> /mo</span>
-              )}
+              {t.price !== "contact" && <span style={{ fontSize: 11, color: "#666" }}> /mo</span>}
             </div>
 
             <div style={{ marginTop: 10, fontSize: 11, color: "#c0c0c0" }}>
@@ -139,17 +137,10 @@ export function Pricing() {
             </div>
 
             <a
-              href={
-                t.slug === "ent"
-                  ? "mailto:hello@hela.dev"
-                  : signupUrl(t.slug)
-              }
+              href={t.slug === "ent" ? "mailto:hello@hela.dev" : signupUrl(t.slug)}
               style={{ display: "block", marginTop: 14 }}
             >
-              <button
-                className={t.featured ? "cta" : ""}
-                style={{ width: "100%" }}
-              >
+              <button className={t.featured ? "cta" : ""} style={{ width: "100%" }}>
                 [ {t.cta} ]
               </button>
             </a>
