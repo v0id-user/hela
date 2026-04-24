@@ -1,13 +1,43 @@
 services:
-  # Two Postgres databases share one cluster locally; in prod they live
-  # on different Fly Postgres clusters. Single-container is fine for dev.
+  # Two logical databases share one PostgreSQL 18 cluster locally; in
+  # production both live on the Railway postgres service (see
+  # infra/railway/main.tf). PG 18's async I/O worker pool runs by
+  # default — the `-c` flags below pin it explicitly so local and
+  # production drift stays small.
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_MULTIPLE_DATABASES: gateway_dev,control_dev
+      # initdb opts: PG 18 defaults data-checksums on; pinning keeps
+      # behaviour stable if the default ever flips back.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command:
+      - postgres
+      # PG 18 async I/O. Alpine ships without liburing, so `worker` is
+      # the only non-sync option. Default io_workers=3; bump to 6 so
+      # we have headroom for the ingest pipeline's batched COPYs.
+      - -c
+      - io_method=worker
+      - -c
+      - io_workers=6
+      # PG 18 honors effective_io_concurrency on Linux even without
+      # fadvise, so the old "set to 0 on containers" guidance is out.
+      - -c
+      - effective_io_concurrency=16
+      - -c
+      - maintenance_io_concurrency=16
+      # WAL tuning for the ingest hot path.
+      - -c
+      - wal_compression=zstd
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - max_connections=200
     ports:
       - "5432:5432"
     volumes:
