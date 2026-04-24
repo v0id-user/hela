@@ -1,0 +1,126 @@
+name: release-sdk-py
+
+# Publish hela to PyPI via OIDC trusted publishing — no long-lived
+# token in a secret, the workflow authenticates directly to PyPI with
+# a short-lived JWT minted by GitHub's OIDC provider.
+#
+# Triggered by a tag of the form `sdk-py-vX.Y.Z`. Tag the release after
+# bumping the version in packages/sdk-py/pyproject.toml:
+#
+#   cd packages/sdk-py
+#   # edit version in pyproject.toml
+#   git commit -am "release: sdk-py v0.2.0"
+#   git tag sdk-py-v0.2.0
+#   git push origin main --tags
+#
+# Requires one-time setup on PyPI:
+#   1. Create the project at https://pypi.org/manage/account/publishing/
+#   2. Trust this repo: v0id-user/hela, workflow: release-sdk-py.yml,
+#      environment: pypi
+#
+# The `environment: pypi` line below is what PyPI checks.
+
+on:
+  push:
+    tags:
+      - "sdk-py-v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build only, don't publish"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-sdk-py-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write  # required for OIDC trusted publishing
+
+jobs:
+  build:
+    name: build sdist + wheel
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with: { python-version: "3.13" }
+
+      - name: extract tag version
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # strip `sdk-py-v` prefix from the tag
+            tag="${GITHUB_REF_NAME#sdk-py-v}"
+            echo "version=${tag}" >> "$GITHUB_OUTPUT"
+          else
+            # manual run — read from pyproject
+            v=$(awk -F'"' '/^version/ {print $2}' packages/sdk-py/pyproject.toml)
+            echo "version=${v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: assert pyproject version matches tag
+        if: github.event_name == 'push'
+        working-directory: packages/sdk-py
+        run: |
+          expected="${{ steps.meta.outputs.version }}"
+          actual=$(awk -F'"' '/^version/ {print $2}' pyproject.toml)
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::tag sdk-py-v${expected} but pyproject.toml is ${actual}"
+            exit 1
+          fi
+
+      - name: run test suite before building
+        working-directory: packages/sdk-py
+        run: |
+          uv sync --all-extras
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+          uv run pytest tests/ -q
+
+      - name: build sdist + wheel
+        working-directory: packages/sdk-py
+        run: uv build
+
+      - name: show artefact metadata
+        working-directory: packages/sdk-py
+        run: |
+          ls -la dist/
+          uvx twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: packages/sdk-py/dist/
+          if-no-files-found: error
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Gate on the `pypi` environment. Production releases go through
+    # the environment's protection rules (required reviewers, branch
+    # allowlist) before PyPI sees the OIDC request.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/hela/${{ needs.build.outputs.version }}/
+    # Only publish on real tag pushes. Manual dispatch defaults to
+    # dry_run=true and stops at build.
+    if: github.event_name == 'push' || inputs.dry_run == false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          # Trusted publishing — no username, no password, no token.
+          # pypa/gh-action-pypi-publish reads the OIDC token from
+          # GITHUB_ACTIONS and exchanges it for a short-lived upload
+          # token at PyPI's OIDC endpoint.
