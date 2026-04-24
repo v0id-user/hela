@@ -179,6 +179,51 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - run: terraform fmt -check -recursive infra/
 
+  # ---------- sdk-py ---------------------------------------------------
+  #
+  # Two jobs that run in parallel:
+  #   - schema-drift: regenerate type modules and fail if the diff is
+  #     non-empty. Catches PRs that edit a JSON Schema without running
+  #     `make sdk.gen`.
+  #   - test-sdk-py: ruff + pytest. The live-integration suite is gated
+  #     behind HELA_LIVE=1 so it stays off here.
+
+  schema-drift:
+    name: schema · regenerate + diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with: { python-version: "3.13" }
+      - name: regenerate SDK types
+        run: uv run packages/sdk-gen/gen.py
+      - name: assert no drift
+        run: |
+          if ! git diff --exit-code --stat; then
+            echo ""
+            echo "::error::Generated SDK types are out of date. Run \`make sdk.gen\` and commit the result."
+            exit 1
+          fi
+
+  test-sdk-py:
+    name: sdk-py · ruff + pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-py
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with: { python-version: "3.13" }
+      - name: install deps
+        run: uv sync --all-extras
+      - name: ruff check
+        run: uv run ruff check src/ tests/
+      - name: ruff format
+        run: uv run ruff format --check src/ tests/
+      - name: pytest
+        run: uv run pytest tests/ -v
+
   # ---------- deploy selector ------------------------------------------
   #
   # One set of deploy jobs, parameterised by the GitHub environment:
