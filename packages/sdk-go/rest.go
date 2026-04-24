@@ -65,12 +65,26 @@ func (r *REST) MintToken(ctx context.Context, req TokenRequest) (TokenResponse, 
 	return resp, nil
 }
 
+// PlaygroundTokenOpts configures POST /playground/token.
+type PlaygroundTokenOpts struct {
+	Sub       string
+	Ephemeral bool
+}
+
 // PlaygroundToken issues a guest token for the public sandbox project.
 // No API key required.
 func (r *REST) PlaygroundToken(ctx context.Context, sub string) (PlaygroundToken, error) {
+	return r.PlaygroundTokenWithOpts(ctx, PlaygroundTokenOpts{Sub: sub})
+}
+
+// PlaygroundTokenWithOpts issues a playground token with optional ephemeral mode.
+func (r *REST) PlaygroundTokenWithOpts(ctx context.Context, o PlaygroundTokenOpts) (PlaygroundToken, error) {
 	body := map[string]any{}
-	if sub != "" {
-		body["sub"] = sub
+	if o.Sub != "" {
+		body["sub"] = o.Sub
+	}
+	if o.Ephemeral {
+		body["ephemeral"] = true
 	}
 	var resp PlaygroundToken
 	if err := r.post(ctx, "/playground/token", body, &resp, false); err != nil {

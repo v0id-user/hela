@@ -98,6 +98,7 @@ async fn setup_live(cfg: &LiveConfig) -> (String, String, String) {
                     vec!["write".into(), "presence:*".into()],
                 ]),
                 ttl_seconds: Some(600),
+                ephemeral: false,
             })
             .await
         {

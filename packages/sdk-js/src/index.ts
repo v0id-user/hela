@@ -17,12 +17,13 @@ export type { Region } from "./regions.js";
 export async function issuePlaygroundToken(opts?: {
   endpoint?: string;
   sub?: string;
-}): Promise<{ token: string; project_id: string; expires_in: number }> {
+  ephemeral?: boolean;
+}): Promise<{ token: string; project_id: string; expires_in: number; ephemeral?: boolean }> {
   const base = opts?.endpoint ?? "https://gateway-production-bfdf.up.railway.app";
   const res = await fetch(`${base}/playground/token`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sub: opts?.sub }),
+    body: JSON.stringify({ sub: opts?.sub, ephemeral: opts?.ephemeral }),
   });
 
   if (!res.ok) throw new Error(`playground/token failed: ${res.status}`);

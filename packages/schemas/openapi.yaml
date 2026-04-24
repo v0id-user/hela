@@ -217,8 +217,15 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 sub: { type: string, description: Opaque guest identifier. }
+                ephemeral:
+                  type: boolean
+                  description: |
+                    If true, the guest token is broadcast-only: publishes go to
+                    currently connected listeners, but the gateway skips cache
+                    replay and Postgres persistence for that token's traffic.
       responses:
         "200":
           description: Guest token
@@ -302,6 +309,12 @@ components:
           minimum: 1
           maximum: 86400
           default: 3600
+        ephemeral:
+          type: boolean
+          description: |
+            If true, traffic sent with the minted JWT is broadcast-only. The
+            gateway still delivers live messages to connected subscribers, but
+            skips cache replay and Postgres persistence for that token.
 
     TokenResponse:
       type: object

@@ -39,6 +39,7 @@ const token = await new SignJWT({
   pid: "proj_abc123",
   sub: userId,
   chans: [["read", "chat:*"], ["write", `chat:room:${roomId}`]],
+  ephemeral: false,
 })
   .setProtectedHeader({ alg: "RS256" })
   .setExpirationTime("5m")
@@ -54,10 +55,15 @@ const res = await fetch("https://gateway-production-bfdf.up.railway.app/v1/token
   body: JSON.stringify({
     sub: userId,
     chans: [["read", "chat:*"], ["write", `chat:room:${roomId}`]],
+    ephemeral: false,
   }),
 });
 const { token } = await res.json();
 ```
+
+Set `ephemeral: true` when you want broadcast-only traffic: connected
+subscribers still receive live messages, but the gateway skips replay
+history and Postgres persistence for that token's publishes.
 
 ## Regions
 

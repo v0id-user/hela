@@ -44,7 +44,8 @@ Body:
 {
   "sub": "end-user-alice",
   "chans": [["read", "chat:*"], ["write", "chat:*"]],
-  "ttl_seconds": 600
+  "ttl_seconds": 600,
+  "ephemeral": false
 }
 ```
 
@@ -57,6 +58,10 @@ Response:
 `chans` is a list of `[scope, pattern]` pairs. `scope` is `"read"` or
 `"write"`; `pattern` is a glob (`*` matches one segment, `**` matches
 the rest). `ttl_seconds` is capped at 86400.
+
+If `ephemeral` is `true`, traffic sent with that JWT is broadcast-only:
+connected subscribers still receive messages live, but the gateway skips
+cache replay and Postgres persistence for that token's traffic.
 
 ### `POST /v1/channels/:channel/publish` — server-side publish
 
@@ -106,6 +111,10 @@ Clients can surface this on internal dashboards.
 
 Used by the landing-page demos. No API key required. Returns a
 5-minute token scoped to `proj_public`.
+
+Pass `{"ephemeral": true}` when you want a broadcast-only playground
+token. This is what the landing-page hero uses: live viewers still see
+messages, but newcomers do not get replayed history from cache or DB.
 
 ### `GET /health` — liveness
 

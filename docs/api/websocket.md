@@ -20,6 +20,13 @@ Required query params:
 - `token` — the customer-signed JWT (or `playground=<token>` instead,
   for sandbox demos).
 
+Optional JWT claims relevant to transport behavior:
+
+- `ephemeral: true` — treat this client as broadcast-only. Joins still
+  succeed and live publishes still fan out, but the gateway skips join
+  replay, `history` replay, ETS cache writes, and Postgres persistence
+  for publishes sent with that token.
+
 ## frame format (Phoenix Channel v2)
 
 Every frame is a JSON array:

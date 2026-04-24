@@ -16,12 +16,17 @@ defmodule HelaWeb.PlaygroundController do
   alias Hela.Channels
 
   def token(conn, params) do
-    {:ok, token} = Playground.issue_guest_token(sub: params["sub"])
+    {:ok, token} =
+      Playground.issue_guest_token(
+        sub: params["sub"],
+        ephemeral: params["ephemeral"] == true
+      )
 
     json(conn, %{
       token: token,
       project_id: Playground.project_id(),
       expires_in: 300,
+      ephemeral: params["ephemeral"] == true,
       scopes: [
         %{scope: "read", pattern: "hello:**"},
         %{scope: "write", pattern: "hello:**"},

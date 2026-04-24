@@ -28,6 +28,13 @@ class TokenRequest(BaseModel):
     Scope grants. Each entry is `[scope, pattern]` where scope is `read` or `write` and pattern is a glob (`*` = one segment, `**` = rest).
     """
     ttl_seconds: conint(ge=1, le=86400) | None = 3600
+    ephemeral: bool | None = None
+    """
+    If true, traffic sent with the minted JWT is broadcast-only. The
+    gateway still delivers live messages to connected subscribers, but
+    skips cache replay and Postgres persistence for that token.
+
+    """
 
 
 class TokenResponse(BaseModel):

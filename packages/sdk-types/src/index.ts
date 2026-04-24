@@ -121,6 +121,7 @@ export interface HelaClaims {
   pid: string;
   sub: string;
   chans: Array<[scope: "read" | "write", pattern: string]>;
+  ephemeral?: boolean;
   exp?: number;
   iat?: number;
 }
