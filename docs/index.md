@@ -1,8 +1,12 @@
 # hela docs
 
-hela is a managed real-time service on Elixir/BEAM. You get a
-WebSocket endpoint per region, a REST surface for server-side use,
-and SDKs that wrap both.
+hela is an **open source** managed realtime platform on
+Elixir/BEAM, built to be a full stack alternative to proprietary
+pub/sub and presence services. The hosted clusters and the
+self-hostable monorepo are the same code: you get a WebSocket
+endpoint per region, a REST surface for server-side use, and SDKs
+that wrap both, with every wire and REST type generated from
+`packages/schemas/`.
 
 ```python
 from hela import connect
