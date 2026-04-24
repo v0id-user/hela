@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ensureClient, noteHeroError, noteHeroJoined, noteHeroRTT, uuidv7Timestamp } from "../lib/hela";
+import {
+  ensureClient,
+  noteHeroError,
+  noteHeroJoined,
+  noteHeroRTT,
+  uuidv7Timestamp,
+} from "../lib/hela";
 import type { HelaChannel, Message } from "@hela/sdk";
 import { signupUrl } from "../lib/urls";
 

@@ -64,7 +64,11 @@ export async function ensureClient(): Promise<HelaClient> {
     return singleton;
   }
 
-  singleton = connect({ region: IS_DEV ? "dev" : "iad", playgroundToken: token, endpoint: API_BASE });
+  singleton = connect({
+    region: IS_DEV ? "dev" : "iad",
+    playgroundToken: token,
+    endpoint: API_BASE,
+  });
   installSocketHooks(singleton);
   return singleton;
 }
