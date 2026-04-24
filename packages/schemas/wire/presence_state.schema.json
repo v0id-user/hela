@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hela.dev/schemas/wire/presence_state.schema.json",
+  "title": "PresenceState",
+  "description": "Full roster emitted once after join. Keys are nicknames; values hold one metadata record per live connection that user has (same user connected twice = two metas).",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/definitions/Entry" },
+  "definitions": {
+    "Entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metas"],
+      "properties": {
+        "metas": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Meta" }
+        }
+      }
+    },
+    "Meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["online_at", "node"],
+      "properties": {
+        "online_at": {
+          "type": "integer",
+          "description": "Unix seconds — when this meta was first tracked."
+        },
+        "node": {
+          "type": "string",
+          "description": "Erlang node that owns this connection."
+        },
+        "region": {
+          "type": "string",
+          "description": "Region slug of the gateway."
+        },
+        "phx_ref": {
+          "type": "string",
+          "description": "Internal tracker ref; carried so the CRDT can tell entries apart."
+        }
+      }
+    }
+  }
+}

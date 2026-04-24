@@ -1,0 +1,336 @@
+openapi: 3.1.0
+info:
+  title: hela
+  version: "0.1.0"
+  summary: Managed real-time on BEAM. REST surface.
+  description: |
+    The HTTP surface that complements hela's WebSocket protocol.
+
+    - **`/v1/*`** is customer-facing. Auth = `Authorization: Bearer hk_<prefix>_<secret>`
+      API key. One key binds to one project; the project's region is fixed
+      at creation.
+    - **`/playground/*`** is public, no auth. Bound to the sandbox project
+      `proj_public`. Heavily rate-limited. Used by the landing-page demo.
+    - **`/cluster/snapshot`** exposes the per-node metrics stream as a
+      one-shot REST read.
+    - **`/_internal/*`** is gated by the shared secret `x-hela-internal`
+      and only called by control during project sync. NOT documented here.
+
+    For the WebSocket surface, see `docs/api/websocket.md` or
+    `packages/schemas/wire/*.schema.json`.
+
+  license:
+    name: AGPL-3.0-or-later
+    identifier: AGPL-3.0-or-later
+
+servers:
+  - url: https://iad.hela.dev
+    description: US East (Ashburn)
+  - url: https://sjc.hela.dev
+    description: US West (San Jose)
+  - url: https://fra.hela.dev
+    description: EU (Frankfurt)
+  - url: https://sin.hela.dev
+    description: Asia (Singapore)
+  - url: https://syd.hela.dev
+    description: Australia (Sydney)
+  - url: http://localhost:4001
+    description: Local dev
+
+security:
+  - apiKey: []
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      security: []
+      tags: [meta]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+
+  /regions:
+    get:
+      summary: List the regions this gateway fleet knows about
+      security: []
+      tags: [meta]
+      responses:
+        "200":
+          description: Region list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [regions, you_are_on]
+                properties:
+                  you_are_on:
+                    type: string
+                    description: Region slug of the gateway that answered.
+                  regions:
+                    type: array
+                    items: { $ref: "#/components/schemas/Region" }
+
+  /v1/tokens:
+    post:
+      summary: Mint a short-lived end-user JWT
+      description: |
+        Server-side helper. Called from your backend with an API key. We
+        sign a JWT using the project's per-project HS256 secret; the SDK
+        passes it as `token` on the WebSocket connect.
+
+        If you'd rather sign tokens yourself with your own RSA keypair,
+        register the public key on the project dashboard and skip this
+        endpoint entirely.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TokenRequest" }
+      responses:
+        "200":
+          description: Signed JWT
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500":
+          description: Project's signing secret hasn't landed on this gateway yet (retry in a moment).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  detail: { type: string }
+
+  /v1/channels/{channel}/publish:
+    post:
+      summary: Publish a message
+      tags: [channels]
+      parameters:
+        - $ref: "#/components/parameters/ChannelPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublishRequest" }
+      responses:
+        "200":
+          description: Accepted, id minted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublishResponse" }
+        "400":
+          description: Body too large (over 4KB) or similar validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429":
+          description: Rate-limited
+          headers:
+            retry-after:
+              schema: { type: integer }
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: [rate_limited]
+                  retry_after_ms: { type: integer }
+
+  /v1/channels/{channel}/history:
+    get:
+      summary: Cursor-paginated history
+      tags: [channels]
+      parameters:
+        - $ref: "#/components/parameters/ChannelPath"
+        - name: before
+          in: query
+          schema: { type: string }
+          description: UUIDv7 of the oldest message on the previous page.
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Messages, oldest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HistoryResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /playground/token:
+    post:
+      summary: Issue a guest playground JWT
+      description: |
+        Public, unauthenticated. Tokens expire in 5 minutes and are
+        scoped to the shared `proj_public` sandbox — usable for
+        `hello:**` and `demo:**` channels only.
+      security: []
+      tags: [playground]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sub: { type: string, description: Opaque guest identifier. }
+      responses:
+        "200":
+          description: Guest token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlaygroundToken" }
+
+  /cluster/snapshot:
+    get:
+      summary: Latest per-node metrics snapshot (public, read-only)
+      description: |
+        What the public live dashboard at hela.dev/dashboard consumes
+        via the `metrics:live` WebSocket channel — a single frame, as
+        REST. Schema matches the `Hela.Metrics` sampler output.
+      security: []
+      tags: [meta]
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                description: See Hela.Metrics — schema intentionally loose, may evolve.
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: "hk_<prefix>_<secret>"
+      description: |
+        Server-side API key, issued at project creation. Treat as a
+        password; never ship in a browser bundle.
+
+  parameters:
+    ChannelPath:
+      name: channel
+      in: path
+      required: true
+      schema: { type: string }
+      description: Channel name (no project prefix). Allowed chars match `[A-Za-z0-9:_\-\.]`.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, enum: [unauthorized] }
+
+  schemas:
+    Region:
+      type: object
+      required: [slug, city, host]
+      properties:
+        slug: { type: string }
+        city: { type: string }
+        host: { type: string }
+
+    TokenRequest:
+      type: object
+      required: [sub]
+      additionalProperties: false
+      properties:
+        sub:
+          type: string
+          description: Opaque id for the end-user this token represents.
+        chans:
+          type: array
+          description: Scope grants. Each entry is `[scope, pattern]` where scope is `read` or `write` and pattern is a glob (`*` = one segment, `**` = rest).
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items: { type: string }
+        ttl_seconds:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          default: 3600
+
+    TokenResponse:
+      type: object
+      required: [token, expires_in]
+      properties:
+        token: { type: string, description: "Bearer JWT, HS256-signed with the project's secret." }
+        expires_in: { type: integer, description: "Seconds until exp." }
+
+    PublishRequest:
+      type: object
+      required: [body]
+      additionalProperties: false
+      properties:
+        body: { type: string, maxLength: 4000 }
+        author: { type: string }
+        reply_to_id: { type: string }
+
+    PublishResponse:
+      type: object
+      required: [id, quota, inserted_at]
+      properties:
+        id: { type: string }
+        inserted_at: { type: string, format: date-time }
+        quota: { type: string, enum: [ok, over] }
+
+    HistoryResponse:
+      type: object
+      required: [source, messages]
+      properties:
+        source: { type: string, enum: [cache, mixed, db] }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/Message" }
+
+    Message:
+      type: object
+      required: [id, channel, author, body, node, inserted_at]
+      properties:
+        id: { type: string }
+        channel: { type: string }
+        author: { type: string }
+        body: { type: string }
+        reply_to_id: { type: string, nullable: true }
+        node: { type: string }
+        inserted_at: { type: string, format: date-time }
+
+    PlaygroundToken:
+      type: object
+      required: [token, project_id, expires_in, scopes]
+      properties:
+        token: { type: string }
+        project_id: { type: string, const: proj_public }
+        expires_in: { type: integer }
+        scopes:
+          type: array
+          items:
+            type: object
+            properties:
+              scope: { type: string, enum: [read, write] }
+              pattern: { type: string }

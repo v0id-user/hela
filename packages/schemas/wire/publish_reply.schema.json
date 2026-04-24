@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hela.dev/schemas/wire/publish_reply.schema.json",
+  "title": "PublishReply",
+  "description": "Server's reply to a publish event.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "quota"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The UUIDv7 the server minted for this message.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "quota": {
+      "type": "string",
+      "enum": ["ok", "over"],
+      "description": "Was this message within the project's monthly cap? `over` means delivered + persisted, but metered for overage billing."
+    }
+  }
+}
