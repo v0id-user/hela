@@ -1,7 +1,8 @@
 defmodule Control.Release do
   @moduledoc """
-  Called from `release_command` in fly.toml:
-  `bin/control eval "Control.Release.migrate"`.
+  Called from `rel/overlays/bin/server` on release start:
+  `bin/control eval "Control.Release.migrate"`. Boots only what the
+  migration needs — no Endpoint, no channel processes.
   """
   @app :control
 

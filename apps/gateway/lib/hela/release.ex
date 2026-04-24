@@ -1,7 +1,8 @@
 defmodule Hela.Release do
   @moduledoc """
-  Called from `release_command` in fly.toml: `bin/hela eval "Hela.Release.migrate"`.
-  Boots only what the migration needs — no Endpoint, no channel processes.
+  Called from `rel/overlays/bin/server` on release start:
+  `bin/hela eval "Hela.Release.migrate"`. Boots only what the
+  migration needs — no Endpoint, no channel processes.
   """
   @app :hela
 
