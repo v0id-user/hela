@@ -21,7 +21,7 @@ kill_timeout = 30
   dockerfile = "apps/gateway/Dockerfile"
 
 [env]
-  PHX_HOST = "{{REGION}}.hela.dev"
+  PHX_HOST = "hela-gateway-{{REGION}}.fly.dev"
   PHX_SERVER = "true"
   HELA_REGION = "{{REGION}}"
   # dns_cluster query: top1.nearest.of.<app>.internal resolves to all

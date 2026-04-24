@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://hela.dev"
+Homepage = "https://github.com/v0id-user/hela"
 Repository = "https://github.com/v0id-user/hela"
 Issues = "https://github.com/v0id-user/hela/issues"
 

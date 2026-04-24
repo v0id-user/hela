@@ -1,6 +1,6 @@
 # @hela/sdk
 
-TypeScript SDK for [hela](https://hela.dev). Browser + Node.
+TypeScript SDK for [hela](https://github.com/v0id-user/hela). Browser + Node.
 
 ```
 npm install @hela/sdk
@@ -82,15 +82,13 @@ Pass `ephemeral: true` for broadcast-only playground traffic; omit it (or
 
 ## Regions
 
-hela runs regional clusters. Pick the one closest to your users.
+hela runs regional clusters. Today the hosted plane is a single `ams`
+service; `iad`, `sjc`, `sin`, `syd` are planned regions and the SDK
+transparently routes them to the live gateway until they come up.
 
-| Region | City         | Host             |
-| ------ | ------------ | ---------------- |
-| iad    | Ashburn      | iad.hela.dev     |
-| sjc    | San Jose     | sjc.hela.dev     |
-| ams    | Amsterdam    | ams.hela.dev     |
-| sin    | Singapore    | sin.hela.dev     |
-| syd    | Sydney       | syd.hela.dev     |
+| Region | City         | Host                                       |
+| ------ | ------------ | ------------------------------------------ |
+| ams    | Amsterdam    | gateway-production-bfdf.up.railway.app     |
 
 `region` is fixed per project. Multi-region replication is an opt-in on
 Scale and Enterprise tiers.

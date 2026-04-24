@@ -10,7 +10,7 @@
     • the [ hela ] wordmark, centred left
     • one-line positioning statement in silver
     • an ASCII-style data-flow strip underneath, faded, like a log tail
-    • bottom-right: the mark + the domain "hela.dev"
+    • bottom-right: the mark + the repo URL (github.com/v0id-user/hela)
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <title>hela — managed real-time on BEAM</title>

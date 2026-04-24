@@ -5,7 +5,7 @@ primary_region = "iad"
   dockerfile = "apps/app/Dockerfile"
 
 [env]
-  VITE_HELA_CONTROL = "https://app-api.hela.dev"
+  VITE_HELA_CONTROL = "https://hela-control.fly.dev"
   VITE_HELA_GATEWAY = "https://gateway-production-bfdf.up.railway.app"
 
 [[services]]

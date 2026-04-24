@@ -11,7 +11,7 @@ kill_timeout = 30
   dockerfile = "apps/control/Dockerfile"
 
 [env]
-  PHX_HOST = "app.hela.dev"
+  PHX_HOST = "hela-control.fly.dev"
   PHX_SERVER = "true"
   POOL_SIZE = "10"
   # GATEWAYS is a JSON map from region slug to internal gateway URL.

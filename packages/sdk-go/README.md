@@ -1,6 +1,6 @@
 # hela-go
 
-Go SDK for [hela](https://hela.dev) — managed real-time on BEAM.
+Go SDK for [hela](https://github.com/v0id-user/hela) — managed real-time on BEAM.
 Go 1.23+, context-aware, depends only on [`coder/websocket`](https://github.com/coder/websocket)
 and the stdlib.
 

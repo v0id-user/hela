@@ -42,12 +42,14 @@ the one closest to most of your users:
 
 | slug | city | host |
 | --- | --- | --- |
-| `iad` | Ashburn, US East | `iad.hela.dev` |
-| `sjc` | San Jose, US West | `sjc.hela.dev` |
-| `ams` | Amsterdam, EU | `ams.hela.dev` |
-| `sin` | Singapore, Asia | `sin.hela.dev` |
-| `syd` | Sydney, AU | `syd.hela.dev` |
+| `ams` | Amsterdam, EU | `gateway-production-bfdf.up.railway.app` |
 | `dev` | localhost | `localhost:4001` |
+
+Only `ams` is live today on the hosted plane (single Railway service).
+`iad`, `sjc`, `sin`, `syd` are planned regions; until they come up,
+every slug resolves to the Amsterdam gateway via the SDK region map.
+The URL above is provisional — a real custom domain will land before
+wider launch.
 
 Regions are isolated — there is no cross-region BEAM mesh. Scale-tier
 projects can opt into multi-region relay; see [architecture](./architecture.md)

@@ -237,9 +237,10 @@ paths:
     get:
       summary: Latest per-node metrics snapshot (public, read-only)
       description: |
-        What the public live dashboard at hela.dev/dashboard consumes
-        via the `metrics:live` WebSocket channel — a single frame, as
-        REST. Schema matches the `Hela.Metrics` sampler output.
+        What the public live dashboard (web service `/dashboard`
+        route) consumes via the `metrics:live` WebSocket channel — a
+        single frame, as REST. Schema matches the `Hela.Metrics`
+        sampler output.
       security: []
       tags: [meta]
       responses:
