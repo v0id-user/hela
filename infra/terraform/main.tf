@@ -9,7 +9,7 @@ terraform {
 
     stripe = {
       source  = "lukasaron/stripe"
-      version = "~> 1.0"
+      version = "~> 3.4"
     }
   }
 }
