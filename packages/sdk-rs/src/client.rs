@@ -220,11 +220,26 @@ mod tests {
     #[test]
     fn http_url_per_region() {
         for (region, want) in [
-            (Region::Iad, "https://gateway-production-bfdf.up.railway.app"),
-            (Region::Sjc, "https://gateway-production-bfdf.up.railway.app"),
-            (Region::Ams, "https://gateway-production-bfdf.up.railway.app"),
-            (Region::Sin, "https://gateway-production-bfdf.up.railway.app"),
-            (Region::Syd, "https://gateway-production-bfdf.up.railway.app"),
+            (
+                Region::Iad,
+                "https://gateway-production-bfdf.up.railway.app",
+            ),
+            (
+                Region::Sjc,
+                "https://gateway-production-bfdf.up.railway.app",
+            ),
+            (
+                Region::Ams,
+                "https://gateway-production-bfdf.up.railway.app",
+            ),
+            (
+                Region::Sin,
+                "https://gateway-production-bfdf.up.railway.app",
+            ),
+            (
+                Region::Syd,
+                "https://gateway-production-bfdf.up.railway.app",
+            ),
             (Region::Dev, "http://localhost:4001"),
         ] {
             let cfg = Config {
@@ -251,7 +266,10 @@ mod tests {
             region: Region::Iad,
             ..Default::default()
         };
-        assert_eq!(ws_url(&cfg), "wss://gateway-production-bfdf.up.railway.app/socket/websocket");
+        assert_eq!(
+            ws_url(&cfg),
+            "wss://gateway-production-bfdf.up.railway.app/socket/websocket"
+        );
 
         let cfg = Config {
             region: Region::Dev,
