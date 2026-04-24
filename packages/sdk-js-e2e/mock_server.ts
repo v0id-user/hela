@@ -71,6 +71,8 @@ type Snapshot = {
 
 type SocketData = {
   channels: Map<string, { joinRef: string | null; nickname?: string }>;
+  /** From `playground` JWT claim; broadcast-only for `hello:world`. */
+  ephemeral: boolean;
 };
 
 const PORT = Number(process.env.HELA_E2E_MOCK_PORT ?? "4010");
@@ -89,9 +91,27 @@ const presenceByTopic = new Map<string, Map<string, { phx_ref: string }>>();
 let messageCounter = 0;
 let tokenCounter = 0;
 
+const HELLO_WORLD_TOPIC = "chan:proj_public:hello:world";
+
+/** Seeded history so e2e can assert ephemeral hero join does not replay it. */
+function seedHelloWorldHistory(): void {
+  const message: Message = {
+    id: "00000001-0000-7000-8000-000000000099",
+    channel: "hello:world",
+    author: "seed",
+    body: "__e2e_seed_hello_world__",
+    reply_to_id: null,
+    node: NODE_NAME,
+    inserted_at: new Date(0).toISOString(),
+  };
+  messageStore.set(HELLO_WORLD_TOPIC, [message]);
+}
+
+seedHelloWorldHistory();
+
 const server = Bun.serve<SocketData>({
   port: PORT,
-  fetch(req, serverInstance) {
+  async fetch(req, serverInstance) {
     const url = new URL(req.url);
 
     if (req.method === "OPTIONS") {
@@ -103,6 +123,7 @@ const server = Bun.serve<SocketData>({
         serverInstance.upgrade(req, {
           data: {
             channels: new Map(),
+            ephemeral: playgroundEphemeralFromReq(req),
           },
         })
       ) {
@@ -113,7 +134,14 @@ const server = Bun.serve<SocketData>({
     }
 
     if (url.pathname === "/playground/token" && req.method === "POST") {
-      return jsonResponse(mintPlaygroundToken(), 200);
+      let ephemeral = false;
+      try {
+        const body = (await req.json()) as { ephemeral?: boolean };
+        ephemeral = body.ephemeral === true;
+      } catch {
+        /* empty or non-JSON body */
+      }
+      return jsonResponse(mintPlaygroundToken(ephemeral), 200);
     }
 
     if (url.pathname === "/health" && req.method === "GET") {
@@ -187,7 +215,7 @@ function handleFrame(ws: ServerWebSocket<SocketData>, frame: Frame): void {
     ws.data.channels.set(topic, { joinRef });
     if (!subscribers.has(topic)) subscribers.set(topic, new Set());
     subscribers.get(topic)!.add(ws);
-    reply(ws, joinRef, ref, topic, joinPayload(topic));
+    reply(ws, joinRef, ref, topic, joinPayload(ws, topic));
     if (topic === "metrics:live") sendMetricsSnapshot(ws);
     if (isPresenceTopic(topic)) broadcastPresence(topic);
     return;
@@ -200,7 +228,15 @@ function handleFrame(ws: ServerWebSocket<SocketData>, frame: Frame): void {
 
   if (event === "publish") {
     const body = payload as { body?: string; author?: string; reply_to_id?: string | null };
-    const message = appendMessage(topic, body.body ?? "", body.author ?? "anon", body.reply_to_id ?? null);
+    const ephemeralHello = ws.data.ephemeral && logicalChannelName(topic) === "hello:world";
+    const message = ephemeralHello
+      ? mintEphemeralWireMessage(
+          topic,
+          body.body ?? "",
+          body.author ?? "anon",
+          body.reply_to_id ?? null,
+        )
+      : appendMessage(topic, body.body ?? "", body.author ?? "anon", body.reply_to_id ?? null);
     reply(ws, joinRef, ref, topic, { id: message.id, quota: "ok" });
     broadcast(topic, [joinRef, null, topic, "message", message]);
     return;
@@ -208,7 +244,7 @@ function handleFrame(ws: ServerWebSocket<SocketData>, frame: Frame): void {
 
   if (event === "history") {
     const args = payload as { before?: string; limit?: number };
-    reply(ws, joinRef, ref, topic, historyPayload(topic, args.before, args.limit));
+    reply(ws, joinRef, ref, topic, historyPayload(ws, topic, args.before, args.limit));
     return;
   }
 
@@ -227,9 +263,18 @@ function handleFrame(ws: ServerWebSocket<SocketData>, frame: Frame): void {
   reply(ws, joinRef, ref, topic, {});
 }
 
-function joinPayload(topic: string) {
+function joinPayload(ws: ServerWebSocket<SocketData>, topic: string) {
   if (topic === "metrics:live") {
     return {};
+  }
+
+  if (ws.data.ephemeral && logicalChannelName(topic) === "hello:world") {
+    return {
+      messages: [],
+      source: "cache",
+      node: NODE_NAME,
+      region: REGION,
+    };
   }
 
   return {
@@ -240,7 +285,16 @@ function joinPayload(topic: string) {
   };
 }
 
-function historyPayload(topic: string, before?: string, limit = 20) {
+function historyPayload(
+  ws: ServerWebSocket<SocketData>,
+  topic: string,
+  before?: string,
+  limit = 20,
+) {
+  if (ws.data.ephemeral && logicalChannelName(topic) === "hello:world") {
+    return { source: "cache", messages: [] };
+  }
+
   const all = [...(messageStore.get(topic) ?? [])];
   const filtered = before ? all.filter((message) => message.id < before) : all;
   return {
@@ -249,7 +303,30 @@ function historyPayload(topic: string, before?: string, limit = 20) {
   };
 }
 
-function appendMessage(topic: string, body: string, author: string, replyToId: string | null): Message {
+/** Live wire message for ephemeral `hello:world` without touching the history store. */
+function mintEphemeralWireMessage(
+  topic: string,
+  body: string,
+  author: string,
+  replyToId: string | null,
+): Message {
+  return {
+    id: nextUuidLikeId(),
+    channel: logicalChannelName(topic),
+    author,
+    body,
+    reply_to_id: replyToId,
+    node: NODE_NAME,
+    inserted_at: new Date().toISOString(),
+  };
+}
+
+function appendMessage(
+  topic: string,
+  body: string,
+  author: string,
+  replyToId: string | null,
+): Message {
   const message: Message = {
     id: nextUuidLikeId(),
     channel: logicalChannelName(topic),
@@ -338,7 +415,10 @@ function sendMetricsSnapshot(ws: ServerWebSocket<SocketData>): void {
       channels_open: subscribers.size,
     },
     pipeline: { queue_depth: 0 },
-    cache: { total: Array.from(messageStore.values()).reduce((sum, list) => sum + list.length, 0), by_project: { proj_public: 4 } },
+    cache: {
+      total: Array.from(messageStore.values()).reduce((sum, list) => sum + list.length, 0),
+      by_project: { proj_public: 4 },
+    },
     quota: { proj_public: { messages: 4, connections: 3 } },
     ingest_by_channel: {
       "demo:channels": 2,
@@ -387,25 +467,45 @@ function histogram(p50Us: number) {
   };
 }
 
-function mintPlaygroundToken() {
+function mintPlaygroundToken(ephemeral = false) {
   tokenCounter += 1;
   const exp = Math.floor((Date.now() + 5 * 60_000) / 1000);
+  const claims: Record<string, unknown> = {
+    pid: "proj_public",
+    sub: `guest-${tokenCounter}`,
+    exp,
+    iat: Math.floor(Date.now() / 1000),
+    chans: [
+      ["read", "hello:*"],
+      ["write", "hello:*"],
+      ["read", "demo:**"],
+      ["write", "demo:**"],
+    ],
+  };
+  if (ephemeral) claims.ephemeral = true;
+
   return {
-    token: mockJwt({
-      pid: "proj_public",
-      sub: `guest-${tokenCounter}`,
-      exp,
-      iat: Math.floor(Date.now() / 1000),
-      chans: [
-        ["read", "hello:*"],
-        ["write", "hello:*"],
-        ["read", "demo:**"],
-        ["write", "demo:**"],
-      ],
-    }),
+    token: mockJwt(claims),
     project_id: "proj_public",
     expires_in: 300,
+    ...(ephemeral ? { ephemeral: true } : {}),
   };
+}
+
+function playgroundEphemeralFromReq(req: Request): boolean {
+  const url = new URL(req.url);
+  const pg = url.searchParams.get("playground");
+  if (!pg) return false;
+  try {
+    const parts = pg.split(".");
+    if (parts.length < 2) return false;
+    const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as {
+      ephemeral?: boolean;
+    };
+    return claims.ephemeral === true;
+  } catch {
+    return false;
+  }
 }
 
 function mockJwt(claims: Record<string, unknown>): string {

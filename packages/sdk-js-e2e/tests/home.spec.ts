@@ -33,13 +33,16 @@ test("landing hero connects and signup routes to the app", async ({ page }) => {
   expect(debug.reconnects).toBeLessThanOrEqual(1);
   expect(telemetry.consoleErrors).toEqual([]);
   expect(telemetry.reconnectLogs).toEqual([]);
-  expect(telemetry.webSocketUrls.filter((url) => url.includes("/socket/websocket"))).toHaveLength(1);
+  const sockets = telemetry.webSocketUrls.filter((url) => url.includes("/socket/websocket"));
+  expect(sockets.length).toBeGreaterThanOrEqual(2);
 });
 
 test("landing session refreshes the playground token and reconnects cleanly", async ({ page }) => {
+  const ts = Date.now();
   const calls = await mockPlaygroundTokens(page, [
-    await mintPlaygroundToken(`playwright-first-${Date.now()}`),
-    await mintPlaygroundToken(`playwright-second-${Date.now()}`),
+    await mintPlaygroundToken(`playwright-hero-a-${ts}`, { ephemeral: true }),
+    await mintPlaygroundToken(`playwright-demo-b-${ts}`, { ephemeral: false }),
+    await mintPlaygroundToken(`playwright-hero-c-${ts}`, { ephemeral: true }),
   ]);
   const telemetry = trackBrowserSignals(page);
 
@@ -47,10 +50,10 @@ test("landing session refreshes the playground token and reconnects cleanly", as
   await waitForHelaReady(page);
 
   const before = await readHelaDebug(page);
-  expect(calls()).toBe(1);
+  expect(calls()).toBe(2);
 
   await forceTokenRefresh(page);
-  await expect.poll(calls).toBe(2);
+  await expect.poll(calls).toBe(3);
 
   await forceReconnect(page);
   await page.waitForFunction(
@@ -66,4 +69,13 @@ test("landing session refreshes the playground token and reconnects cleanly", as
   expect(after.reconnects).toBeLessThanOrEqual(before.reconnects + 1);
   expect(telemetry.consoleErrors).toEqual([]);
   expect(telemetry.reconnectLogs).toEqual([]);
+});
+
+test("hero ephemeral join does not replay seeded hello:world history", async ({ page }) => {
+  test.skip(!!process.env.HELA_E2E_BASE_URL, "mock seeds hello:world only in preview");
+
+  await page.goto(appUrl("/"));
+  await waitForHelaReady(page);
+
+  await expect(page.getByTestId("hero-channel")).not.toContainText("__e2e_seed_hello_world__");
 });
