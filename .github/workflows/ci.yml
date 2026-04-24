@@ -179,6 +179,35 @@ jobs:
       - run: cd apps/web && bun run build
       - run: cd apps/app && bun run build
 
+  test-sdk-js-e2e-preview:
+    name: sdk-js · e2e preview
+    runs-on: ubuntu-latest
+    needs: [lint-js]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: bun-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - name: install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: packages/sdk-js-e2e
+      - name: run preview browser e2e
+        run: bun run test:e2e
+      - name: upload Playwright preview artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-preview-artifacts
+          path: |
+            packages/sdk-js-e2e/playwright-report/
+            packages/sdk-js-e2e/test-results/
+          if-no-files-found: ignore
+
   lint-terraform:
     name: terraform · fmt
     runs-on: ubuntu-latest
@@ -599,3 +628,38 @@ jobs:
         env:
           HELA_GATEWAY: ${{ env.VITE_HELA_GATEWAY }}
           HELA_CONTROL: ${{ env.VITE_HELA_CONTROL }}
+
+  test-sdk-js-e2e-deployed:
+    name: sdk-js · e2e playground
+    needs: [smoke]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: bun-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - name: install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: packages/sdk-js-e2e
+      - name: run deployed browser e2e
+        run: bun run test:e2e
+        env:
+          HELA_E2E_BASE_URL: ${{ env.HELA_WEB_URL }}
+          HELA_GATEWAY_URL: ${{ env.HELA_GATEWAY_URL }}
+          HELA_CONTROL_URL: ${{ env.HELA_CONTROL_URL }}
+          HELA_APP_URL: ${{ env.HELA_APP_URL }}
+      - name: upload Playwright deployed artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-deployed-artifacts
+          path: |
+            packages/sdk-js-e2e/playwright-report/
+            packages/sdk-js-e2e/test-results/
+          if-no-files-found: ignore
