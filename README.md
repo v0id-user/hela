@@ -12,7 +12,8 @@
 
 <p align="center">
   <strong>Managed real-time infrastructure on BEAM.</strong><br/>
-  Regional clusters · channels · presence · history · sub-100ms · flat monthly pricing.
+  Regional clusters · channels · presence · history · sub-100ms · flat monthly pricing.<br/>
+  <em>Open source end to end: the managed service and self hosted paths ship from this tree.</em>
 </p>
 
 <p align="center">
@@ -28,6 +29,14 @@
 This repo is the whole thing: the data plane, the control plane, four
 SDKs, the marketing site, and the customer dashboard — one monorepo,
 four independently deployable apps.
+
+Competing on realtime with well-funded incumbents is unforgiving. **hela
+is the open source alternative** for teams that want the same
+primitives without a black box: read the server, run your own
+regions, diff the wire protocol, and own the whole stack under the
+AGPL (or a commercial license if that fits your situation). The
+product you see in production is the code in this repository, not a
+separate enterprise edition.
 
 ```
 hela/
