@@ -2,22 +2,26 @@ import { Socket } from "phoenix";
 import { Region, wsUrl, httpUrl } from "./regions.js";
 import { HelaChannel } from "./channel.js";
 
+type HelaTokenSource = string | (() => string);
+
 export interface HelaConfig {
   /** Which region's cluster to talk to. SDK resolves the WS endpoint. */
   region: Region;
   /**
    * A JWT grant signed by your backend. The canonical auth path —
    * your backend signs a short-lived token scoped to the channels
-   * and user you want. Pass as a string or a getter for auto-rotation.
+   * and user you want. Pass as a string, or a synchronous getter if
+   * your app rotates the token outside the SDK.
    */
-  token?: string | (() => Promise<string> | string);
+  token?: HelaTokenSource;
   /**
    * For the public landing-page playground only. HS256 token signed
    * by hela's playground secret, scoped to the `proj_public` sandbox.
    * Minted anonymously via `POST /playground/token`; see
-   * `issuePlaygroundToken()` in this package.
+   * `issuePlaygroundToken()` in this package. Like `token`, this can
+   * be a string or a synchronous getter if you refresh it externally.
    */
-  playgroundToken?: string;
+  playgroundToken?: HelaTokenSource;
   /** Override the WS/HTTP endpoint. Useful for local dev and tests. */
   endpoint?: string;
   /** How long to wait for reconnect attempts, in ms. Default 10000. */
@@ -36,19 +40,10 @@ export class HelaClient {
   constructor(config: HelaConfig) {
     this.config = config;
 
-    const params: Record<string, string> = {};
-    if (config.playgroundToken) params.playground = config.playgroundToken;
-    // token is resolved lazily in params()/reconnect, so we pass a thunk
-    // via phoenix.js' own `params` function option.
-
     this.socket = new Socket(wsUrl(config.region, config.endpoint), {
-      params: () => {
-        const p: Record<string, string> = { ...params };
-        if (typeof config.token === "string") p.token = config.token;
-        // Getter-style tokens: resolve on each reconnect. phoenix.js' params
-        // option can return a plain object; it calls the fn each reconnect.
-        return p;
-      },
+      // phoenix.js re-evaluates params() on reconnect, so as long as the
+      // sources below return current auth state, reconnects reuse fresh creds.
+      params: () => currentSocketParams(this.config),
       reconnectAfterMs:
         config.reconnectAfterMs ||
         ((tries) => [10, 50, 100, 150, 200, 500, 1000, 2000][tries - 1] ?? 5000),
@@ -63,6 +58,39 @@ export class HelaClient {
 
   disconnect(cb?: () => void): void {
     this.socket.disconnect(cb);
+  }
+
+  /**
+   * Replace the current customer JWT. Useful when your app rotates auth
+   * outside the SDK and wants reconnects to pick up the latest value.
+   */
+  setToken(token?: string): this {
+    this.config.token = token;
+    return this;
+  }
+
+  /**
+   * Replace the current playground JWT. The landing page uses this when
+   * its short-lived guest token is refreshed in the background.
+   */
+  setPlaygroundToken(token?: string): this {
+    this.config.playgroundToken = token;
+    return this;
+  }
+
+  onOpen(callback: () => void): () => void {
+    const ref = this.socket.onOpen(() => callback());
+    return () => this.socket.off([ref]);
+  }
+
+  onClose(callback: (event?: unknown) => void): () => void {
+    const ref = this.socket.onClose((event: unknown) => callback(event));
+    return () => this.socket.off([ref]);
+  }
+
+  onError(callback: (error?: unknown) => void): () => void {
+    const ref = this.socket.onError((error: unknown) => callback(error));
+    return () => this.socket.off([ref]);
   }
 
   /**
@@ -101,8 +129,8 @@ export class HelaClient {
     // statically; for customer tokens the server ignores our topic prefix
     // choice if it doesn't match the claim, so falling back to "proj" is
     // safe — but decode if we have the token.
-    const tok = typeof this.config.token === "string" ? this.config.token : null;
-    const pg = this.config.playgroundToken;
+    const tok = readTokenSource(this.config.token);
+    const pg = readTokenSource(this.config.playgroundToken);
     const picked = tok || pg;
 
     if (picked) {
@@ -128,4 +156,25 @@ function tryReadPid(jwt: string): string | null {
 /** Shortcut: construct and connect in one call. */
 export function connect(config: HelaConfig): HelaClient {
   return new HelaClient(config).connect();
+}
+
+function currentSocketParams(config: HelaConfig): Record<string, string> {
+  const params: Record<string, string> = {};
+  const token = readTokenSource(config.token);
+  const playground = readTokenSource(config.playgroundToken);
+  if (token) params.token = token;
+  if (playground) params.playground = playground;
+  return params;
+}
+
+function readTokenSource(source?: HelaTokenSource): string | undefined {
+  if (!source) return undefined;
+  if (typeof source === "string") return source;
+
+  try {
+    return source();
+  } catch (error) {
+    console.error("[hela sdk] token source failed", error);
+    return undefined;
+  }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { issuePlaygroundToken } from "@hela/sdk";
 import { Panel, SectionHeading } from "./Panel";
 import { ensureClient, uuidv7Timestamp } from "../lib/hela";
 import { API_BASE } from "../lib/config";
@@ -502,12 +503,7 @@ function AuthDemo() {
 
   async function fetchToken() {
     setLoading(true);
-    const res = await fetch(`${API_BASE}/playground/token`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    const { token: t } = (await res.json()) as { token: string };
+    const { token: t } = await issuePlaygroundToken({ endpoint: API_BASE });
     setToken(t);
 
     try {
