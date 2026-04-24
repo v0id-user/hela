@@ -33,9 +33,10 @@ type State = {
 
 const EMPTY_STATE: State = {
   control: null,
-  gateways: Object.fromEntries(
-    REGIONS.map(({ slug }) => [slug, null]),
-  ) as Record<Region, Probe | null>,
+  gateways: Object.fromEntries(REGIONS.map(({ slug }) => [slug, null])) as Record<
+    Region,
+    Probe | null
+  >,
 };
 
 async function probe(url: string): Promise<Probe> {
@@ -174,15 +175,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function ProbeRow({
-  label,
-  probe,
-  live,
-}: {
-  label: string;
-  probe: Probe | null;
-  live: boolean;
-}) {
+function ProbeRow({ label, probe, live }: { label: string; probe: Probe | null; live: boolean }) {
   const status = statusOf(probe, live);
   return (
     <div

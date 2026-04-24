@@ -85,10 +85,8 @@ defmodule Hela.PlaygroundLimiter do
     # Delete entries whose window ended more than 2× the window ago.
     # per-sec buckets older than 2s, per-hour buckets older than 2h.
     :ets.select_delete(@table, [
-      {{{:"$1", :per_sec, :_, :"$2"}, :_},
-       [{:<, {:*, :"$2", 1}, now - 2}], [true]},
-      {{{:"$1", :per_hour, :_, :"$2"}, :_},
-       [{:<, {:*, :"$2", 3600}, now - 7200}], [true]}
+      {{{:"$1", :per_sec, :_, :"$2"}, :_}, [{:<, {:*, :"$2", 1}, now - 2}], [true]},
+      {{{:"$1", :per_hour, :_, :"$2"}, :_}, [{:<, {:*, :"$2", 3600}, now - 7200}], [true]}
     ])
 
     {:noreply, state}

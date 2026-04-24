@@ -32,7 +32,8 @@ if config_env() == :prod do
   # deployment. Unset → crash at boot rather than silently lie about
   # being in Ashburn (how we ended up with an Amsterdam gateway
   # reporting `iad` for the first few weeks of v1).
-  config :hela, :region,
+  config :hela,
+         :region,
          System.get_env("HELA_REGION") ||
            raise("""
            HELA_REGION env var required. Set to the slug matching this

@@ -268,8 +268,8 @@ export function Dashboard() {
           fontSize: 12,
         }}
       >
-        &gt; this dashboard is the same shape customers get for their own project on the
-        app — just scoped to one project instead of the whole cluster.
+        &gt; this dashboard is the same shape customers get for their own project on the app — just
+        scoped to one project instead of the whole cluster.
       </div>
     </div>
   );
