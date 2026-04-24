@@ -65,6 +65,21 @@ Set `ephemeral: true` when you want broadcast-only traffic: connected
 subscribers still receive live messages, but the gateway skips replay
 history and Postgres persistence for that token's publishes.
 
+## Playground token helper
+
+For the public sandbox project (`proj_public`), you can mint a guest JWT
+with `issuePlaygroundToken` instead of wiring `fetch` yourself:
+
+```ts
+import { connect, issuePlaygroundToken } from "@hela/sdk";
+
+const { token } = await issuePlaygroundToken({ ephemeral: true });
+const client = connect({ region: "iad", playgroundToken: token });
+```
+
+Pass `ephemeral: true` for broadcast-only playground traffic; omit it (or
+`false`) when you need join replay and persistence (default demos).
+
 ## Regions
 
 hela runs regional clusters. Pick the one closest to your users.

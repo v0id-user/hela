@@ -31,7 +31,7 @@ Listens on `:4001` in dev (control is on `:4000`).
 
 | Method | Path                              | Purpose                      |
 | ------ | --------------------------------- | ---------------------------- |
-| POST   | /playground/token                 | guest JWT for landing demos  |
+| POST   | /playground/token                 | guest JWT for landing demos (`ephemeral` optional) |
 | POST   | /playground/publish               | sandbox publish              |
 | GET    | /playground/history/:channel      | sandbox history              |
 | GET    | /cluster/snapshot                 | latest metrics snapshot      |

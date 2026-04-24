@@ -8,11 +8,23 @@ export type { PresenceEntry } from "./presence.js";
 export type { Region } from "./regions.js";
 
 /**
- * Issue a playground guest token against a hela server. Useful for local
- * dev and the landing-page demos.
+ * Mint a short-lived playground JWT (`proj_public`) via `POST /playground/token`.
  *
- *   const { token } = await issuePlaygroundToken({ endpoint: "http://localhost:4000" });
- *   const client = connect({ region: "dev", playgroundToken: token });
+ * **`ephemeral`** — optional; default is full history + persistence. When
+ * `true`, the gateway treats the resulting JWT as **broadcast-only**: live
+ * subscribers still receive messages, but join/history do not replay cache or
+ * Postgres, and publishes from this token are not persisted.
+ *
+ * @example Full demo token (history + persistence)
+ * ```ts
+ * const { token } = await issuePlaygroundToken({ endpoint: "http://localhost:4000" });
+ * const client = connect({ region: "dev", playgroundToken: token });
+ * ```
+ *
+ * @example Strip or lobby that should not retain replay
+ * ```ts
+ * const { token } = await issuePlaygroundToken({ ephemeral: true });
+ * ```
  */
 export async function issuePlaygroundToken(opts?: {
   endpoint?: string;

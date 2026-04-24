@@ -51,6 +51,8 @@ func main() {
   token and hands it to the user. Pass as `Token`.
 - **Playground token** (landing-page demos) — 5-minute guest token
   scoped to the public sandbox project. Pass as `PlaygroundToken`.
+  Use `PlaygroundTokenWithOpts{Ephemeral: true}` when you need a
+  broadcast-only guest JWT (no join replay, no persistence).
 
 Your backend mints tokens via `hela.REST`:
 
@@ -59,10 +61,11 @@ rest := hela.NewREST("https://gateway-production-bfdf.up.railway.app", hela.REST
     APIKey: os.Getenv("HELA_API_KEY"),
 })
 resp, err := rest.MintToken(ctx, hela.TokenRequest{
-    Sub:   user.ID,
-    Chans: [][]string{{"read", "chat:lobby"}, {"write", "chat:lobby"}},
+    Sub:        user.ID,
+    Chans:      [][]string{{"read", "chat:lobby"}, {"write", "chat:lobby"}},
     TTLSeconds: 300,
 })
+// TokenRequest.Ephemeral: set true for broadcast-only HS256 grants from /v1/tokens.
 ```
 
 ## presence

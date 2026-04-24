@@ -368,6 +368,9 @@ components:
         token: { type: string }
         project_id: { type: string, const: proj_public }
         expires_in: { type: integer }
+        ephemeral:
+          type: boolean
+          description: Present and true when the token was minted with ephemeral mode.
         scopes:
           type: array
           items:

@@ -98,6 +98,10 @@ class PlaygroundToken(BaseModel):
     token: str
     project_id: Literal["proj_public"]
     expires_in: int
+    ephemeral: bool | None = None
+    """
+    Present and true when the token was minted with ephemeral mode.
+    """
     scopes: list[Scope]
 
 
