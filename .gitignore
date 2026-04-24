@@ -4,6 +4,9 @@ dist/
 .vite/
 *.tsbuildinfo
 .bun/
+apps/web/public/version.json
+apps/web/public/schemas/
+apps/app/public/version.json
 
 # elixir
 apps/*/_build/
@@ -32,6 +35,7 @@ infra/terraform/*.auto.tfvars
 .claude/
 .cursor/
 .vscode/
+RESUME.md
 
 # bun
 bun.lockb
