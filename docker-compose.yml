@@ -37,7 +37,7 @@ services:
       DATABASE_URL: ecto://postgres:postgres@postgres:5432/control_dev
       SECRET_KEY_BASE: dev-control-secret-key-base-000000000000000000000000000000000000000000000000000000000000
       GATEWAY_INTERNAL_SECRET: dev-only-internal-secret
-      GATEWAYS: '{"iad":"http://gateway:4000","sjc":"http://gateway:4000","fra":"http://gateway:4000","sin":"http://gateway:4000","syd":"http://gateway:4000","dev":"http://gateway:4000"}'
+      GATEWAYS: '{"iad":"http://gateway:4000","sjc":"http://gateway:4000","ams":"http://gateway:4000","sin":"http://gateway:4000","syd":"http://gateway:4000","dev":"http://gateway:4000"}'
       STRIPE_SECRET_KEY: sk_test_replace_me
     depends_on:
       - postgres

@@ -14,7 +14,7 @@ type Region string
 const (
 	RegionIAD Region = "iad" // Ashburn, US East
 	RegionSJC Region = "sjc" // San Jose, US West
-	RegionFRA Region = "fra" // Frankfurt, EU
+	RegionAMS Region = "ams" // Amsterdam, EU
 	RegionSIN Region = "sin" // Singapore, Asia
 	RegionSYD Region = "syd" // Sydney, AU
 	RegionDEV Region = "dev" // localhost
@@ -23,7 +23,7 @@ const (
 var regions = map[Region]struct{ city, host string }{
 	RegionIAD: {"Ashburn, US East", "iad.hela.dev"},
 	RegionSJC: {"San Jose, US West", "sjc.hela.dev"},
-	RegionFRA: {"Frankfurt, EU", "fra.hela.dev"},
+	RegionAMS: {"Amsterdam, EU", "ams.hela.dev"},
 	RegionSIN: {"Singapore, Asia", "sin.hela.dev"},
 	RegionSYD: {"Sydney, AU", "syd.hela.dev"},
 	RegionDEV: {"local dev", "localhost:4001"},

@@ -10,7 +10,7 @@ project_name        = "hela"
 workspace_id        = "30ae0030-123a-4f5c-87b9-03de3b9a9f12"
 github_repo         = "v0id-user/hela"
 github_branch       = "main"
-gateway_region_slug = "iad"
+gateway_region_slug = "ams"
 
 # Generate once, never re-use. `openssl rand -hex 24` is enough entropy.
 postgres_password = "CHANGE_ME_TO_A_REAL_PASSWORD"

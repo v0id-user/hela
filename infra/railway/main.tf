@@ -121,7 +121,7 @@ locals {
   gateways_json = jsonencode({
     iad = "https://${local.gateway_domain}"
     sjc = "https://${local.gateway_domain}"
-    fra = "https://${local.gateway_domain}"
+    ams = "https://${local.gateway_domain}"
     sin = "https://${local.gateway_domain}"
     syd = "https://${local.gateway_domain}"
   })

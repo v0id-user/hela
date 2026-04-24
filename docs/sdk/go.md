@@ -150,7 +150,7 @@ metrics, or shared connection pools.
 const (
     hela.RegionIAD // Ashburn, US East
     hela.RegionSJC // San Jose, US West
-    hela.RegionFRA // Frankfurt
+    hela.RegionAMS // Amsterdam
     hela.RegionSIN // Singapore
     hela.RegionSYD // Sydney
     hela.RegionDEV // localhost

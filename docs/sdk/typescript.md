@@ -146,7 +146,7 @@ try {
 ```ts
 import { connect, REGIONS } from "@hela/sdk";
 
-// hosted: "iad" | "sjc" | "fra" | "sin" | "syd"
+// hosted: "iad" | "sjc" | "ams" | "sin" | "syd"
 await connect({ region: "iad", token });
 
 // local dev:

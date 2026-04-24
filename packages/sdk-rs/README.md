@@ -114,7 +114,7 @@ match chat.publish(req).await {
 ```rust
 hela::Region::Iad   // Ashburn, US East
 hela::Region::Sjc   // San Jose, US West
-hela::Region::Fra   // Frankfurt
+hela::Region::Ams   // Amsterdam
 hela::Region::Sin   // Singapore
 hela::Region::Syd   // Sydney
 hela::Region::Dev   // localhost

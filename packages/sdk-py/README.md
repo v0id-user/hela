@@ -75,7 +75,7 @@ except RateLimitedError as e:
 
 ## regions
 
-`region="iad"|"sjc"|"fra"|"sin"|"syd"` picks a hosted cluster.
+`region="iad"|"sjc"|"ams"|"sin"|"syd"` picks a hosted cluster.
 `region="dev"` + `endpoint="http://localhost:4001"` is for local hela.
 
 ## what's inside

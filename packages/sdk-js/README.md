@@ -67,7 +67,7 @@ hela runs regional clusters. Pick the one closest to your users.
 | ------ | ------------ | ---------------- |
 | iad    | Ashburn      | iad.hela.dev     |
 | sjc    | San Jose     | sjc.hela.dev     |
-| fra    | Frankfurt    | fra.hela.dev     |
+| ams    | Amsterdam    | ams.hela.dev     |
 | sin    | Singapore    | sin.hela.dev     |
 | syd    | Sydney       | syd.hela.dev     |
 

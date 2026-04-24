@@ -25,7 +25,7 @@ variable "fly_api_token" {
 
 variable "gateway_regions" {
   type    = list(string)
-  default = ["iad", "sjc", "fra", "sin", "syd"]
+  default = ["iad", "sjc", "ams", "sin", "syd"]
 }
 
 provider "fly" {
@@ -44,7 +44,7 @@ resource "fly_app" "gateway" {
 # create` rather than Terraform — the `fly` provider doesn't expose it.
 # We keep a note here so whoever runs the module knows to run:
 #
-#   for r in iad sjc fra sin syd; do
+#   for r in iad sjc ams sin syd; do
 #     flyctl postgres create --name hela-gw-db-$r --region $r --vm-size shared-cpu-1x
 #     flyctl postgres attach hela-gw-db-$r --app hela-gateway-$r
 #   done

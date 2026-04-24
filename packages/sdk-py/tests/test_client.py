@@ -70,7 +70,7 @@ def test_http_url_for_each_hosted_region():
     for region, host in [
         ("iad", "iad.hela.dev"),
         ("sjc", "sjc.hela.dev"),
-        ("fra", "fra.hela.dev"),
+        ("ams", "ams.hela.dev"),
         ("sin", "sin.hela.dev"),
         ("syd", "syd.hela.dev"),
     ]:

@@ -5,7 +5,7 @@ defmodule HelaWeb.RegionController do
   @regions [
     %{slug: "iad", city: "Ashburn, US East", host: "iad.hela.dev"},
     %{slug: "sjc", city: "San Jose, US West", host: "sjc.hela.dev"},
-    %{slug: "fra", city: "Frankfurt, EU", host: "fra.hela.dev"},
+    %{slug: "ams", city: "Amsterdam, EU", host: "ams.hela.dev"},
     %{slug: "sin", city: "Singapore, Asia", host: "sin.hela.dev"},
     %{slug: "syd", city: "Sydney, AU", host: "syd.hela.dev"}
   ]

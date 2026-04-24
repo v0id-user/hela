@@ -259,7 +259,7 @@ function MultiRegionDiagram() {
   return (
     <svg viewBox="0 0 1100 280" width="100%" style={{ display: "block" }}>
       {regionBox(20, 40, "iad · US East", "node A · node B")}
-      {regionBox(420, 40, "fra · EU", "node A · node B")}
+      {regionBox(420, 40, "ams · EU", "node A · node B")}
       {regionBox(820, 40, "sin · Asia", "node A · node B")}
 
       {relay(260, 130, "relay")}

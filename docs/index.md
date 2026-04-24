@@ -37,7 +37,7 @@ Elixir process. Pick the one closest to most of your users:
 | --- | --- | --- |
 | `iad` | Ashburn, US East | `iad.hela.dev` |
 | `sjc` | San Jose, US West | `sjc.hela.dev` |
-| `fra` | Frankfurt, EU | `fra.hela.dev` |
+| `ams` | Amsterdam, EU | `ams.hela.dev` |
 | `sin` | Singapore, Asia | `sin.hela.dev` |
 | `syd` | Sydney, AU | `syd.hela.dev` |
 | `dev` | localhost | `localhost:4001` |

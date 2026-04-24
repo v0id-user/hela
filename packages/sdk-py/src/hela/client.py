@@ -21,12 +21,12 @@ from typing import Literal
 from hela._transport import Socket
 from hela.channel import HelaChannel
 
-Region = Literal["iad", "sjc", "fra", "sin", "syd", "dev"]
+Region = Literal["iad", "sjc", "ams", "sin", "syd", "dev"]
 
 _REGIONS: dict[str, dict[str, str]] = {
     "iad": {"city": "Ashburn, US East", "host": "iad.hela.dev"},
     "sjc": {"city": "San Jose, US West", "host": "sjc.hela.dev"},
-    "fra": {"city": "Frankfurt, EU", "host": "fra.hela.dev"},
+    "ams": {"city": "Amsterdam, EU", "host": "ams.hela.dev"},
     "sin": {"city": "Singapore, Asia", "host": "sin.hela.dev"},
     "syd": {"city": "Sydney, AU", "host": "syd.hela.dev"},
     "dev": {"city": "local dev", "host": "localhost:4001"},

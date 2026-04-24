@@ -74,7 +74,7 @@ interface Account {
 interface Project {
   id: string;
   name: string;
-  region: "iad" | "sjc" | "fra" | "sin" | "syd";
+  region: "iad" | "sjc" | "ams" | "sin" | "syd";
   tier: "free" | "starter" | "growth" | "scale" | "ent";
 }
 interface ApiKeyResp {

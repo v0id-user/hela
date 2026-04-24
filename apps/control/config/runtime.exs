@@ -31,7 +31,7 @@ if config_env() == :prod do
            raise("GATEWAY_INTERNAL_SECRET is missing")
 
   # Per-region gateway endpoints come from env as a JSON map, e.g.:
-  #   GATEWAYS={"iad":"https://iad-gateway.internal","fra":"https://..."}
+  #   GATEWAYS={"iad":"https://iad-gateway.internal","ams":"https://..."}
   gateways =
     case System.get_env("GATEWAYS") do
       nil -> raise "GATEWAYS env (JSON map region -> url) is missing"

@@ -2,7 +2,7 @@ defmodule Control.Accounts.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @regions ~w(iad sjc fra sin syd)
+  @regions ~w(iad sjc ams sin syd)
   @tiers ~w(free starter growth scale ent)
 
   @primary_key {:id, :string, autogenerate: false}

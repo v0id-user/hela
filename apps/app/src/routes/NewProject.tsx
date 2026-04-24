@@ -6,7 +6,7 @@ import { Page, Panel } from "../components/Layout";
 const REGIONS: { slug: Region; label: string }[] = [
   { slug: "iad", label: "Ashburn · US East" },
   { slug: "sjc", label: "San Jose · US West" },
-  { slug: "fra", label: "Frankfurt · EU" },
+  { slug: "ams", label: "Amsterdam · EU" },
   { slug: "sin", label: "Singapore · Asia" },
   { slug: "syd", label: "Sydney · AU" },
 ];

@@ -14,7 +14,7 @@ pub enum Region {
     #[default]
     Iad,
     Sjc,
-    Fra,
+    Ams,
     Sin,
     Syd,
     Dev,
@@ -25,7 +25,7 @@ impl Region {
         match self {
             Region::Iad => "iad.hela.dev",
             Region::Sjc => "sjc.hela.dev",
-            Region::Fra => "fra.hela.dev",
+            Region::Ams => "ams.hela.dev",
             Region::Sin => "sin.hela.dev",
             Region::Syd => "syd.hela.dev",
             Region::Dev => "localhost:4001",
@@ -222,7 +222,7 @@ mod tests {
         for (region, want) in [
             (Region::Iad, "https://iad.hela.dev"),
             (Region::Sjc, "https://sjc.hela.dev"),
-            (Region::Fra, "https://fra.hela.dev"),
+            (Region::Ams, "https://ams.hela.dev"),
             (Region::Sin, "https://sin.hela.dev"),
             (Region::Syd, "https://syd.hela.dev"),
             (Region::Dev, "http://localhost:4001"),

@@ -19,7 +19,7 @@ config :control, ControlWeb.Endpoint,
 config :control, :gateways, %{
   "iad" => "http://localhost:4001",
   "sjc" => "http://localhost:4001",
-  "fra" => "http://localhost:4001",
+  "ams" => "http://localhost:4001",
   "sin" => "http://localhost:4001",
   "syd" => "http://localhost:4001"
 }

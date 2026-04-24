@@ -33,13 +33,13 @@ variable "github_branch" {
 # region env var `HELA_REGION` is what the code uses to identify itself.
 
 variable "gateway_region_slug" {
-  description = "Region slug this gateway reports as (iad, sjc, fra, sin, syd)."
+  description = "Region slug this gateway reports as (iad, sjc, ams, sin, syd). Default ams since the only live gateway is on Railway europe-west4 (Amsterdam)."
   type        = string
-  default     = "iad"
+  default     = "ams"
 
   validation {
-    condition     = contains(["iad", "sjc", "fra", "sin", "syd"], var.gateway_region_slug)
-    error_message = "gateway_region_slug must be one of iad, sjc, fra, sin, syd."
+    condition     = contains(["iad", "sjc", "ams", "sin", "syd"], var.gateway_region_slug)
+    error_message = "gateway_region_slug must be one of iad, sjc, ams, sin, syd."
   }
 }
 

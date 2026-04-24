@@ -201,7 +201,7 @@ await connect(region="sjc", token=my_jwt)
 await connect(region="dev", endpoint="http://localhost:4001", token=my_jwt)
 ```
 
-Hosted slugs: `"iad"`, `"sjc"`, `"fra"`, `"sin"`, `"syd"`. The `"dev"`
+Hosted slugs: `"iad"`, `"sjc"`, `"ams"`, `"sin"`, `"syd"`. The `"dev"`
 slug + an explicit `endpoint=` points at a local gateway.
 
 ## reference

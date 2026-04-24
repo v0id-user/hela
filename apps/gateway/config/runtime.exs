@@ -28,7 +28,16 @@ if config_env() == :prod do
 
   config :hela, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :hela, :region, System.get_env("HELA_REGION", "iad")
+  # The region slug this gateway reports as. Must match the physical
+  # deployment. Unset → crash at boot rather than silently lie about
+  # being in Ashburn (how we ended up with an Amsterdam gateway
+  # reporting `iad` for the first few weeks of v1).
+  config :hela, :region,
+         System.get_env("HELA_REGION") ||
+           raise("""
+           HELA_REGION env var required. Set to the slug matching this
+           gateway's physical region: one of iad, sjc, ams, sin, syd.
+           """)
 
   config :hela, :playground,
     project_id: System.get_env("PLAYGROUND_PROJECT_ID", "proj_public"),

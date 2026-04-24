@@ -64,7 +64,7 @@ func TestHTTPURLForEachHostedRegion(t *testing.T) {
 	for region, host := range map[Region]string{
 		RegionIAD: "https://iad.hela.dev",
 		RegionSJC: "https://sjc.hela.dev",
-		RegionFRA: "https://fra.hela.dev",
+		RegionAMS: "https://ams.hela.dev",
 		RegionSIN: "https://sin.hela.dev",
 		RegionSYD: "https://syd.hela.dev",
 	} {

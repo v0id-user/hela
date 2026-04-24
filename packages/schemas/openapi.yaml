@@ -28,8 +28,8 @@ servers:
     description: US East (Ashburn)
   - url: https://sjc.hela.dev
     description: US West (San Jose)
-  - url: https://fra.hela.dev
-    description: EU (Frankfurt)
+  - url: https://ams.hela.dev
+    description: EU (Amsterdam)
   - url: https://sin.hela.dev
     description: Asia (Singapore)
   - url: https://syd.hela.dev

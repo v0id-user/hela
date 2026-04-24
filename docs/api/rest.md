@@ -15,7 +15,7 @@ One per region. Pick the region where your project lives:
 ```
 https://iad.hela.dev
 https://sjc.hela.dev
-https://fra.hela.dev
+https://ams.hela.dev
 https://sin.hela.dev
 https://syd.hela.dev
 ```

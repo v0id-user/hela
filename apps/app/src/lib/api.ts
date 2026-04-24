@@ -7,7 +7,7 @@ const K_ACCOUNT = "hela.dash.account";
 const K_PROJECTS = "hela.dash.projects";
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
-export type Region = "iad" | "sjc" | "fra" | "sin" | "syd";
+export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
 
 export interface Account {
   email: string;
