@@ -1,12 +1,12 @@
 # hela docs
 
-hela is an **open source** managed realtime platform on
-Elixir/BEAM, built to be a full stack alternative to proprietary
-pub/sub and presence services. The hosted clusters and the
-self-hostable monorepo are the same code: you get a WebSocket
+**Open source and self-hostable first:** hela is a full stack
+realtime platform on Elixir/BEAM, offered as the **hosted** public
+regions second. The two paths share the same monorepo: a WebSocket
 endpoint per region, a REST surface for server-side use, and SDKs
-that wrap both, with every wire and REST type generated from
-`packages/schemas/`.
+with every wire and REST type generated from `packages/schemas/`.
+Proprietary pub/sub and presence services are the comparison, not
+the default way you are expected to run the software.
 
 ```python
 from hela import connect
@@ -34,8 +34,11 @@ async with (await connect(region="iad", token=my_jwt)) as client:
 
 ## regions
 
-Five hosted clusters, plus a `dev` region that points at a local
-Elixir process. Pick the one closest to most of your users:
+This table is for the **public hosted** product. If you are self
+hosting, your region list is whatever you configure in your own
+deploy. Five **hosted** clusters, plus a `dev` region that points at
+a local Elixir process, when you are using the shared service. Pick
+the one closest to most of your users:
 
 | slug | city | host |
 | --- | --- | --- |
