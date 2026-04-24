@@ -57,6 +57,34 @@ paths:
                 properties:
                   ok: { type: boolean }
 
+  /version:
+    get:
+      summary: Build and version metadata
+      security: []
+      tags: [meta]
+      responses:
+        "200":
+          description: Diagnostics for the gateway instance that answered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, service, version, generated_at]
+                properties:
+                  ok: { type: boolean }
+                  service:
+                    type: string
+                    enum: [gateway]
+                  version: { type: string }
+                  commit: { type: string }
+                  deployment_id: { type: string }
+                  environment: { type: string }
+                  region: { type: string }
+                  node: { type: string }
+                  generated_at:
+                    type: string
+                    format: date-time
+
   /regions:
     get:
       summary: List the regions this gateway fleet knows about

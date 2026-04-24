@@ -30,6 +30,7 @@ defmodule HelaWeb.Router do
 
     get "/", PageController, :index
     get "/health", PageController, :health
+    get "/version", PageController, :version
     get "/regions", RegionController, :index
     get "/regions/:slug/ping", RegionController, :ping
 

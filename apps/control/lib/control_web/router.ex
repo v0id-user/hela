@@ -18,6 +18,7 @@ defmodule ControlWeb.Router do
     pipe_through :api
 
     get "/health", PageController, :health
+    get "/version", PageController, :version
 
     post "/webhooks/polar", PolarWebhookController, :handle
   end

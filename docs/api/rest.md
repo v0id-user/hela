@@ -109,7 +109,27 @@ Used by the landing-page demos. No API key required. Returns a
 
 ### `GET /health` — liveness
 
-200 OK with `{"ok": true, "region": "iad"}`. No auth.
+200 OK with `{"ok": true}`. No auth.
+
+### `GET /version` — gateway build metadata
+
+Returns lightweight diagnostics for the gateway instance that answered:
+
+```json
+{
+  "ok": true,
+  "service": "gateway",
+  "version": "0.1.0",
+  "commit": "abc123...",
+  "region": "ams",
+  "node": "hela@10.0.0.12",
+  "generated_at": "2026-04-24T12:34:56Z"
+}
+```
+
+`commit`, `deployment_id`, and `environment` are present when the deploy
+runtime exposes them. Use this endpoint for rollout diagnostics; keep
+`/health` as the simple liveness probe.
 
 ### `GET /regions` — region directory
 
