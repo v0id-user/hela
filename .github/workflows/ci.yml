@@ -63,10 +63,40 @@ jobs:
             apps/control/deps
             apps/control/_build
           key: elixir-deps-${{ hashFiles('apps/**/mix.lock') }}
-      - run: mix deps.get
+      - name: gateway · mix deps.get
+        shell: bash
         working-directory: apps/gateway
-      - run: mix deps.get
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 5); do
+            if mix deps.get; then
+              exit 0
+            fi
+
+            echo "gateway mix deps.get failed ($attempt/5)" >&2
+            sleep 5
+          done
+
+          echo "::error::gateway mix deps.get failed after retries"
+          exit 1
+      - name: control · mix deps.get
+        shell: bash
         working-directory: apps/control
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 5); do
+            if mix deps.get; then
+              exit 0
+            fi
+
+            echo "control mix deps.get failed ($attempt/5)" >&2
+            sleep 5
+          done
+
+          echo "::error::control mix deps.get failed after retries"
+          exit 1
       - name: gateway · mix format --check-formatted
         run: mix format --check-formatted
         working-directory: apps/gateway
@@ -123,8 +153,23 @@ jobs:
             apps/gateway/deps
             apps/gateway/_build
           key: gateway-${{ hashFiles('apps/gateway/mix.lock') }}
-      - run: mix deps.get
+      - name: gateway · mix deps.get
+        shell: bash
         working-directory: apps/gateway
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 5); do
+            if mix deps.get; then
+              exit 0
+            fi
+
+            echo "gateway mix deps.get failed ($attempt/5)" >&2
+            sleep 5
+          done
+
+          echo "::error::gateway mix deps.get failed after retries"
+          exit 1
       - run: mix compile --warnings-as-errors
         working-directory: apps/gateway
       - run: mix test --warnings-as-errors
@@ -154,8 +199,23 @@ jobs:
             apps/control/deps
             apps/control/_build
           key: control-${{ hashFiles('apps/control/mix.lock') }}
-      - run: mix deps.get
+      - name: control · mix deps.get
+        shell: bash
         working-directory: apps/control
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 5); do
+            if mix deps.get; then
+              exit 0
+            fi
+
+            echo "control mix deps.get failed ($attempt/5)" >&2
+            sleep 5
+          done
+
+          echo "::error::control mix deps.get failed after retries"
+          exit 1
       - run: mix compile --warnings-as-errors
         working-directory: apps/control
       - run: mix test --warnings-as-errors
