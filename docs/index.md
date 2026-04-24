@@ -23,7 +23,9 @@ async with (await connect(region="iad", token=my_jwt)) as client:
 | drive the socket by hand | [api/websocket](./api/websocket.md) |
 | use the Python SDK | [sdk/python](./sdk/python.md) |
 | use the TypeScript SDK | [sdk/typescript](./sdk/typescript.md) |
-| add a Go / Rust / Swift SDK | [sdk/adding-a-language](./sdk/adding-a-language.md) |
+| use the Go SDK | [sdk/go](./sdk/go.md) |
+| use the Rust SDK | [sdk/rust](./sdk/rust.md) |
+| add a Swift / Kotlin / … SDK | [sdk/adding-a-language](./sdk/adding-a-language.md) |
 | run ops on a live region | [runbook](./runbook.md) |
 
 ## regions

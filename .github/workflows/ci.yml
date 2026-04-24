@@ -247,6 +247,31 @@ jobs:
       - name: go test
         run: go test -race ./...
 
+  test-sdk-rs:
+    name: sdk-rs · clippy + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-rs
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: "clippy, rustfmt" }
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            packages/sdk-rs/target
+          key: cargo-sdk-rs-${{ hashFiles('packages/sdk-rs/Cargo.lock') }}
+      - name: fmt check
+        run: cargo fmt --check
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: test
+        run: cargo test --locked
+
   # ---------- deploy selector ------------------------------------------
   #
   # One set of deploy jobs, parameterised by the GitHub environment:
