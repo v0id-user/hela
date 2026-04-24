@@ -65,6 +65,28 @@ Rules:
    removing a field is a breaking protocol change; coordinate with
    SDK bumps and a `WIRE_VERSION` bump.
 
+## spec-driven: the plan is the spec
+
+Any non-trivial feature starts as a plan in `.cursor/plans/` (or the
+equivalent markdown under `docs/plans/` if no cursor). The plan is a
+contract:
+
+- **The plan lists the files to change and the contract changes
+  allowed.** If your implementation touches a file the plan doesn't
+  mention, either update the plan first or narrow the change.
+- **The plan's "Allowed API / Contract Changes" section is the
+  source of truth for what's additive vs breaking.** When in doubt,
+  default to additive. The ephemeral-demo-mode PR (#15) is the
+  reference: optional fields, omit-on-false serialization, no
+  removals or required-field changes.
+- **The PR description links to the plan.** Reviewers (and the
+  admin-bypass flow) grade the PR against the plan's todos, not
+  just the diff.
+- **When the plan is done, update its status and call out remaining
+  follow-ups in-line** (e.g. rollback runbooks, deprecations). Don't
+  close a plan by deleting it — it's the historical record of why
+  the code is shaped this way.
+
 ## SDKs
 
 Two in tree:
