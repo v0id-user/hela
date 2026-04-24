@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "mock-server": "bun run ./mock_server.ts",
+    "typecheck": "tsc --noEmit -p .",
     "test": "cd ../.. && bun run build:sdk && cd packages/sdk-js-e2e && playwright test",
     "test:headed": "cd ../.. && bun run build:sdk && cd packages/sdk-js-e2e && playwright test --headed"
   },

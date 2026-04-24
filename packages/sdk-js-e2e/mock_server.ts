@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { ServerWebSocket } from "bun";
+
 type Frame = [string | null, string | null, string, string, unknown];
 
 type Message = {
