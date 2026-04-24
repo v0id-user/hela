@@ -1,10 +1,13 @@
 name: ci
 
 # Scope:
-#   - PRs run lint + typecheck + tests.
-#   - Pushes to main do everything PRs do, then deploy to Railway
-#     through a `production` environment. Enable required reviewers on
-#     that environment for human-in-the-loop safety.
+#   - Every PR runs lint + typecheck + tests.
+#   - PRs + non-main branches deploy to the `dev` environment (no review).
+#   - Pushes to `main` deploy to `production` (required reviewer).
+#
+# The difference is entirely which GitHub environment the deploy jobs
+# target; the same Railway services handle both, routed by
+# `RAILWAY_ENVIRONMENT` (production|dev).
 
 on:
   push:
@@ -20,6 +23,7 @@ permissions:
   contents: read
   pull-requests: read
   actions: read
+  deployments: write
 
 env:
   MIX_ENV: test
@@ -149,8 +153,6 @@ jobs:
       - run: cd apps/web && bun run build
       - run: cd apps/app && bun run build
 
-  # ---------- terraform fmt check (drift prevention) --------------------
-
   lint-terraform:
     name: terraform · fmt
     runs-on: ubuntu-latest
@@ -159,53 +161,74 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - run: terraform fmt -check -recursive infra/
 
-  # ---------- deploys — main only, gated by `production` environment ---
+  # ---------- deploy selector ------------------------------------------
   #
-  # Set up the `production` environment in repo settings with at least
-  # one required reviewer — that forces a human to approve each deploy.
-  # RAILWAY_TOKEN should live in the environment's secrets, not repo-wide.
+  # One set of deploy jobs, parameterised by the GitHub environment:
+  #   - PRs + non-main branches → `dev`   (auto-approved, dev Railway env)
+  #   - push to main             → `production` (reviewer-approved, prod Railway env)
+  #
+  # The `RAILWAY_ENVIRONMENT` env var at runtime picks which Railway
+  # environment `railway up` targets — so the same deploy steps run for
+  # both, the only difference is the token and the target env name.
+
+  # Determine which GitHub environment to deploy to. No ternary in
+  # workflow expressions, so we emit it as a job output.
+  target:
+    name: pick deploy target
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.pick.outputs.env }}
+      railway_env: ${{ steps.pick.outputs.railway_env }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "env=production"        >> "$GITHUB_OUTPUT"
+            echo "railway_env=production" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=dev"               >> "$GITHUB_OUTPUT"
+            echo "railway_env=dev"       >> "$GITHUB_OUTPUT"
+          fi
 
   deploy-control:
-    name: deploy · control
-    needs: [test-control]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: deploy · control (${{ needs.target.outputs.env }})
+    needs: [test-control, target]
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://control-production-059e.up.railway.app
-    concurrency: deploy-control
+      name: ${{ needs.target.outputs.env }}
+    concurrency: deploy-control-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v4
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
-      - run: railway up ./apps/control --service control --path-as-root --ci --detach
+      - run: |
+          railway up ./apps/control --service control --path-as-root --ci --detach \
+            --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-gateway:
-    name: deploy · gateway
-    needs: [test-gateway, deploy-control]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: deploy · gateway (${{ needs.target.outputs.env }})
+    needs: [test-gateway, target, deploy-control]
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://gateway-production-bfdf.up.railway.app
-    concurrency: deploy-gateway
+      name: ${{ needs.target.outputs.env }}
+    concurrency: deploy-gateway-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v4
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
-      - run: railway up ./apps/gateway --service gateway --path-as-root --ci --detach
+      - run: |
+          railway up ./apps/gateway --service gateway --path-as-root --ci --detach \
+            --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-web:
-    name: deploy · web
-    needs: [build-js, deploy-gateway]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: deploy · web (${{ needs.target.outputs.env }})
+    needs: [build-js, target, deploy-gateway]
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://web-production-f24fc.up.railway.app
-    concurrency: deploy-web
+      name: ${{ needs.target.outputs.env }}
+    concurrency: deploy-web-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -213,19 +236,19 @@ jobs:
       - run: bun run build:sdk
       - run: cd apps/web && bun run build
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
-      - run: railway up ./apps/web --service web --path-as-root --ci --detach
+      - run: |
+          railway up ./apps/web --service web --path-as-root --ci --detach \
+            --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-app:
-    name: deploy · app
-    needs: [build-js, deploy-control]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: deploy · app (${{ needs.target.outputs.env }})
+    needs: [build-js, target, deploy-control]
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://app-production-1716a.up.railway.app
-    concurrency: deploy-app
+      name: ${{ needs.target.outputs.env }}
+    concurrency: deploy-app-${{ needs.target.outputs.env }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -233,15 +256,17 @@ jobs:
       - run: bun run build:sdk
       - run: cd apps/app && bun run build
       - run: curl -fsSL https://railway.com/install.sh | sh && echo "$HOME/.railway/bin" >> $GITHUB_PATH
-      - run: railway up ./apps/app --service app --path-as-root --ci --detach
+      - run: |
+          railway up ./apps/app --service app --path-as-root --ci --detach \
+            --environment ${{ needs.target.outputs.railway_env }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-  # ---------- post-deploy smoke test -----------------------------------
+  # ---------- post-deploy smoke ----------------------------------------
 
   smoke:
-    name: smoke · e2e.py against live
-    needs: [deploy-gateway, deploy-control, deploy-web, deploy-app]
+    name: smoke · e2e.py against ${{ needs.target.outputs.env }}
+    needs: [deploy-gateway, deploy-control, deploy-web, deploy-app, target]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

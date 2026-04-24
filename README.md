@@ -148,8 +148,23 @@ push to main
                                    └─→ deploy-web
 ```
 
-Deploy jobs fire only on `push` to `main` (not PRs). Each has a
-`concurrency:` group so overlapping pushes don't race.
+### Environments
+
+Two GitHub environments, each with its own `RAILWAY_TOKEN` scoped to a
+matching Railway environment:
+
+| GitHub env   | Railway env  | Triggers                    | Review required |
+| ------------ | ------------ | --------------------------- | --------------- |
+| `dev`        | `dev`        | PRs + non-main branch pushes | no              |
+| `production` | `production` | push to `main`              | yes             |
+
+PRs auto-deploy a preview to the Railway `dev` environment so the smoke
+test runs against the exact commit. Merging to `main` kicks off a
+production rollout that pauses for a reviewer's ack before each of the
+four services rolls.
+
+Each deploy job has a `concurrency:` group scoped by environment, so
+overlapping pushes to dev never race a production rollout.
 
 ### Platform-agnostic
 
