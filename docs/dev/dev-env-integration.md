@@ -56,9 +56,14 @@ The test must exercise, in order, on a fresh anonymous run:
    returns 401 with `{ error: "invalid_credentials" }` and no session
    cookie change.
 5. **Right password returns 200 and refreshes the session.**
-6. **Logout drops the session.**
-   `POST /auth/logout` clears the cookie; a subsequent
-   `GET /api/me` returns 401.
+6. **Logout returns 200 and clears the cookie.**
+   `POST /auth/logout` returns 200 with a `Set-Cookie` that resets
+   `_control_key` (empty value, `Max-Age=0`, or expiry in the past).
+   This is the contract Phoenix's cookie session store can support;
+   true server-side revocation would require a Redis/DB session store
+   and is intentionally out of scope today. Document any future
+   migration to a real session store and tighten this case to verify
+   that an old cookie is rejected after logout.
 
 ### Cleanup
 
