@@ -47,6 +47,20 @@ defmodule ControlWeb.AuthController do
 
   def me(conn, _), do: json(conn, %{account: shape(conn.assigns.account)})
 
+  @doc """
+  Account self-delete. Cancels paid Polar subscriptions, removes
+  projects (cascading keys + gateway sync), deletes the Polar
+  customer, and deletes the account row. Drops the session at the
+  end so the dashboard's bootstrap call returns 401 on next load.
+  """
+  def delete_me(conn, _) do
+    :ok = Accounts.delete_account(conn.assigns.account)
+
+    conn
+    |> configure_session(drop: true)
+    |> json(%{ok: true})
+  end
+
   defp shape(a), do: Map.take(a, [:id, :email, :polar_customer_id, :github_id])
 
   defp errors(%Ecto.Changeset{errors: errs}),

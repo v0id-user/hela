@@ -72,6 +72,92 @@ defmodule Control.Billing do
     :ok
   end
 
+  # --- billing summary (for the dashboard's Billing page) -------------
+
+  @doc """
+  Aggregate billing snapshot for an account. Used by `GET /api/billing`
+  to populate the dashboard. Pulls Polar's customer state once and
+  joins it against the local project rows.
+
+  Returns `subscriptions: []` and `has_payment_method: false` if Polar
+  isn't configured (dev with no `POLAR_ACCESS_TOKEN`).
+
+  `subscription_summary` keeps only the fields the UI uses, so we
+  don't leak Polar's internal shape (or PII like billing addresses)
+  into our API response.
+  """
+  def summary(%Account{} = account) do
+    projects =
+      account.id
+      |> Control.Accounts.list_projects()
+      |> Enum.map(&shape_project/1)
+
+    state =
+      case Polar.get_customer_state(account.polar_customer_id) do
+        {:ok, body} when is_map(body) -> body
+        _ -> %{}
+      end
+
+    subs = state |> Map.get("active_subscriptions", []) |> Enum.map(&shape_subscription/1)
+
+    %{
+      account: %{
+        id: account.id,
+        email: account.email,
+        polar_customer_id: account.polar_customer_id
+      },
+      projects: projects,
+      subscriptions: subs,
+      has_payment_method: state |> Map.get("default_payment_method") |> is_map()
+    }
+  end
+
+  defp shape_project(p) do
+    %{
+      id: p.id,
+      name: p.name,
+      tier: p.tier,
+      polar_subscription_id: p.polar_subscription_id
+    }
+  end
+
+  defp shape_subscription(s) when is_map(s) do
+    price = s |> Map.get("prices", []) |> List.first() || %{}
+
+    %{
+      id: s["id"],
+      status: s["status"],
+      current_period_end: s["current_period_end"],
+      recurring_interval: s["recurring_interval"],
+      amount: price["price_amount"],
+      currency: price["price_currency"],
+      product_id: s["product_id"]
+    }
+  end
+
+  # --- account delete (full teardown) ---------------------------------
+
+  @doc """
+  Delete the Polar customer for this account. Used by
+  `Accounts.delete_account/1` after per-project subs are canceled.
+  No-op if the account has no `polar_customer_id` or Polar isn't
+  configured. Errors are logged but never raised — local account
+  deletion proceeds even if Polar is flaky, since the alternative
+  is leaving the user unable to delete.
+  """
+  def delete_customer(%Account{polar_customer_id: nil}), do: :ok
+
+  def delete_customer(%Account{polar_customer_id: cid}) do
+    case Polar.delete_customer(cid) do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("polar customer delete failed for #{cid}: #{inspect(reason)}")
+        :ok
+    end
+  end
+
   # --- webhook dispatch -----------------------------------------------
 
   def handle_webhook(%{"type" => "subscription.created", "data" => data}) do

@@ -84,6 +84,47 @@ defmodule Control.Polar do
 
   def cancel_subscription(nil), do: {:ok, %{}}
 
+  @doc """
+  Aggregate state for a single customer:
+    `active_subscriptions`, `granted_benefits`, `active_meters`, etc.
+  Returns `{:ok, %{}}` if Polar isn't configured (dev with no
+  `POLAR_ACCESS_TOKEN`) so the dashboard renders an empty state
+  instead of erroring.
+  """
+  def get_customer_state(nil), do: {:ok, %{}}
+
+  def get_customer_state(customer_id) when is_binary(customer_id) do
+    if configured?() do
+      get("/v1/customers/#{customer_id}/state")
+    else
+      {:ok, %{}}
+    end
+  end
+
+  @doc """
+  Delete a customer (used on account delete). Polar cascades: any
+  subscriptions for that customer get canceled implicitly. We
+  still call `cancel_subscription/1` per project before deleting
+  the customer so the cancellation reasons + period-end behavior
+  match the per-project flow.
+
+  Returns `{:ok, %{}}` if Polar isn't configured or the customer id
+  is nil — account-delete must succeed locally even if Polar is
+  flaky or unconfigured.
+  """
+  def delete_customer(nil), do: {:ok, %{}}
+
+  def delete_customer(customer_id) when is_binary(customer_id) do
+    if configured?() do
+      case delete("/v1/customers/#{customer_id}") do
+        {:ok, body} -> {:ok, body}
+        {:error, _} = err -> err
+      end
+    else
+      {:ok, %{}}
+    end
+  end
+
   # --- webhook signature ----------------------------------------------
 
   @doc """
@@ -111,17 +152,20 @@ defmodule Control.Polar do
 
   defp post(path, body), do: req(:post, path, body)
   defp patch(path, body), do: req(:patch, path, body)
+  defp get(path), do: req(:get, path, nil)
+  defp delete(path), do: req(:delete, path, nil)
 
   defp req(method, path, body) do
-    opts = [
-      method: method,
-      url: base_url() <> path,
-      headers: [
-        {"authorization", "Bearer #{token()}"},
-        {"content-type", "application/json"}
-      ],
-      json: body
-    ]
+    opts =
+      [
+        method: method,
+        url: base_url() <> path,
+        headers: [
+          {"authorization", "Bearer #{token()}"},
+          {"content-type", "application/json"}
+        ]
+      ]
+      |> then(fn o -> if body == nil, do: o, else: Keyword.put(o, :json, body) end)
 
     case Req.request(opts) do
       {:ok, %{status: s, body: b}} when s in 200..299 ->

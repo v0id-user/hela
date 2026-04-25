@@ -35,6 +35,10 @@ defmodule ControlWeb.Router do
     pipe_through [:api_session, :session]
 
     get "/me", AuthController, :me
+    delete "/me", AuthController, :delete_me
+
+    get "/billing", BillingController, :show
+
     get "/projects", ProjectsController, :index
     post "/projects", ProjectsController, :create
     get "/projects/:id", ProjectsController, :show
