@@ -61,9 +61,7 @@ export function Signup() {
               required
             />
           </div>
-          {error && (
-            <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>
-          )}
+          {error && <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>}
           <button type="submit" disabled={busy} className="cta" style={{ width: "100%" }}>
             [ {busy ? "creating…" : "create account"} ]
           </button>
@@ -71,8 +69,11 @@ export function Signup() {
       </Panel>
 
       <div style={{ fontSize: 12, color: "#888", textAlign: "center", marginTop: 10 }}>
-        already have one? <Link to="/login" style={{ color: "#c9a76a" }}>sign in</Link>.
-        github sign-in is coming once we ship the OAuth flow.
+        already have one?{" "}
+        <Link to="/login" style={{ color: "#c9a76a" }}>
+          sign in
+        </Link>
+        . github sign-in is coming once we ship the OAuth flow.
       </div>
     </Page>
   );

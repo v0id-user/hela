@@ -58,9 +58,7 @@ export function Login() {
               required
             />
           </div>
-          {error && (
-            <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>
-          )}
+          {error && <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>}
           <button type="submit" disabled={busy} className="cta" style={{ width: "100%" }}>
             [ {busy ? "signing in…" : "sign in"} ]
           </button>
@@ -68,7 +66,11 @@ export function Login() {
       </Panel>
 
       <div style={{ fontSize: 12, color: "#888", textAlign: "center", marginTop: 10 }}>
-        no account yet? <Link to="/signup" style={{ color: "#c9a76a" }}>create one</Link>.
+        no account yet?{" "}
+        <Link to="/signup" style={{ color: "#c9a76a" }}>
+          create one
+        </Link>
+        .
       </div>
     </Page>
   );
