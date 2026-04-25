@@ -49,7 +49,9 @@ const POLAR_TOKEN =
   env.SANDBOX_POLAR_ACCESS_TOKEN ??
   "";
 if (!POLAR_TOKEN) {
-  console.error("missing env: DEV_POLAR_ACCESS_TOKEN (or SANDBOX_POLAR_ACCESS_TOKEN). add to .env.local.");
+  console.error(
+    "missing env: DEV_POLAR_ACCESS_TOKEN (or SANDBOX_POLAR_ACCESS_TOKEN). add to .env.local.",
+  );
   process.exit(2);
 }
 const POLAR_BASE = "https://sandbox-api.polar.sh";
@@ -103,7 +105,10 @@ let account: Account | null = null;
     else bad("signup creates a control plane account", `email mismatch ${account.email}`);
   } else {
     const body = await res.text();
-    bad("signup creates a control plane account", `status=${res.status} body=${body.slice(0, 120)}`);
+    bad(
+      "signup creates a control plane account",
+      `status=${res.status} body=${body.slice(0, 120)}`,
+    );
   }
 }
 
@@ -114,7 +119,8 @@ if (account?.polar_customer_id) {
   });
   if (res.status === 200) {
     const body = (await res.json()) as { email: string };
-    if (body.email === email) ok("polar customer created in sandbox", `id=${account.polar_customer_id}`);
+    if (body.email === email)
+      ok("polar customer created in sandbox", `id=${account.polar_customer_id}`);
     else bad("polar customer created in sandbox", `polar email ${body.email} != signup email`);
   } else {
     bad("polar customer created in sandbox", `polar GET /customers/{id} status=${res.status}`);
@@ -173,9 +179,16 @@ if (account?.polar_customer_id) {
 {
   const out = await fetch(`${CONTROL_URL}/auth/logout`, { method: "POST", ...authed() });
   const sc = out.headers.get("set-cookie") ?? "";
-  const cleared = /_control_key=(""|;|$)/.test(sc) || /max-age=0/i.test(sc) || /expires=Thu, 01 Jan 1970/i.test(sc);
+  const cleared =
+    /_control_key=(""|;|$)/.test(sc) ||
+    /max-age=0/i.test(sc) ||
+    /expires=Thu, 01 Jan 1970/i.test(sc);
   if (out.status === 200 && cleared) ok("logout returns 200 and clears the cookie", "200 + clear");
-  else bad("logout returns 200 and clears the cookie", `status=${out.status} set-cookie=${sc.slice(0, 80)}`);
+  else
+    bad(
+      "logout returns 200 and clears the cookie",
+      `status=${out.status} set-cookie=${sc.slice(0, 80)}`,
+    );
 }
 
 // ── cleanup: delete the sandbox Polar customer ──────────────────────────
