@@ -1,10 +1,37 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { projects, TIER_PRICE } from "../lib/api";
+import { listProjects, Project, TIER_PRICE } from "../lib/api";
 import { Page, Panel, KV } from "../components/Layout";
 
 export function ProjectList() {
-  const ps = projects();
-  const total = ps.reduce((a, p) => a + p.price_per_month, 0);
+  const [ps, setPs] = useState<Project[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listProjects()
+      .then(setPs)
+      .catch((e) => setError(e instanceof Error ? e.message : "failed to load"));
+  }, []);
+
+  if (error) {
+    return (
+      <Page>
+        <Panel title="couldn't load projects">
+          <div style={{ color: "#e07b7b", fontSize: 13 }}>{error}</div>
+        </Panel>
+      </Page>
+    );
+  }
+
+  if (ps === null) {
+    return (
+      <Page>
+        <div style={{ color: "#888", fontSize: 13 }}>loading…</div>
+      </Page>
+    );
+  }
+
+  const total = ps.reduce((a, p) => a + TIER_PRICE[p.tier], 0);
 
   return (
     <Page>
@@ -35,7 +62,7 @@ export function ProjectList() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                  gridTemplateColumns: "2fr 1fr",
                   gap: 12,
                   alignItems: "center",
                 }}
@@ -46,8 +73,6 @@ export function ProjectList() {
                     <div style={{ fontSize: 11, color: "#666" }}>{p.id}</div>
                   </Link>
                 </div>
-                <KV k="msgs/mo" v={fmt(p.usage.messages) + " / " + fmt(p.usage.cap_messages)} />
-                <KV k="conns" v={p.usage.connections + " / " + p.usage.cap_connections} />
                 <KV k="$/mo" v={"$" + TIER_PRICE[p.tier]} />
               </div>
             </Panel>
@@ -71,12 +96,4 @@ export function ProjectList() {
       )}
     </Page>
   );
-}
-
-function fmt(n: number): string {
-  if (n === Number.POSITIVE_INFINITY) return "∞";
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}b`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
-  if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
-  return String(n);
 }

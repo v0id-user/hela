@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { signup, AuthError } from "../lib/api";
+import { signup, ApiError } from "../lib/api";
 import { Page, Panel } from "../components/Layout";
 
 export function Signup() {
@@ -23,7 +23,7 @@ export function Signup() {
       // the new session for SessionChip + route guards.
       window.location.href = "/";
     } catch (err) {
-      const msg = err instanceof AuthError ? humanError(err) : "signup failed; try again";
+      const msg = err instanceof ApiError ? humanError(err) : "signup failed; try again";
       setError(msg);
     } finally {
       setBusy(false);
@@ -96,7 +96,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #333",
 };
 
-function humanError(err: AuthError): string {
+function humanError(err: ApiError): string {
   if (err.status === 400) return "email or password is invalid";
   if (err.status === 409 || err.message.includes("has already been taken")) {
     return "an account with that email already exists; try sign in";
