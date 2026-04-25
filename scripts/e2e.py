@@ -168,12 +168,13 @@ class HelaWS:
 async def main() -> None:
     start = time.time()
     email = f"py-e2e-{int(time.time() * 1000)}@gmail.com"
+    password = f"e2e-pw-{int(time.time() * 1000)}"
 
     client = httpx.AsyncClient(timeout=20, follow_redirects=False)
 
     # --- 1. signup --------------------------------------------------------
     print("\n1. SIGNUP")
-    r = await client.post(f"{CT}/auth/signup", json={"email": email})
+    r = await client.post(f"{CT}/auth/signup", json={"email": email, "password": password})
     r.raise_for_status()
     account = r.json()["account"]
     _ok("account created", {"id": account["id"], "email": account["email"]})
@@ -183,7 +184,7 @@ async def main() -> None:
     (await client.post(f"{CT}/auth/logout")).raise_for_status()
     _ok("logout")
     client.cookies.clear()
-    r = await client.post(f"{CT}/auth/login", json={"email": email})
+    r = await client.post(f"{CT}/auth/login", json={"email": email, "password": password})
     r.raise_for_status()
     assert r.json()["account"]["id"] == account["id"], "logged in as different account"
     _ok("logged back in", account["id"])
