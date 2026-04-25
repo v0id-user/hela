@@ -50,6 +50,20 @@ means you are repeating a mistake we already paid for. See
 9. CI green is not feature-works. The `sdk-js · e2e playground` job
    is the closest signal we have to a real browser flow, and even
    that lies if the test is filtering its own errors.
+10. **Auth and billing changes are gated on the dev environment
+    integration test.** If your diff touches
+    `apps/control/lib/control/accounts*`,
+    `apps/control/lib/control/billing*`,
+    `apps/control/lib/control_web/controllers/auth_controller.ex`,
+    or any flow that creates or mutates a Polar customer or
+    subscription, you MUST run the test in
+    [`docs/dev/dev-env-integration.md`](docs/dev/dev-env-integration.md)
+    against the **dev** Railway env (sandbox Polar) and paste its
+    output in the PR before requesting merge to `main`. CI does not
+    run this yet — that is not a license to skip. Local `mix test`
+    catches unit bugs; this catches wiring bugs (CORS, cookies,
+    Polar HTTP, env var typos) that only surface against a real
+    deploy.
 
 ## before you code
 
@@ -86,14 +100,22 @@ means you are repeating a mistake we already paid for. See
    If you only ran a typechecker, say so in the PR body.
 2. Did you grep the repo for any string you renamed? `stripe_` and
    `hela.dev` both survived prior sweeps that did not do this.
-3. Did you reconcile `infra/railway/main.tf` with anything you
-   changed live via `railway` CLI or GraphQL? Drift between Terraform
-   and live state is a real recurring incident.
+3. If your diff touches auth or billing (rule 10 above), you must
+   have run the dev-env integration test against the dev Railway
+   env. Paste the output (last `dev integration: ...` line at
+   minimum) into the PR body. No exceptions.
+4. Variable values now live in `railway` CLI per environment, not
+   in Terraform. If you added a new env var, did you update
+   [`infra/railway/README.md`](infra/railway/README.md)'s matrix
+   and run `railway variable set` against both envs?
 
 ## branches and merging
 
-- `main` is the only branch that matters. Squash-only merges, linear
-  history.
+- Two long-lived branches: `main` (production Railway env target) and
+  `dev` (dev Railway env target, sandbox Polar). Feature branches
+  open PRs into `dev` first; once green there and the dev-env
+  integration test passes, a `dev` to `main` PR ships to production.
+  Squash-only merges, linear history on both.
 - `enforce_admins: false` is set on `v0id-user/hela`. The owner has
   explicitly opted in to admin-bypass for solo maintenance:
   `gh pr merge --admin --squash --delete-branch` is acceptable when
