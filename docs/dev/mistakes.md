@@ -274,3 +274,84 @@ real ones if they happen.
   specific jobs that passed and the specific surfaces that are
   not yet behind the gate. If a summary is shorter than the
   list of jobs that ran, it is hiding something.
+
+### Reused `@hela.dev` for test emails despite four prior callouts
+- What happened: in this session I generated test signups against
+  the dev integration test as `dev-it-...@hela.dev` and the live
+  browser test as `browser-it-...@hela.dev`. The project does not
+  own `hela.dev` — that fact is documented in CLAUDE.md, in
+  `docs/dev/pitfalls.md` ("`hela.dev` is not owned by the project"),
+  in `apps/web/public/brand/BRAND.md`, and in this very file under
+  "Sweep did not actually sweep". User: "i still see you test with
+  hela.dev, no idea why you do that is it to piss me off or what,
+  we littraly using someone else domain, no only this is dumb, it
+  risks us".
+- Why it happened: I was unblocking a Polar 4xx (Polar rejects
+  `.test`) and grabbed the first plausible-looking domain that
+  passes Polar's validator without checking whether the project
+  owns it. CLAUDE.md was loaded into the session prompt and I
+  still missed the rule.
+- How it was caught: by the user.
+- The fix: switched both `scripts/dev_integration_test.ts` and
+  `scripts/e2e.py` to `@v0id.me` (owned by the project owner,
+  passes Polar's validator). Added a "test data domains" entry in
+  `docs/dev/pitfalls.md`.
+- Rule going forward: when generating any synthetic identifier
+  that lands in an external service (Polar customer email, OAuth
+  redirect URL, webhook URL), check that the domain belongs to
+  the project owner before using it. Owned today: `v0id.me`. Not
+  owned: `hela.dev` (despite the project being called hela), every
+  third-party email host, and every reserved-TLD-but-the-API-rejects
+  alternative. If unclear, ask before generating.
+
+### Pushed feature PR with prettier-dirty files; CI failed half-shipped
+- What happened: PR #23 (auth + TF refactor) merged via admin
+  squash to main. CI's `js · prettier + typecheck` job failed
+  because three new files (`Login.tsx`, `Signup.tsx`,
+  `dev_integration_test.ts`) were not prettier-clean. The
+  `js · build web + app` job is gated on prettier passing, so
+  the production app + web deploys were skipped — but
+  control + gateway deployed normally. Production was left in a
+  half-shipped state (new auth backend, old frontend bundles,
+  no Login route). User: "all the ci failed, you should have
+  checked github CI first, OMG claude really you are a peice of
+  a slop machine".
+- Why it happened: lefthook had no `js-prettier` hook (only
+  Python/Go/Rust/schemas were gated). I never ran
+  `bunx --bun prettier --check` locally before committing. CLAUDE.md
+  says "did you actually run the affected tests" in the "before
+  you push" checklist; I treated tests as the elixir + ts test
+  suites and skipped formatters.
+- How it was caught: by the user noticing the CI run page after
+  the merge was already in.
+- The fix: hotfix PR #24 ran `prettier --write` on the three
+  files. PR #25 added `js-prettier`, `js-tsc-app`, `js-tsc-web`,
+  `elixir-format-control`, `elixir-format-gateway` hooks to
+  `lefthook.yml` so the CI shape is reproducible at commit time.
+- Rule going forward: every CI job that gates a deploy must have
+  a matching local hook. Before opening a PR, run
+  `lefthook run pre-commit --all-files` (or the equivalent
+  manual command per language) and read the output. "It compiles"
+  is not enough; formatters and lints have to pass too.
+
+### Smoke test e2e.py was not updated when auth contract changed
+- What happened: PR #23 changed `POST /auth/signup` from
+  accepting just `{email}` to requiring `{email, password}`.
+  `scripts/e2e.py` (the post-deploy smoke run by CI) was not
+  updated, so it kept POSTing email-only and 400d on the new
+  contract. The smoke job failed against production after the
+  deploys had already succeeded.
+- Why it happened: I treated the dev-environment integration
+  test (`scripts/dev_integration_test.ts`, written in this same
+  PR) as the canonical exercise of the auth surface and didn't
+  grep for other smoke / e2e scripts that might be calling the
+  same endpoints with the old shape.
+- How it was caught: CI smoke job failure on the post-deploy
+  smoke; user noticed.
+- The fix: PR #25 added the `password` field to e2e.py's signup
+  + login calls.
+- Rule going forward: when changing a wire-level contract on an
+  auth/billing endpoint, grep the repo for *every* caller (test
+  scripts, smoke tests, SDK integration tests, sample code in
+  docs) and update them in the same PR.
+  `rg -nF '/auth/signup' .` from the repo root is the minimum.

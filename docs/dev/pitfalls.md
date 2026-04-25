@@ -154,6 +154,25 @@ before changing the area in question.
   for Fly secondary documentation. If a real domain ever lands,
   this rule changes.
 
+### Test data domains
+- Synthetic identifiers that land in an external service (Polar
+  customer email, OAuth callback URL, webhook URL) must be on a
+  domain the project owner controls.
+- **Owned today:** `v0id.me`. Use `@v0id.me` for any test-only
+  email that must pass real-domain validation (Polar's customer
+  validator rejects RFC 2606 special-use TLDs like `.test`,
+  `.example`, `.invalid`, `.localhost`).
+- **Do not use** `@hela.dev` (we don't own it — see above),
+  `@gmail.com` or other public mail hosts (third-party — risks
+  collision with a real account), or any "looks unique enough"
+  domain.
+- Pattern: `<purpose>-<timestamp><random>@v0id.me`, e.g.
+  `dev-it-1777102000@v0id.me`. The timestamp prevents inter-run
+  collisions; the purpose prefix lets you find the test rows
+  later for cleanup.
+- See `docs/dev/mistakes.md` "Reused @hela.dev for test emails"
+  for the incident behind this rule.
+
 ### Fly is documented as secondary, not active
 - The toml files under `infra/fly/` exist as a runnable secondary
   path. They reference `*.fly.dev` placeholders. Do not
