@@ -7,6 +7,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { Signup } from "./routes/Signup";
+import { Login } from "./routes/Login";
 import { ProjectList } from "./routes/ProjectList";
 import { NewProject } from "./routes/NewProject";
 import { ProjectDetail } from "./routes/ProjectDetail";
@@ -55,9 +56,9 @@ function SessionChip() {
     >
       {a.email}
       <button
-        onClick={() => {
-          signout();
-          window.location.href = "/signup";
+        onClick={async () => {
+          await signout();
+          window.location.href = "/login";
         }}
         style={{ marginLeft: 8, fontSize: 10, padding: "2px 6px" }}
       >
@@ -81,13 +82,19 @@ const activeLinkStyle: React.CSSProperties = {
 };
 
 const authed = () => {
-  if (!account()) throw redirect({ to: "/signup" });
+  if (!account()) throw redirect({ to: "/login" });
 };
 
 const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/signup",
   component: Signup,
+});
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: Login,
 });
 
 const projectListRoute = createRoute({
@@ -141,6 +148,7 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   signupRoute,
+  loginRoute,
   projectListRoute,
   newProjectRoute,
   projectDetailRoute,

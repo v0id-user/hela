@@ -11,12 +11,26 @@ defmodule Control.Accounts do
 
   # --- accounts -------------------------------------------------------
 
-  def create_account(email, opts \\ []) do
-    with {:ok, account} <-
-           Account.signup_changeset(%{email: email, github_id: opts[:github_id]})
-           |> Repo.insert(),
+  def create_account(email, password, opts \\ []) do
+    attrs = %{email: email, password: password, github_id: opts[:github_id]}
+
+    with {:ok, account} <- Account.signup_changeset(attrs) |> Repo.insert(),
          {:ok, account} <- Billing.ensure_customer(account) do
       {:ok, account}
+    end
+  end
+
+  def authenticate(email, password) when is_binary(email) and is_binary(password) do
+    case Repo.get_by(Account, email: email) do
+      nil ->
+        Account.verify_password(nil, password)
+        {:error, :unauthorized}
+
+      account ->
+        case Account.verify_password(account, password) do
+          :ok -> {:ok, account}
+          :error -> {:error, :unauthorized}
+        end
     end
   end
 

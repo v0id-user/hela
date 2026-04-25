@@ -3,11 +3,13 @@ defmodule ControlWeb.AuthController do
 
   alias Control.Accounts
 
-  def signup(conn, %{"email" => email}) do
-    case Accounts.create_account(email) do
+  def signup(conn, %{"email" => email, "password" => password})
+      when is_binary(email) and is_binary(password) do
+    case Accounts.create_account(email, password) do
       {:ok, account} ->
         conn
         |> put_session(:account_id, account.id)
+        |> configure_session(renew: true)
         |> json(%{account: shape(account)})
 
       {:error, changeset} ->
@@ -17,18 +19,26 @@ defmodule ControlWeb.AuthController do
     end
   end
 
-  # Password login is scaffolded; real impl would check Bcrypt.verify_pass.
-  # For v1 the dashboard issues a session by email lookup in dev mode.
-  def login(conn, %{"email" => email}) do
-    case Accounts.get_account_by_email(email) do
-      nil ->
-        conn |> put_status(401) |> json(%{error: "no_such_account"})
+  def signup(conn, _) do
+    conn |> put_status(400) |> json(%{error: "email_and_password_required"})
+  end
 
-      account ->
+  def login(conn, %{"email" => email, "password" => password})
+      when is_binary(email) and is_binary(password) do
+    case Accounts.authenticate(email, password) do
+      {:ok, account} ->
         conn
         |> put_session(:account_id, account.id)
+        |> configure_session(renew: true)
         |> json(%{account: shape(account)})
+
+      {:error, :unauthorized} ->
+        conn |> put_status(401) |> json(%{error: "invalid_credentials"})
     end
+  end
+
+  def login(conn, _) do
+    conn |> put_status(400) |> json(%{error: "email_and_password_required"})
   end
 
   def logout(conn, _) do

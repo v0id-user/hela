@@ -1,15 +1,17 @@
-// The dashboard is a thin client over a REST API that lives behind login.
-// In dev we mock the account state in localStorage so the flow can be
-// exercised end-to-end without calling the Polar billing surface. Swap
-// these helpers for real fetches against a /api/* surface in production.
+// The dashboard is a thin client over the control plane's REST API.
+// Authentication is real (cookie-session against /auth/* on control);
+// projects + keys + usage are still localStorage-backed scaffolding
+// and will be wired up to /api/projects when those endpoints land.
 
-const K_ACCOUNT = "hela.dash.account";
+const BASE: string = import.meta.env.VITE_HELA_CONTROL ?? "";
+
 const K_PROJECTS = "hela.dash.projects";
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
 
 export interface Account {
+  id: string;
   email: string;
   polar_customer_id: string | null;
   github_id: string | null;
@@ -43,38 +45,80 @@ const TIER_CAPS: Record<Tier, { messages: number; connections: number }> = {
   ent: { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
 };
 
-export function isSignedIn(): boolean {
-  return !!localStorage.getItem(K_ACCOUNT);
+// --- auth ---------------------------------------------------------------
+
+let _account: Account | null = null;
+
+// Hydrate the in-memory account from the server's session cookie. Call
+// once on app boot before mounting the router; the route guards read
+// `account()` synchronously and trust whatever bootstrap left here.
+export async function bootstrap(): Promise<void> {
+  try {
+    const res = await fetch(`${BASE}/api/me`, { credentials: "include" });
+    if (res.ok) {
+      const json = (await res.json()) as { account: Account };
+      _account = json.account;
+    } else {
+      _account = null;
+    }
+  } catch {
+    _account = null;
+  }
 }
 
 export function account(): Account | null {
-  const raw = localStorage.getItem(K_ACCOUNT);
-  return raw ? (JSON.parse(raw) as Account) : null;
+  return _account;
 }
 
-export function signup(email: string): Account {
-  const a: Account = {
-    email,
-    // Mock value shaped like a Polar customer id for the dev-only flow.
-    polar_customer_id: "cus_" + Math.random().toString(36).slice(2, 10),
-    github_id: null,
-  };
-  localStorage.setItem(K_ACCOUNT, JSON.stringify(a));
-  if (!localStorage.getItem(K_PROJECTS)) {
-    localStorage.setItem(K_PROJECTS, JSON.stringify([]));
+export function isSignedIn(): boolean {
+  return _account !== null;
+}
+
+export class AuthError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
   }
-  return a;
 }
 
-export function signout(): void {
-  localStorage.removeItem(K_ACCOUNT);
+export async function signup(email: string, password: string): Promise<Account> {
+  return await postCreds("/auth/signup", email, password);
 }
+
+export async function login(email: string, password: string): Promise<Account> {
+  return await postCreds("/auth/login", email, password);
+}
+
+async function postCreds(path: string, email: string, password: string): Promise<Account> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new AuthError(body.error ?? `request failed (${res.status})`, res.status);
+  }
+  const json = (await res.json()) as { account: Account };
+  _account = json.account;
+  return _account;
+}
+
+export async function signout(): Promise<void> {
+  try {
+    await fetch(`${BASE}/auth/logout`, { method: "POST", credentials: "include" });
+  } finally {
+    _account = null;
+  }
+}
+
+// --- projects (still localStorage; backend wiring is a follow-up) -------
 
 export function projects(): Project[] {
   const raw = localStorage.getItem(K_PROJECTS);
   const ps = raw ? (JSON.parse(raw) as Project[]) : [];
-  // Rehydrate usage with something non-zero so the dashboard charts show
-  // shape. Real implementation reads from the server's /v1/usage endpoint.
   return ps.map(fillUsage);
 }
 
