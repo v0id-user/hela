@@ -77,6 +77,47 @@ pre-commit:
       root: "packages/sdk-rs"
       run: cargo test --quiet
 
+    # --- JS / TS (apps/web, apps/app, packages/*, scripts/*) ----------
+    # Mirrors CI's `js · prettier + typecheck` job. Catch failures
+    # before push, not after a PR is open.
+    # Incident 2026-04-25: a feature PR landed with prettier-dirty
+    # auth files; CI prettier failed, app+web build was skipped, prod
+    # went half-shipped (control + gateway only). These hooks make
+    # that class of mistake local.
+    js-prettier:
+      tags: js format
+      glob: "{apps,packages,scripts}/**/*.{ts,tsx,css}"
+      run: bunx --bun prettier --check {staged_files}
+
+    js-tsc-app:
+      tags: js typecheck
+      glob: "apps/app/**/*.{ts,tsx}"
+      root: "apps/app"
+      run: bunx tsc -b --noEmit
+
+    js-tsc-web:
+      tags: js typecheck
+      glob: "apps/web/**/*.{ts,tsx}"
+      root: "apps/web"
+      run: bunx tsc -b --noEmit
+
+    # --- Elixir -------------------------------------------------------
+    # Mirrors CI's `elixir · format` job. mix format with
+    # --check-formatted returns non-zero on any file that isn't
+    # formatted; we pass staged_files so only what's changing is
+    # checked.
+    elixir-format-control:
+      tags: elixir format
+      glob: "apps/control/**/*.{ex,exs}"
+      root: "apps/control"
+      run: mix format --check-formatted {staged_files}
+
+    elixir-format-gateway:
+      tags: elixir format
+      glob: "apps/gateway/**/*.{ex,exs}"
+      root: "apps/gateway"
+      run: mix format --check-formatted {staged_files}
+
     # --- schemas ------------------------------------------------------
     # Any schema change has to regenerate or CI's drift guard fails.
     # Run the same check locally so nobody pushes a broken commit.
