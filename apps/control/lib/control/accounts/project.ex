@@ -52,6 +52,94 @@ defmodule Control.Accounts.Project do
     project
     |> cast(attrs, [:name, :tier, :jwt_public_key_jwk])
     |> validate_inclusion(:tier, @tiers)
+    |> validate_jwk_is_public(:jwt_public_key_jwk)
     |> put_change(:updated_at, DateTime.utc_now() |> DateTime.truncate(:second))
   end
+
+  @doc """
+  Validate that the JWK in `field` is the **public** half of an
+  asymmetric key pair, never a private key and never a symmetric
+  secret. Customers register their JWK so the gateway can verify
+  tokens they sign on their backend; only the public half belongs
+  here.
+
+  Accepted shapes (per RFC 7517 / 7518):
+
+    * `kty=RSA` with `n` and `e` and **no `d`**
+    * `kty=EC` with `crv`, `x`, `y` and **no `d`**
+    * `kty=OKP` with `crv`, `x` and **no `d`** (Ed25519 / Ed448)
+
+  Rejected:
+
+    * any of the above with a `d` field (the private exponent /
+      scalar — would mean a private key was pasted by mistake)
+    * `kty=oct` (a symmetric secret in `k`; HS256 keys live
+      server-side in `jwt_signing_secret`, not here)
+    * missing or unknown `kty`
+  """
+  def validate_jwk_is_public(changeset, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      jwk when is_map(jwk) ->
+        case classify_jwk(jwk) do
+          :ok -> changeset
+          {:error, reason} -> add_error(changeset, field, reason)
+        end
+
+      _ ->
+        add_error(changeset, field, "must be a JWK object")
+    end
+  end
+
+  defp classify_jwk(%{"kty" => "RSA"} = jwk) do
+    cond do
+      Map.has_key?(jwk, "d") ->
+        {:error, "looks like a private RSA key (contains 'd'); register only the public half"}
+
+      not Map.has_key?(jwk, "n") or not Map.has_key?(jwk, "e") ->
+        {:error, "RSA JWK is missing 'n' or 'e'"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp classify_jwk(%{"kty" => "EC"} = jwk) do
+    cond do
+      Map.has_key?(jwk, "d") ->
+        {:error, "looks like a private EC key (contains 'd'); register only the public half"}
+
+      not Map.has_key?(jwk, "x") or not Map.has_key?(jwk, "y") ->
+        {:error, "EC JWK is missing 'x' or 'y'"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp classify_jwk(%{"kty" => "OKP"} = jwk) do
+    cond do
+      Map.has_key?(jwk, "d") ->
+        {:error, "looks like a private OKP key (contains 'd'); register only the public half"}
+
+      not Map.has_key?(jwk, "x") ->
+        {:error, "OKP JWK is missing 'x'"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp classify_jwk(%{"kty" => "oct"}) do
+    {:error,
+     "symmetric ('oct') keys are not supported here — HS256 secrets live server-side; register only an asymmetric public key"}
+  end
+
+  defp classify_jwk(%{"kty" => other}) do
+    {:error, "unknown kty #{inspect(other)}; expected one of RSA, EC, OKP"}
+  end
+
+  defp classify_jwk(_), do: {:error, "JWK is missing 'kty'"}
 end
