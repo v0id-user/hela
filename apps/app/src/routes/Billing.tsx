@@ -1,27 +1,42 @@
 import { useEffect, useState } from "react";
-import { account, listProjects, Project, TIER_PRICE } from "../lib/api";
+import { getBilling, BillingSummary, TIER_PRICE } from "../lib/api";
 import { Page, Panel, KV } from "../components/Layout";
 
-// We don't fabricate billing data. The previous version showed a
-// hardcoded "•••• 4242" payment method and a synthetic next-invoice
-// date that had no relation to the real Polar subscription state.
-// Until the control plane proxies a real `/api/billing` summary
-// (Polar GET /v1/customers/{id}/subscriptions etc.), this page
-// shows what we actually know — the Polar customer id from signup
-// — and points at Polar's hosted customer portal for the rest.
+// Real billing summary from the control plane (which proxies Polar's
+// customer state). We don't fabricate payment-method previews or
+// invoice dates anymore — fields that aren't yet known render as
+// "—" or as empty states.
 
 export function Billing() {
-  const a = account()!;
-  const [ps, setPs] = useState<Project[] | null>(null);
+  const [b, setB] = useState<BillingSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listProjects()
-      .then(setPs)
-      .catch(() => setPs([]));
+    getBilling()
+      .then(setB)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "couldn't load"));
   }, []);
 
-  const subTotal = ps ? ps.reduce((sum, p) => sum + TIER_PRICE[p.tier], 0) : 0;
-  const paidProjects = ps ? ps.filter((p) => p.tier !== "free").length : 0;
+  if (error) {
+    return (
+      <Page>
+        <Panel title="couldn't load billing">
+          <div style={{ color: "#e07b7b", fontSize: 13 }}>{error}</div>
+        </Panel>
+      </Page>
+    );
+  }
+
+  if (b === null) {
+    return (
+      <Page>
+        <div style={{ color: "#888", fontSize: 13 }}>loading…</div>
+      </Page>
+    );
+  }
+
+  const paidProjects = b.projects.filter((p) => p.tier !== "free");
+  const flatTotal = paidProjects.reduce((sum, p) => sum + TIER_PRICE[p.tier], 0);
 
   return (
     <Page>
@@ -36,77 +51,75 @@ export function Billing() {
         }}
       >
         <Panel title="billing account">
-          <KV k="email" v={a.email} />
+          <KV k="email" v={b.account.email} />
           <KV
             k="polar customer"
-            v={a.polar_customer_id ?? <span style={{ color: "#888" }}>not yet provisioned</span>}
+            v={
+              b.account.polar_customer_id ?? <span style={{ color: "#888" }}>not provisioned</span>
+            }
+          />
+          <KV
+            k="payment method"
+            v={
+              b.has_payment_method ? (
+                <span style={{ color: "#c0c0c0" }}>on file</span>
+              ) : (
+                <span style={{ color: "#888" }}>none</span>
+              )
+            }
           />
           <div style={{ fontSize: 11, color: "#666", marginTop: 10, lineHeight: 1.5 }}>
-            payment methods, invoices, and subscription state live in Polar's customer portal. we
-            don't mirror them here.
+            payment methods, invoices, and dunning state live in Polar's hosted customer portal. we
+            surface presence + current subscriptions here, not the full ledger.
           </div>
         </Panel>
 
         <Panel title="this month">
-          <KV k="projects" v={ps ? ps.length : "…"} />
-          <KV k="paid projects" v={ps ? paidProjects : "…"} />
-          <KV k="subscription total" v={ps ? "$" + subTotal : "…"} />
+          <KV k="projects" v={b.projects.length} />
+          <KV k="paid projects" v={paidProjects.length} />
+          <KV k="active subs in polar" v={b.subscriptions.length} />
+          <KV k="flat tier total" v={"$" + flatTotal} />
           <div style={{ fontSize: 11, color: "#666", marginTop: 10, lineHeight: 1.5 }}>
-            subtotal is each paid project's flat tier price. overage and the next invoice date come
-            from Polar — open the portal to see them.
+            flat tier total is the sum of each paid project's monthly tier price. overage (messages
+            above tier cap) lands on Polar at invoice time and isn't summed here.
           </div>
         </Panel>
       </div>
 
       <Panel title="active subscriptions">
-        {ps === null ? (
-          <div style={{ color: "#888", fontSize: 13 }}>loading…</div>
-        ) : ps.filter((p) => p.tier !== "free").length === 0 ? (
+        {b.subscriptions.length === 0 ? (
           <div style={{ color: "#888", fontSize: 13 }}>
-            no paid projects yet. create one with a paid tier and Polar collects payment on
-            checkout.
+            {paidProjects.length === 0
+              ? "no paid projects yet. create one with a paid tier and Polar collects payment on checkout."
+              : "no active subscriptions in Polar yet — checkout may not have completed for the paid project(s) above."}
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
               <tr style={{ color: "#666", borderBottom: "1px solid #222" }}>
-                <th style={{ textAlign: "left", padding: "4px 8px" }}>project</th>
-                <th style={{ textAlign: "left", padding: "4px 8px" }}>tier</th>
-                <th style={{ textAlign: "right", padding: "4px 8px" }}>$/mo</th>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>subscription</th>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>status</th>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>renews</th>
+                <th style={{ textAlign: "right", padding: "4px 8px" }}>amount</th>
               </tr>
             </thead>
             <tbody>
-              {ps
-                .filter((p) => p.tier !== "free")
-                .map((p) => (
-                  <tr key={p.id} style={{ borderBottom: "1px dotted #1a1a1a" }}>
-                    <td style={{ padding: "4px 8px" }}>{p.name}</td>
-                    <td style={{ padding: "4px 8px", color: "#888" }}>{p.tier}</td>
-                    <td
-                      style={{
-                        padding: "4px 8px",
-                        textAlign: "right",
-                        color: "#c0c0c0",
-                      }}
-                    >
-                      ${TIER_PRICE[p.tier]}
-                    </td>
-                  </tr>
-                ))}
-              <tr>
-                <td colSpan={2} style={{ padding: "6px 8px", color: "#888" }}>
-                  subscription total
-                </td>
-                <td
-                  style={{
-                    padding: "6px 8px",
-                    textAlign: "right",
-                    color: "#c9a76a",
-                  }}
-                >
-                  ${subTotal}
-                </td>
-              </tr>
+              {b.subscriptions.map((s) => (
+                <tr key={s.id ?? Math.random()} style={{ borderBottom: "1px dotted #1a1a1a" }}>
+                  <td style={{ padding: "4px 8px", color: "#c0c0c0" }}>
+                    {s.id ? s.id.slice(0, 16) + "…" : "—"}
+                  </td>
+                  <td style={{ padding: "4px 8px", color: "#888" }}>{s.status ?? "—"}</td>
+                  <td style={{ padding: "4px 8px", color: "#888" }}>
+                    {s.current_period_end ? s.current_period_end.slice(0, 10) : "—"}
+                  </td>
+                  <td style={{ padding: "4px 8px", textAlign: "right", color: "#c0c0c0" }}>
+                    {s.amount != null && s.currency
+                      ? `${(s.amount / 100).toFixed(2)} ${s.currency.toUpperCase()}`
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

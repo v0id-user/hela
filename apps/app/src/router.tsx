@@ -47,6 +47,7 @@ const rootRoute = createRootRoute({
   ),
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 function SessionChip() {
   const a = account();
   if (!a) return null;

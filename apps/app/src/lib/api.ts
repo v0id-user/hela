@@ -104,6 +104,37 @@ export async function signout(): Promise<void> {
   }
 }
 
+export async function deleteAccount(): Promise<void> {
+  try {
+    await jsonRequest("/api/me", { method: "DELETE" });
+  } finally {
+    _account = null;
+  }
+}
+
+// --- billing ------------------------------------------------------------
+
+export interface SubscriptionSummary {
+  id: string | null;
+  status: string | null;
+  current_period_end: string | null;
+  recurring_interval: string | null;
+  amount: number | null;
+  currency: string | null;
+  product_id: string | null;
+}
+
+export interface BillingSummary {
+  account: { id: string; email: string; polar_customer_id: string | null };
+  projects: { id: string; name: string; tier: Tier; polar_subscription_id: string | null }[];
+  subscriptions: SubscriptionSummary[];
+  has_payment_method: boolean;
+}
+
+export async function getBilling(): Promise<BillingSummary> {
+  return await jsonRequest<BillingSummary>("/api/billing");
+}
+
 // --- projects -----------------------------------------------------------
 
 async function jsonRequest<T>(path: string, init: RequestInit = {}): Promise<T> {

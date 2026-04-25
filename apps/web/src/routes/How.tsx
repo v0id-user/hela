@@ -294,7 +294,7 @@ function node(x: number, y: number, title: string, sub: string) {
   );
 }
 
-function nodeLabeled(x: number, y: number, title: string, sub: string) {
+function nodeLabeled(x: number, y: number, title: string, _sub: string) {
   return (
     <g key={title + x}>
       <rect x={x} y={y} width={120} height={80} fill="#0d0d0d" stroke="#c9a76a" />
