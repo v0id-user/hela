@@ -110,10 +110,13 @@ export function Dashboard() {
   useEffect(() => {
     if (!agg) return;
     setHistory((h) => {
+      // Dedupe by at_ms — a poll that re-emits the same window
+      // shouldn't produce duplicate history rows.
+      if (h.length > 0 && h[h.length - 1].at === agg.at_ms) return h;
       const next = h.length >= HISTORY_LEN ? h.slice(-(HISTORY_LEN - 1)) : h;
       return [...next, { at: agg.at_ms, in: agg.rate_in, persisted: agg.rate_persisted }];
     });
-  }, [agg?.at_ms]);
+  }, [agg]);
 
   return (
     <div style={{ padding: 16, maxWidth: 1600, margin: "0 auto" }}>

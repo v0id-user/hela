@@ -89,6 +89,11 @@ pre-commit:
       glob: "{apps,packages,scripts}/**/*.{ts,tsx,css}"
       run: bunx --bun prettier --check {staged_files}
 
+    js-eslint:
+      tags: js lint
+      glob: "{apps/app,apps/web,packages,scripts}/**/*.{ts,tsx}"
+      run: bunx eslint --max-warnings 0 {staged_files}
+
     js-tsc-app:
       tags: js typecheck
       glob: "apps/app/**/*.{ts,tsx}"

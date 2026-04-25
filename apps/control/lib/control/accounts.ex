@@ -37,6 +37,22 @@ defmodule Control.Accounts do
   def get_account(id), do: Repo.get(Account, id)
   def get_account_by_email(email), do: Repo.get_by(Account, email: email)
 
+  @doc """
+  Tear down an account: cancel paid Polar subscriptions per project,
+  delete the projects (which cascades API keys + gateway sync),
+  delete the Polar customer, then delete the account row. Best
+  effort on the Polar side — failures there are logged but don't
+  block local deletion.
+  """
+  def delete_account(%Account{} = account) do
+    list_projects(account.id)
+    |> Enum.each(&delete_project/1)
+
+    :ok = Billing.delete_customer(account)
+    {:ok, _} = Repo.delete(account)
+    :ok
+  end
+
   # --- projects -------------------------------------------------------
 
   def list_projects(account_id) do

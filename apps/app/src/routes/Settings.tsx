@@ -1,27 +1,50 @@
 import { useState } from "react";
-import { account, signout } from "../lib/api";
+import { account, signout, deleteAccount } from "../lib/api";
 import { Page, Panel, KV } from "../components/Layout";
 
-// Identity surfaces only what the backend actually exposes today:
-// email and (optional) github_id. Buttons that don't have a wired
-// endpoint behind them are gone — change-password, link-github,
-// and delete-account aren't implemented in the control plane yet.
-// "Coming soon" notes mark the gap honestly so the page doesn't
-// pretend to do things it can't.
+// Identity surfaces only what the backend exposes today: email and
+// (optional) github_id. Account-delete is now real (DELETE /api/me),
+// cancels Polar subs, removes projects + keys, deletes the row,
+// drops the session.
 //
-// Email verification: the accounts schema doesn't track a verified_at
-// column yet. Account creation does not send a verification email.
-// The banner here makes that clear so users don't assume the email
-// has been confirmed.
+// Email verification: the accounts schema has no verified_at column
+// and signup does not send a confirmation email. The banner makes
+// that explicit so users don't assume the email has been confirmed.
 
 export function Settings() {
   const a = account()!;
   const [signingOut, setSigningOut] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
 
   async function doSignout() {
     setSigningOut(true);
     await signout();
     window.location.href = "/login";
+  }
+
+  async function doDelete() {
+    if (confirmEmail.trim() !== a.email) {
+      setDeleteError("type your email to confirm");
+      return;
+    }
+    if (
+      !confirm(
+        `permanently delete ${a.email}? this cancels every paid Polar subscription on this account, removes every project + API key, and deletes the row. cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      window.location.href = "/signup";
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "delete failed");
+      setDeleting(false);
+    }
   }
 
   return (
@@ -65,12 +88,43 @@ export function Settings() {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <Panel title="danger zone" right="not built">
-          <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
-            account deletion isn't implemented in the control plane yet. when it is, deleting here
-            will cancel paid subscriptions in Polar, revoke API keys, and remove your row from the
-            accounts table.
+        <Panel title="danger zone" right="irreversible" style={{ borderColor: "#6a3030" }}>
+          <div style={{ fontSize: 12, color: "#e0a8a8", lineHeight: 1.6, marginBottom: 10 }}>
+            <strong style={{ color: "#ff9090" }}>delete account.</strong> Cancels every paid Polar
+            subscription on this account, deletes every project (which revokes its API keys and
+            removes its rows on the gateway), deletes the Polar customer record, and deletes your
+            account row. There is no undo. Type your email below to confirm.
           </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              placeholder={a.email}
+              autoComplete="off"
+              style={{
+                flex: 1,
+                fontSize: 12,
+                padding: "6px 8px",
+                background: "#0a0a0a",
+                color: "#e0e0e0",
+                border: "1px solid #333",
+              }}
+            />
+            <button
+              onClick={doDelete}
+              disabled={deleting || confirmEmail.trim() !== a.email}
+              style={{
+                background: "#1a0d0d",
+                color: confirmEmail.trim() === a.email ? "#ff9090" : "#666",
+                border: "1px solid #6a3030",
+              }}
+            >
+              [ {deleting ? "deleting…" : "delete account"} ]
+            </button>
+          </div>
+          {deleteError && (
+            <div style={{ color: "#e07b7b", fontSize: 12, marginTop: 8 }}>{deleteError}</div>
+          )}
         </Panel>
       </div>
     </Page>
