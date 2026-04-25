@@ -355,3 +355,49 @@ real ones if they happen.
   scripts, smoke tests, SDK integration tests, sample code in
   docs) and update them in the same PR.
   `rg -nF '/auth/signup' .` from the repo root is the minimum.
+
+### Provisioned dev gateway without overriding HELA_WEB_HOST / HELA_APP_HOST
+- What happened: when I provisioned `gateway-dev` earlier this
+  session I set `PHX_SERVER`, `HELA_REGION`, `DATABASE_URL`,
+  `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6`, `SECRET_KEY_BASE`,
+  `PLAYGROUND_SECRET`, `GATEWAY_INTERNAL_SECRET`,
+  `RAILWAY_DOCKERFILE_PATH` — but missed `HELA_WEB_HOST` and
+  `HELA_APP_HOST`. `apps/gateway/config/runtime.exs` falls those
+  back to the production hostnames as defaults
+  (`web-production-f24fc.up.railway.app`,
+  `app-production-1716a.up.railway.app`). Phoenix's
+  `check_origin` allowlist on the gateway endpoint was therefore
+  production-only on the dev gateway — so a fresh dev/web bundle
+  calling dev/gateway over WebSocket would still get its origin
+  rejected at handshake time, producing the same reconnect storm
+  the user spent a chunk of the prior session debugging.
+  Compounded by: the dev/web bundle that was actually serving was
+  stale (CI's web deploy had hit Railway-CDN 503/403 transients
+  three times) and had production gateway URLs baked in, so the
+  user saw the storm sooner than they would have otherwise.
+- Why it happened: I worked through the per-service env-var
+  matrix in `infra/railway/README.md` for control + postgres but
+  treated gateway as "the same shape as production with -dev
+  appended", missing that `HELA_WEB_HOST`/`HELA_APP_HOST` aren't
+  static across envs and weren't even in the matrix yet.
+- How it was caught: user saw reconnect storm in dev/web's
+  DevTools network panel ("we are back on the infainte
+  connections, like if everything we worked toward to fix, just
+  never ever exsisted"). Same symptom as the prior session's
+  reconnect storm but a different root cause (origin allowlist
+  vs. token refresh).
+- The fix: set `HELA_WEB_HOST` + `HELA_APP_HOST` on every
+  gateway service instance, per env, including dev. Add the rule
+  to `infra/railway/README.md`'s gateway env var matrix and to
+  the seeding command block.
+- Rule going forward: when adding a new Railway environment that
+  serves browser traffic, every service env var that has a host
+  default in the Elixir config (`HELA_WEB_HOST`,
+  `HELA_APP_HOST`, etc.) needs the new env's hostname set
+  explicitly. The default is production for safety, but that
+  means a forgotten override silently sends dev traffic to prod
+  endpoints (or rejects dev traffic at the prod allowlist).
+  Browser e2e tests on `main`'s deployed bundle don't catch this
+  because they hit the matched-origin pair (prod web → prod
+  gateway). A real dev integration test would need to exercise
+  dev/web → dev/gateway WebSocket handshake to catch it.

@@ -66,6 +66,8 @@ This is the canonical list of variables every service expects. The
 | --- | --- | --- | --- |
 | `PHX_SERVER` | `true` | `true` | static |
 | `HELA_REGION` | `ams` | `ams` | one gateway today; add per-region values when you split |
+| `HELA_WEB_HOST` | dev web public host | prod web public host | **required** — gateway's WebSocket `check_origin` allowlist; defaults in `runtime.exs` are production-only, so dev needs this overridden or browsers from dev/web get handshake-rejected (reconnect storm) |
+| `HELA_APP_HOST` | dev app public host | prod app public host | **required** — same as above for the dashboard's WebSocket connections |
 | `DATABASE_URL` | `ecto://hela:<pw>@postgres.railway.internal:5432/hela` | same | uses internal DNS |
 | `PHX_HOST` | gateway public domain | same | from `terraform output urls.gateway` (strip `https://`) |
 | `PORT` | `4000` | `4000` | static |
@@ -157,6 +159,8 @@ railway variable set --service postgres --environment $ENV --skip-deploys \
 # gateway
 railway variable set --service gateway --environment $ENV --skip-deploys \
   "PHX_SERVER=true" "HELA_REGION=ams" \
+  "HELA_WEB_HOST=$([ "$ENV" = "production" ] && echo web-production-f24fc.up.railway.app || echo web-dev-dev-881b.up.railway.app)" \
+  "HELA_APP_HOST=$([ "$ENV" = "production" ] && echo app-production-1716a.up.railway.app || echo app-dev-dev-4b3a.up.railway.app)" \
   "DATABASE_URL=ecto://hela:$DB_PW@postgres.railway.internal:5432/hela" \
   "PHX_HOST=$GW_HOST" "PORT=4000" "POOL_SIZE=10" "ECTO_IPV6=1" \
   "SECRET_KEY_BASE=$SKB_GW" "PLAYGROUND_SECRET=$PLAYG" \
