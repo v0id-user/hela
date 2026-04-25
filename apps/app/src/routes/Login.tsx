@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { signup, AuthError } from "../lib/api";
+import { login, AuthError } from "../lib/api";
 import { Page, Panel } from "../components/Layout";
 
-export function Signup() {
+export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -11,19 +11,18 @@ export function Signup() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.includes("@") || password.length < 8) {
-      setError("email must look like an email; password must be at least 8 chars");
-      return;
-    }
     setBusy(true);
     setError(null);
     try {
-      await signup(email.trim(), password);
-      // Full reload so bootstrap() re-runs and the root route picks up
-      // the new session for SessionChip + route guards.
+      await login(email.trim(), password);
+      // Full reload so bootstrap() re-runs and the root route sees
+      // the fresh session.
       window.location.href = "/";
     } catch (err) {
-      const msg = err instanceof AuthError ? humanError(err) : "signup failed; try again";
+      const msg =
+        err instanceof AuthError && err.status === 401
+          ? "email or password is wrong"
+          : "sign-in failed; try again";
       setError(msg);
     } finally {
       setBusy(false);
@@ -32,7 +31,7 @@ export function Signup() {
 
   return (
     <Page>
-      <h1 style={{ fontSize: 22, marginBottom: 14 }}>create an account</h1>
+      <h1 style={{ fontSize: 22, marginBottom: 14 }}>sign in</h1>
 
       <Panel title="email + password" style={{ marginBottom: 12 }}>
         <form onSubmit={submit}>
@@ -54,10 +53,8 @@ export function Signup() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder="at least 8 characters"
+              autoComplete="current-password"
               style={inputStyle}
-              minLength={8}
               required
             />
           </div>
@@ -65,14 +62,13 @@ export function Signup() {
             <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>
           )}
           <button type="submit" disabled={busy} className="cta" style={{ width: "100%" }}>
-            [ {busy ? "creating…" : "create account"} ]
+            [ {busy ? "signing in…" : "sign in"} ]
           </button>
         </form>
       </Panel>
 
       <div style={{ fontSize: 12, color: "#888", textAlign: "center", marginTop: 10 }}>
-        already have one? <Link to="/login" style={{ color: "#c9a76a" }}>sign in</Link>.
-        github sign-in is coming once we ship the OAuth flow.
+        no account yet? <Link to="/signup" style={{ color: "#c9a76a" }}>create one</Link>.
       </div>
     </Page>
   );
@@ -94,11 +90,3 @@ const inputStyle: React.CSSProperties = {
   color: "#e0e0e0",
   border: "1px solid #333",
 };
-
-function humanError(err: AuthError): string {
-  if (err.status === 400) return "email or password is invalid";
-  if (err.status === 409 || err.message.includes("has already been taken")) {
-    return "an account with that email already exists; try sign in";
-  }
-  return err.message;
-}
