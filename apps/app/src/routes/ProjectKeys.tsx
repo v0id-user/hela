@@ -1,18 +1,78 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
-import { project, rotateKey } from "../lib/api";
+import { getProject, listKeys, createKey, revokeKey, ApiError, ApiKey, Project } from "../lib/api";
 import { Page, Panel } from "../components/Layout";
 
 export function ProjectKeys() {
   const { id } = useParams({ strict: false }) as { id: string };
-  const p = project(id);
-  const [lastNew, setLastNew] = useState<{ prefix: string; secret: string } | null>(null);
+  const [p, setP] = useState<Project | null>(null);
+  const [keys, setKeys] = useState<ApiKey[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [lastNew, setLastNew] = useState<{ wire: string } | null>(null);
 
-  if (!p) return null;
+  async function refresh() {
+    setKeys(await listKeys(id));
+  }
 
-  function rotate() {
-    const { prefix, secret } = rotateKey(id);
-    setLastNew({ prefix, secret });
+  useEffect(() => {
+    Promise.all([getProject(id), listKeys(id)])
+      .then(([proj, ks]) => {
+        setP(proj);
+        setKeys(ks);
+      })
+      .catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 404) {
+          setError("not_found");
+        } else {
+          setError(e instanceof Error ? e.message : "couldn't load");
+        }
+      });
+  }, [id]);
+
+  async function create() {
+    setBusy(true);
+    try {
+      const { wire } = await createKey(id, newLabel.trim() || undefined);
+      setLastNew({ wire });
+      setNewLabel("");
+      await refresh();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke(keyId: string) {
+    if (!confirm("revoke this key? backends using it will get 401 on next call.")) return;
+    setBusy(true);
+    try {
+      await revokeKey(id, keyId);
+      await refresh();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (error === "not_found") {
+    return (
+      <Page>
+        <Panel title="not found">
+          <span style={{ color: "#888" }}>no project with id {id}</span>
+        </Panel>
+      </Page>
+    );
+  }
+  if (error || !p || !keys) {
+    return (
+      <Page>
+        <div style={{ color: error ? "#e07b7b" : "#888", fontSize: 13 }}>{error ?? "loading…"}</div>
+      </Page>
+    );
   }
 
   return (
@@ -26,7 +86,7 @@ export function ProjectKeys() {
 
       <Panel
         title="keys · this project"
-        right={`${p.keys.length} active`}
+        right={`${keys.length} active`}
         style={{ marginBottom: 12 }}
       >
         <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
@@ -34,28 +94,50 @@ export function ProjectKeys() {
           call REST publish endpoints). keep them out of the browser. we only ever show the full
           secret once, at creation.
         </div>
-        <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ color: "#666", borderBottom: "1px solid #222" }}>
-              <th style={{ textAlign: "left", padding: "4px 8px" }}>prefix</th>
-              <th style={{ textAlign: "left", padding: "4px 8px" }}>label</th>
-              <th style={{ textAlign: "left", padding: "4px 8px" }}>last used</th>
-            </tr>
-          </thead>
-          <tbody>
-            {p.keys.map((k) => (
-              <tr key={k.prefix} style={{ borderBottom: "1px dotted #1a1a1a" }}>
-                <td style={{ padding: "4px 8px", color: "#c9a76a" }}>
-                  hk_{k.prefix}_<span style={{ color: "#666" }}>•••</span>
-                </td>
-                <td style={{ padding: "4px 8px" }}>{k.label ?? "—"}</td>
-                <td style={{ padding: "4px 8px", color: "#888" }}>{k.last_used_at ?? "—"}</td>
+        {keys.length === 0 ? (
+          <div style={{ fontSize: 12, color: "#888", padding: "8px 0" }}>
+            no keys yet — create one below.
+          </div>
+        ) : (
+          <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ color: "#666", borderBottom: "1px solid #222" }}>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>prefix</th>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>label</th>
+                <th style={{ textAlign: "left", padding: "4px 8px" }}>last used</th>
+                <th style={{ textAlign: "right", padding: "4px 8px" }} />
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <div style={{ marginTop: 12 }}>
-          <button onClick={rotate}>[ rotate ]</button>
+            </thead>
+            <tbody>
+              {keys.map((k) => (
+                <tr key={k.id} style={{ borderBottom: "1px dotted #1a1a1a" }}>
+                  <td style={{ padding: "4px 8px", color: "#c9a76a" }}>
+                    hk_{k.prefix}_<span style={{ color: "#666" }}>•••</span>
+                  </td>
+                  <td style={{ padding: "4px 8px" }}>{k.label ?? "—"}</td>
+                  <td style={{ padding: "4px 8px", color: "#888" }}>
+                    {k.last_used_at ? k.last_used_at.slice(0, 16).replace("T", " ") : "—"}
+                  </td>
+                  <td style={{ padding: "4px 8px", textAlign: "right" }}>
+                    <button onClick={() => revoke(k.id)} disabled={busy}>
+                      [ revoke ]
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div style={{ marginTop: 12, display: "flex", gap: 6 }}>
+          <input
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="label (optional, e.g. 'prod backend')"
+            style={{ flex: 1, fontSize: 12, padding: "6px 8px" }}
+          />
+          <button onClick={create} disabled={busy}>
+            [ {busy ? "creating…" : "new key"} ]
+          </button>
         </div>
       </Panel>
 
@@ -73,9 +155,10 @@ export function ProjectKeys() {
               fontSize: 12,
               margin: 0,
               userSelect: "all",
+              overflow: "auto",
             }}
           >
-            hk_{lastNew.prefix}_{lastNew.secret}
+            {lastNew.wire}
           </pre>
         </Panel>
       )}

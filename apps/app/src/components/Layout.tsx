@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 export function Page({ children }: { children: ReactNode }) {
-  return <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>{children}</div>;
+  return <div style={{ padding: 20, maxWidth: 820, margin: "0 auto" }}>{children}</div>;
 }
 
 export function Panel({

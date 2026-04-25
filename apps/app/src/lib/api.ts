@@ -1,11 +1,10 @@
-// The dashboard is a thin client over the control plane's REST API.
-// Authentication is real (cookie-session against /auth/* on control);
-// projects + keys + usage are still localStorage-backed scaffolding
-// and will be wired up to /api/projects when those endpoints land.
+// Dashboard API client. Auth is real (cookie-session against /auth/*
+// on the control plane). Projects + API keys are real (against /api/*).
+// Usage stats are not implemented on the backend yet — the dashboard
+// should not display fabricated numbers; until /api/usage lands the
+// usage panels render placeholders.
 
 const BASE: string = import.meta.env.VITE_HELA_CONTROL ?? "";
-
-const K_PROJECTS = "hela.dash.projects";
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
@@ -22,11 +21,18 @@ export interface Project {
   name: string;
   region: Region;
   tier: Tier;
-  created_at: string;
+  multi_region: Region[];
+  inserted_at: string;
+  updated_at: string;
   jwt_registered: boolean;
-  keys: { prefix: string; label: string | null; last_used_at: string | null }[];
-  usage: { messages: number; connections: number; cap_messages: number; cap_connections: number };
-  price_per_month: number;
+}
+
+export interface ApiKey {
+  id: string;
+  prefix: string;
+  label: string | null;
+  last_used_at: string | null;
+  inserted_at: string;
 }
 
 export const TIER_PRICE: Record<Tier, number> = {
@@ -37,30 +43,14 @@ export const TIER_PRICE: Record<Tier, number> = {
   ent: 2500,
 };
 
-const TIER_CAPS: Record<Tier, { messages: number; connections: number }> = {
-  free: { messages: 1_000_000, connections: 100 },
-  starter: { messages: 10_000_000, connections: 1_000 },
-  growth: { messages: 100_000_000, connections: 10_000 },
-  scale: { messages: 1_000_000_000, connections: 100_000 },
-  ent: { messages: Number.POSITIVE_INFINITY, connections: Number.POSITIVE_INFINITY },
-};
-
 // --- auth ---------------------------------------------------------------
 
 let _account: Account | null = null;
 
-// Hydrate the in-memory account from the server's session cookie. Call
-// once on app boot before mounting the router; the route guards read
-// `account()` synchronously and trust whatever bootstrap left here.
 export async function bootstrap(): Promise<void> {
   try {
     const res = await fetch(`${BASE}/api/me`, { credentials: "include" });
-    if (res.ok) {
-      const json = (await res.json()) as { account: Account };
-      _account = json.account;
-    } else {
-      _account = null;
-    }
+    _account = res.ok ? ((await res.json()) as { account: Account }).account : null;
   } catch {
     _account = null;
   }
@@ -74,7 +64,7 @@ export function isSignedIn(): boolean {
   return _account !== null;
 }
 
-export class AuthError extends Error {
+export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
     super(message);
@@ -99,7 +89,7 @@ async function postCreds(path: string, email: string, password: string): Promise
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new AuthError(body.error ?? `request failed (${res.status})`, res.status);
+    throw new ApiError(body.error ?? `request failed (${res.status})`, res.status);
   }
   const json = (await res.json()) as { account: Account };
   _account = json.account;
@@ -114,96 +104,96 @@ export async function signout(): Promise<void> {
   }
 }
 
-// --- projects (still localStorage; backend wiring is a follow-up) -------
+// --- projects -----------------------------------------------------------
 
-export function projects(): Project[] {
-  const raw = localStorage.getItem(K_PROJECTS);
-  const ps = raw ? (JSON.parse(raw) as Project[]) : [];
-  return ps.map(fillUsage);
-}
-
-export function project(id: string): Project | null {
-  return projects().find((p) => p.id === id) ?? null;
-}
-
-export function createProject(attrs: { name: string; region: Region; tier: Tier }): Project {
-  const caps = TIER_CAPS[attrs.tier];
-  const p: Project = {
-    id: "proj_" + randomId(8),
-    name: attrs.name,
-    region: attrs.region,
-    tier: attrs.tier,
-    created_at: new Date().toISOString(),
-    jwt_registered: false,
-    keys: [
-      {
-        prefix: randomId(6),
-        label: "default",
-        last_used_at: null,
-      },
-    ],
-    usage: {
-      messages: 0,
-      connections: 0,
-      cap_messages: caps.messages,
-      cap_connections: caps.connections,
+async function jsonRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...((init.headers as Record<string, string>) ?? {}),
     },
-    price_per_month: TIER_PRICE[attrs.tier],
-  };
-  const all = projects();
-  all.push(p);
-  localStorage.setItem(K_PROJECTS, JSON.stringify(all));
-  return p;
-}
-
-export function updateProject(id: string, patch: Partial<Project>): Project | null {
-  const all = projects();
-  const i = all.findIndex((p) => p.id === id);
-  if (i === -1) return null;
-  all[i] = { ...all[i], ...patch };
-  localStorage.setItem(K_PROJECTS, JSON.stringify(all));
-  return all[i];
-}
-
-export function deleteProject(id: string): void {
-  const all = projects().filter((p) => p.id !== id);
-  localStorage.setItem(K_PROJECTS, JSON.stringify(all));
-}
-
-export function rotateKey(id: string): { prefix: string; secret: string } {
-  const p = project(id);
-  if (!p) throw new Error("no project");
-  const prefix = randomId(6);
-  const secret = randomId(32);
-  p.keys = p.keys.map((k) => ({ ...k, last_used_at: null }));
-  p.keys.unshift({
-    prefix,
-    label: "rotated " + new Date().toISOString().slice(0, 10),
-    last_used_at: null,
+    ...init,
   });
-  updateProject(id, { keys: p.keys });
-  return { prefix, secret };
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new ApiError(body.error ?? `request failed (${res.status})`, res.status);
+  }
+  return (await res.json()) as T;
 }
 
-function fillUsage(p: Project): Project {
-  // Deterministic fake usage between 10% and 80% of cap, for visual-dev.
-  const seed = Array.from(p.id).reduce((a, c) => a + c.charCodeAt(0), 0);
-  const pct = 0.1 + (seed % 70) / 100;
-  if (p.usage.cap_messages === Number.POSITIVE_INFINITY) return p;
-  return {
-    ...p,
-    usage: {
-      ...p.usage,
-      messages: Math.floor(p.usage.cap_messages * pct),
-      connections: Math.floor(p.usage.cap_connections * (pct * 0.6)),
-    },
-  };
+export async function listProjects(): Promise<Project[]> {
+  const r = await jsonRequest<{ projects: Project[] }>("/api/projects");
+  return r.projects;
 }
 
-function randomId(n: number): string {
-  const bytes = new Uint8Array(n);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0"))
-    .join("")
-    .slice(0, n);
+export async function getProject(id: string): Promise<Project> {
+  const r = await jsonRequest<{ project: Project }>(`/api/projects/${id}`);
+  return r.project;
+}
+
+export async function createProject(attrs: {
+  name: string;
+  region: Region;
+  tier: Tier;
+}): Promise<Project> {
+  const r = await jsonRequest<{ project: Project }>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(attrs),
+  });
+  return r.project;
+}
+
+export async function updateProject(
+  id: string,
+  attrs: Partial<Pick<Project, "name" | "tier">>,
+): Promise<Project> {
+  const r = await jsonRequest<{ project: Project }>(`/api/projects/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(attrs),
+  });
+  return r.project;
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await jsonRequest(`/api/projects/${id}`, { method: "DELETE" });
+}
+
+export async function setProjectJwk(id: string, jwk: object): Promise<Project> {
+  const r = await jsonRequest<{ project: Project }>(`/api/projects/${id}/jwk`, {
+    method: "PUT",
+    body: JSON.stringify({ jwk }),
+  });
+  return r.project;
+}
+
+export async function startCheckout(projectId: string): Promise<string | null> {
+  const r = await jsonRequest<{ url: string | null }>(`/api/projects/${projectId}/checkout`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  return r.url;
+}
+
+// --- API keys -----------------------------------------------------------
+
+export async function listKeys(projectId: string): Promise<ApiKey[]> {
+  const r = await jsonRequest<{ keys: ApiKey[] }>(`/api/projects/${projectId}/keys`);
+  return r.keys;
+}
+
+export async function createKey(
+  projectId: string,
+  label?: string,
+): Promise<{ key: ApiKey; wire: string }> {
+  // Backend returns {key, wire} where `wire` is the full
+  // hk_<prefix>_<secret> string — only shown once at creation.
+  return await jsonRequest<{ key: ApiKey; wire: string }>(`/api/projects/${projectId}/keys`, {
+    method: "POST",
+    body: JSON.stringify({ label: label ?? null }),
+  });
+}
+
+export async function revokeKey(projectId: string, keyId: string): Promise<void> {
+  await jsonRequest(`/api/projects/${projectId}/keys/${keyId}`, { method: "DELETE" });
 }

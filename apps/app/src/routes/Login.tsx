@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { login, AuthError } from "../lib/api";
+import { login, ApiError } from "../lib/api";
 import { Page, Panel } from "../components/Layout";
 
 export function Login() {
@@ -20,7 +20,7 @@ export function Login() {
       window.location.href = "/";
     } catch (err) {
       const msg =
-        err instanceof AuthError && err.status === 401
+        err instanceof ApiError && err.status === 401
           ? "email or password is wrong"
           : "sign-in failed; try again";
       setError(msg);
