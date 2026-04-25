@@ -91,7 +91,10 @@ pre-commit:
 
     js-eslint:
       tags: js lint
-      glob: "{apps/app,apps/web,packages,scripts}/**/*.{ts,tsx}"
+      # Mirror the include scope in eslint.config.mjs. SDK packages,
+      # the e2e package, and the UI package each have their own
+      # toolchain and aren't covered by the dashboard rules.
+      glob: "{apps/app,apps/web}/src/**/*.{ts,tsx},scripts/**/*.ts"
       run: bunx eslint --max-warnings 0 {staged_files}
 
     js-tsc-app:
