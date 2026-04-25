@@ -1,202 +1,175 @@
-# CLAUDE.md — rules for agentic work on hela
+# CLAUDE.md, contract for agentic work on hela
 
 Read this first. These rules bind every Claude/Copilot/agent session
-that touches this repo.
+that touches this repo. If a rule conflicts with something you read
+elsewhere, this file wins, then `docs/dev/`.
 
-## commits
+## project at a glance
 
-The hard rule: **small, focused commits, often**. One logical change
-per commit. No "feat: everything I did today" mega-commits.
+- Managed real-time on BEAM (Pusher/Ably alternative). Self-hostable.
+- Monorepo: Elixir gateway + control, React web + app, four SDKs
+  (TS / Python / Go / Rust). Schemas in `packages/schemas/` are the
+  source of truth, SDK types are generated.
+- Hosted plane runs on Railway (one Amsterdam gateway today). Fly is
+  a documented secondary path, not active.
+- Billing is Polar. Not Stripe. Stripe was rejected and removed.
 
-When in doubt about where to split:
+## hard rules
 
-- **A commit should tell a story.** Schema change + codegen + SDK
-  consumer + tests + docs = five commits, not one, even if they
-  all need to land together in the same PR.
-- **The commit message body should explain *why*, not *what*.** The
-  diff shows what changed; a future reader cares about the reason.
-- **Never batch unrelated refactors with a feature.** If you have to
-  write "also: …" in a commit message, split it.
-- **Commit frequently during a task.** If you've been editing for 30
-  minutes without a commit, you've waited too long. Commit locally,
-  even if you rebase before pushing.
-- **Work-in-progress commits are fine — squash them before PR.**
-  Don't hold off committing because the state isn't "clean yet".
+These are derived from real incidents in prior sessions. Breaking one
+means you are repeating a mistake we already paid for. See
+`docs/dev/mistakes.md` for the source incident behind each.
 
-### message format
+1. Do not paper over a failing test by filtering its signal. If a
+   `consoleErrors.toEqual([])` test is catching a real 4xx, fix the
+   server, do not filter the 4xx out of the assertion.
+2. Do not add a retry loop to hide a server bug. Retries are for
+   genuine transients (network blip, cold start). For consistent
+   server responses, fix the server.
+3. Run a fresh `grep -ri` from repo root before claiming a sweep is
+   done. Sweeps that only touched README and docs missed `stripe_`
+   in TS types and `hela.dev` in `infra/fly/*.toml`.
+4. Sequence destructive ops correctly. When changing a Railway
+   service's image and attaching a volume in the same change, set
+   the image first. Otherwise the old image initdb's the volume and
+   the new image cannot read it.
+5. Never claim a deploy succeeded based on `/health` alone if the
+   real signal is a downstream dependency. Use `/version` (which
+   forces a release-script execution path) or curl an endpoint that
+   actually exercises the dependency.
+6. Pin status checks by id, not by `first: 1`. `serviceInstanceUpdate`
+   followed by `deployments(first: 1)` can return the prior deploy.
+   Always capture the deployment id from the trigger mutation.
+7. Do not extend transitive permission. "Yes do the upgrade" does not
+   authorize a `volume delete`. State the destructive sub-step,
+   confirm, then act.
+8. Read the actual config before assuming a BEAM feature is wired.
+   This repo has no `libcluster` and no `Node.connect`, so the host
+   part of `RELEASE_NODE` is a label, not a routable address. Treat
+   it as a label until clustering ships.
+9. CI green is not feature-works. The `sdk-js · e2e playground` job
+   is the closest signal we have to a real browser flow, and even
+   that lies if the test is filtering its own errors.
 
-Subjects must match `^[A-Za-z0-9 ,:]{4,72}$` (enforced by
-`scripts/check-commit-msg.sh` and the commitlint CI job).
-Conventional-Commit prefixes are allowed; parens and hyphens aren't.
+## before you code
 
-Good:
+1. `git pull --rebase`. Then `git status`. The repo state may not be
+   what you remember from last session.
+2. Read the file you are about to edit, end to end. Hooks may have
+   shown you only a slice.
+3. If the change touches a wire-level type, edit
+   `packages/schemas/openapi.yaml` or the wire schema first, then
+   `make sdk.gen`. Never hand-edit `_generated/`.
+4. If it is a non-trivial feature, write the plan into
+   `.cursor/plans/<slug>.plan.md` first. List the files you intend
+   to touch and the contract changes you intend to make. The plan
+   is the spec.
+5. Search for the symbol you are about to add or rename. If anything
+   matches in another file, you have a coordination problem to
+   resolve before editing.
 
-```
-feat: presence CRDT client-side mirror
-fix: heartbeat timeout on slow networks
-docs: rewrite quickstart for hosted regions
-ci: schema drift guard
-```
+## before you commit
 
-Bad:
+1. Run the package's typechecker and tests. See `docs/dev/testing.md`
+   for the exact commands per language.
+2. Subject must match `^[A-Za-z0-9 ,:]{4,72}$`. Conventional-Commit
+   prefixes are allowed, parens and hyphens are not.
+3. One logical change per commit. If you have to write `also: ...`
+   in the body, split.
+4. Body explains *why*, not *what*. The diff shows what.
+5. Do not skip pre-commit hooks (`--no-verify`) without a stated
+   reason in the commit body.
 
-```
-feat(sdk-py): everything         # parens banned
-fix: tests!!!                    # punctuation
-WIP                              # too terse, < 4 chars
-Huge commit with 30 files doing tests, docs, sdk scaffolding, Makefile changes, and CI wiring  # over 72 chars + mixing concerns
-```
+## before you push
 
-## schemas are the source of truth
+1. Did you actually run the affected tests, or just hope they pass?
+   If you only ran a typechecker, say so in the PR body.
+2. Did you grep the repo for any string you renamed? `stripe_` and
+   `hela.dev` both survived prior sweeps that did not do this.
+3. Did you reconcile `infra/railway/main.tf` with anything you
+   changed live via `railway` CLI or GraphQL? Drift between Terraform
+   and live state is a real recurring incident.
 
-Every wire-level or REST-level type lives in
-`packages/schemas/`. SDK type modules are **generated**:
+## branches and merging
 
-- Python: `packages/sdk-py/src/hela/_generated/`
-- TypeScript: `packages/sdk-types/src/`
-
-Rules:
-
-1. **Never edit `_generated/` by hand.** Run `make sdk.gen`.
-2. **When you change a schema, run `make sdk.gen` and commit both
-   the schema and the regenerated code in the same commit.** CI's
-   `schema-drift` job rejects PRs where they don't match.
-3. **Additive changes only on the stable path.** Renaming or
-   removing a field is a breaking protocol change; coordinate with
-   SDK bumps and a `WIRE_VERSION` bump.
-
-## spec-driven: the plan is the spec
-
-Any non-trivial feature starts as a plan in `.cursor/plans/` (or the
-equivalent markdown under `docs/plans/` if no cursor). The plan is a
-contract:
-
-- **The plan lists the files to change and the contract changes
-  allowed.** If your implementation touches a file the plan doesn't
-  mention, either update the plan first or narrow the change.
-- **The plan's "Allowed API / Contract Changes" section is the
-  source of truth for what's additive vs breaking.** When in doubt,
-  default to additive. The ephemeral-demo-mode PR (#15) is the
-  reference: optional fields, omit-on-false serialization, no
-  removals or required-field changes.
-- **The PR description links to the plan.** Reviewers (and the
-  admin-bypass flow) grade the PR against the plan's todos, not
-  just the diff.
-- **When the plan is done, update its status and call out remaining
-  follow-ups in-line** (e.g. rollback runbooks, deprecations). Don't
-  close a plan by deleting it — it's the historical record of why
-  the code is shaped this way.
+- `main` is the only branch that matters. Squash-only merges, linear
+  history.
+- `enforce_admins: false` is set on `v0id-user/hela`. The owner has
+  explicitly opted in to admin-bypass for solo maintenance:
+  `gh pr merge --admin --squash --delete-branch` is acceptable when
+  the owner has stated intent to ship a failing-CI PR. Do not
+  extend this pattern to other repos.
+- Pending-deployment auto-approve via `gh api -X POST
+  repos/v0id-user/hela/actions/runs/<RUN_ID>/pending_deployments` is
+  also acceptable on this repo. See
+  `docs/dev/development-cycle.md` for the exact payload.
 
 ## SDKs
 
-Two in tree:
+Four in tree, in this order of investment:
 
-- `packages/sdk-js/` — TypeScript, phoenix.js under the hood
-- `packages/sdk-py/` — Python, async, Pydantic v2
+- `packages/sdk-js/`, TypeScript, phoenix.js under the hood, also
+  imported by the web and app clients
+- `packages/sdk-py/`, Python, asyncio + Pydantic v2
+- `packages/sdk-go/`, Go, `coder/websocket` + stdlib
+- `packages/sdk-rs/`, Rust, `tokio-tungstenite` + `reqwest`
 
-Future languages follow the recipe in
-`docs/sdk/adding-a-language.md`. Short version: generate types,
-hand-write transport + domain API, cover with unit + live
-integration tests.
-
-**Don't add new language SDKs without opening an issue first** — we
-want to agree on shape before committing to maintenance cost.
-
-## tests
-
-- Every package owns its own test suite. Run it before committing.
-- Python: `cd packages/sdk-py && uv run pytest`. Live tests gated
-  behind `HELA_LIVE=1`.
-- Elixir: `cd apps/<app> && mix test`.
-- TypeScript: typecheck via `bunx tsc --noEmit` is the floor; add
-  unit tests where logic is non-trivial.
-- CI runs every suite on every PR. Don't bypass with `[skip ci]`
-  unless it's a docs-only change that touches zero test files.
-
-## branches
-
-- `main` is protected: squash-only merges, at least one review
-  (except v0id-user bypass for solo maintenance, per the repo
-  owner's per-user preference).
-- Branch from main. Rebase, don't merge, to keep main linear.
-- Delete branches after merge.
+Wire types are generated. Domain API and transport are hand-written.
+Adding a new language SDK requires opening an issue first, since
+each one is real maintenance cost.
 
 ## deployment
 
-- **Railway is primary.** `infra/railway/` has the Terraform.
-- **Fly is secondary.** `infra/fly/` still works but isn't the hot
-  path.
-- **Polar is the billing platform** — not Stripe. Don't re-add
-  Stripe integration paths that were removed.
-- Terraform for IaC on both. Don't click in the dashboards;
-  if the state drifts, reconcile it into TF.
+- Railway is primary. `infra/railway/main.tf` is the source of
+  truth. Apply via `terraform apply` from `infra/railway/`. If
+  Terraform is not installed locally, you can apply individual
+  changes via `railway` CLI or the GraphQL API at
+  `https://backboard.railway.com/graphql/v2`, but you must reconcile
+  the change back into `main.tf` in the same PR.
+- The `/version.commit` deploy gate in `.github/workflows/ci.yml`
+  verifies the pushed SHA actually shipped. Do not loosen it.
+- Postgres runs on `postgres:18-alpine`, with a Railway volume
+  mounted at `/var/lib/postgresql/data` and `PGDATA` pointed at the
+  `pgdata/` subdirectory under that mount. See
+  `docs/dev/environment.md` for the rationale.
+- Fly is documented as secondary in `infra/fly/`. The toml files
+  point at `*.fly.dev` hostnames. Do not add `*.hela.dev`
+  references; the project does not own that domain.
 
-### admin bypass
+## secrets
 
-The repo owner (`v0id-user`) has explicitly opted in to admin
-bypass on this repo. Agents acting on their behalf should:
-
-- **Auto-approve pending deployments** after a green push to `main`.
-  The `production` environment gate is there for humans; an agent
-  doesn't need to wait:
-
-  ```sh
-  # Get the env id + pending run id
-  gh api repos/v0id-user/hela/actions/runs/<RUN_ID>/pending_deployments
-
-  # Approve
-  gh api -X POST repos/v0id-user/hela/actions/runs/<RUN_ID>/pending_deployments \
-    --input - <<EOF
-  {"environment_ids":[<ENV_ID>],"state":"approved","comment":"admin bypass per owner preference"}
-  EOF
-  ```
-
-  Re-run the approve call for each deploy job — each `environment:
-  production` in `ci.yml` triggers a separate gate.
-
-- **Push directly to `main`** (branch protection has
-  `enforce_admins: false`). Prefer PRs for real changes, but push
-  straight when the alternative is a ticket in a drawer.
-
-- **`gh pr merge --admin --squash --delete-branch`** for merging
-  failing-CI PRs the owner has already said they intended to ship.
-
-Do *not* extend any of this to org-owned or unfamiliar repos —
-this section is specific to `v0id-user/*`.
+Never commit secrets. Never echo or log tokens. If you see a token
+in a transcript, treat it as compromised and rotate it. Use GitHub
+environment secrets. The owner may paste tokens into the
+conversation for setup; redact them from any output you produce.
 
 ## licensing
 
-AGPL-3.0-or-later, across the whole monorepo. Any new source file
-needs the SPDX header or the `# SPDX-License-Identifier: AGPL-3.0-or-later`
-comment near the top. License changes are owner-only decisions.
+AGPL-3.0-or-later for code. Brand assets in `apps/web/public/brand/`
+have a trademark carve-out documented in `apps/web/public/brand/LICENSE.md`.
+New source files need an SPDX header.
 
-## secrets and tokens
+## where to find detailed docs
 
-- **Never commit secrets.** Use GitHub environment secrets.
-- **Never echo or log tokens.** If you see one in a transcript,
-  rotate it and redact the transcript.
-- The repo owner (v0id-user) may paste tokens into the conversation
-  for setup — treat them as redacted in any output you produce.
+- `docs/dev/README.md`, index of dev docs
+- `docs/dev/mistakes.md`, post-mortem log of session-level mistakes
+- `docs/dev/development-cycle.md`, the actual contributor loop
+- `docs/dev/naming-conventions.md`, per-language naming rules
+- `docs/dev/code-quality.md`, "works on my machine is not shipped"
+- `docs/dev/testing.md`, the test pyramid as it exists here
+- `docs/dev/environment.md`, runtime versions, env vars, secrets
+- `docs/dev/pitfalls.md`, sharp edges
+- `docs/architecture.md`, mental model for the system
+- `docs/runbook.md`, ops scenarios
 
-## docs
+## how to ask for help
 
-Documentation isn't optional. Before closing a feature PR:
+Before escalating, gather:
 
-- `docs/` page covering the user-facing surface, with code examples
-- README in each package if it's new or the entry point shape changed
-- `CHANGELOG.md` in the affected package if it publishes to a registry
+1. The exact command you ran and the output.
+2. The git SHA you are on (`git rev-parse HEAD`).
+3. The branch state (`git status --short`).
+4. The relevant log line, not a paraphrase.
+5. What you have already tried, and what made you stop.
 
-## tooling preferences
-
-- Python scripts: `uv run` with PEP 723 inline deps, not
-  `pip install` + a committed `requirements.txt`.
-- TypeScript scripts: `bun run`, not `node` or `ts-node`.
-- Shell scripts: POSIX-sh or bash with `set -euo pipefail`. No zsh-
-  only features.
-
-## when you're stuck
-
-1. Read `docs/architecture.md` to refresh the mental model.
-2. Check `docs/runbook.md` for ops scenarios.
-3. Ask in the PR or issue before making a directional decision.
-   A five-minute clarification beats an hour of rework.
+A five-minute clarification beats an hour of rework.
