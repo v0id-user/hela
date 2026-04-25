@@ -108,14 +108,22 @@ export class HelaClient {
   /**
    * Measure round-trip latency to the region by sending a `ping` on any
    * joined channel. Returns ms. The channel must already be joined.
+   *
+   * Phoenix's `Push.receive("ok", cb)` registers a callback and returns
+   * the same Push synchronously — it does not return a Promise. So the
+   * earlier `await channel.raw.push(...).receive("ok", () => {})` was
+   * resolving immediately, reporting RTT ≈ 0ms. Wrap in a real promise
+   * that the receive callbacks resolve (or reject on error/timeout).
    */
   async measureRTT(channel: HelaChannel): Promise<number> {
     const t0 = performance.now();
-    await channel.raw
-      .push("ping", { t: t0 })
-      .receive("ok", () => {})
-      .receive("error", () => {});
-    return performance.now() - t0;
+    return new Promise<number>((resolve, reject) => {
+      channel.raw
+        .push("ping", { t: t0 })
+        .receive("ok", () => resolve(performance.now() - t0))
+        .receive("error", (err: unknown) => reject(new Error(`ping error: ${JSON.stringify(err)}`)))
+        .receive("timeout", () => reject(new Error("ping timeout")));
+    });
   }
 
   /** Base HTTP URL for calling `fetch`-backed helpers against this region. */
