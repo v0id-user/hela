@@ -33,6 +33,12 @@ test("landing hero connects and signup routes to the app", async ({ page }) => {
   expect(debug.reconnects).toBeLessThanOrEqual(1);
   expect(telemetry.consoleErrors).toEqual([]);
   expect(telemetry.reconnectLogs).toEqual([]);
+  // No 429 on the legitimate first-paint pattern. The page mints two
+  // playground tokens (hero ephemeral + demo non-ephemeral) within
+  // the same second; the per-IP rate limiter must accommodate that
+  // burst. If this fails, either the limiter tightened or the page
+  // started minting more tokens than it needs.
+  expect(telemetry.rateLimited).toEqual([]);
   const sockets = telemetry.webSocketUrls.filter((url) => url.includes("/socket/websocket"));
   expect(sockets.length).toBeGreaterThanOrEqual(2);
 });

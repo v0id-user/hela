@@ -106,30 +106,35 @@ export function trackBrowserSignals(page: Page): {
   consoleErrors: string[];
   reconnectLogs: string[];
   webSocketUrls: string[];
+  rateLimited: string[];
 } {
   const consoleErrors: string[] = [];
   const reconnectLogs: string[] = [];
   const webSocketUrls: string[] = [];
+  const rateLimited: string[] = [];
 
   page.on("console", (message) => {
-    if (message.type() === "error") {
-      const text = message.text();
-      // Chromium auto-logs every non-2xx response as "Failed to load
-      // resource: the server responded with a status of N". That is
-      // not an actionable error when the SDK retries the request
-      // (e.g. 429 from the playground rate limiter), so filter those
-      // out and keep the signal focused on real breakage.
-      if (/Failed to load resource: .*status of (429|503|504)/.test(text)) return;
-      consoleErrors.push(text);
-    }
+    if (message.type() === "error") consoleErrors.push(message.text());
     if (/reconnect/i.test(message.text())) reconnectLogs.push(message.text());
+  });
+
+  // Network-level 429 watch on /playground/token. We previously
+  // filtered these out because the SDK retries them, but that hid a
+  // real bug: the per-IP rate limiter was eating legitimate
+  // landing-page traffic on first paint. Tests should now FAIL on
+  // any 429 so future tightening of the limiter can't silently
+  // regress the user-facing flow.
+  page.on("response", (res) => {
+    if (res.status() === 429 && /\/playground\/token(\b|\?)/.test(res.url())) {
+      rateLimited.push(`${res.status()} ${res.url()}`);
+    }
   });
 
   page.on("websocket", (ws) => {
     webSocketUrls.push(ws.url());
   });
 
-  return { consoleErrors, reconnectLogs, webSocketUrls };
+  return { consoleErrors, reconnectLogs, webSocketUrls, rateLimited };
 }
 
 export async function waitForHelaReady(page: Page, timeout = 10_000): Promise<void> {

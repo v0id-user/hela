@@ -13,13 +13,22 @@ defmodule Hela.PlaygroundLimiter do
   count-so-far in that bucket. Old entries are GC'd every minute.
 
   Limits (per IP):
-    token   — 1/sec, 30/hour     (mint a playground JWT)
+    token   — 5/sec, 120/hour    (mint a playground JWT)
     publish — 3/sec, 500/hour    (push a message via REST)
 
   The per-second bucket stops bursts; the per-hour bucket stops
-  patient attackers. The caps are intentionally generous for normal
-  demo use: a visitor who mints one token and publishes a handful of
-  messages on the live-chat demo fits comfortably.
+  patient attackers. The token caps allow for the legitimate
+  landing-page pattern of two clients (hero ephemeral + demo
+  primitives non-ephemeral) firing on first paint, plus token
+  refresh cycles, plus a reasonable amount of reload churn — without
+  letting a bot mint thousands per hour.
+
+  History note: token was 1/sec, 30/hour. That bit a real user-
+  facing flow because the marketing site mints two tokens
+  (different `sub`, different `ephemeral` flag) within the same
+  second on first load; the per-IP limiter punted one of them with
+  429. Bumping to 5/sec accommodates the legitimate burst; 120/hour
+  still catches sustained abuse.
   """
 
   use GenServer
@@ -29,7 +38,7 @@ defmodule Hela.PlaygroundLimiter do
   # `{cap, window_seconds}` pairs per action. Every request checks
   # every pair in order; the first denial wins.
   @limits %{
-    token: [{:per_sec, 1, 1}, {:per_hour, 30, 3600}],
+    token: [{:per_sec, 5, 1}, {:per_hour, 120, 3600}],
     publish: [{:per_sec, 3, 1}, {:per_hour, 500, 3600}]
   }
 
