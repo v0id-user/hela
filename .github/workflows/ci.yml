@@ -441,16 +441,29 @@ jobs:
       - uses: actions/checkout@v6
       - name: install Railway CLI
         shell: bash
+        # Pinned binary download from GitHub releases. The official
+        # `railway.com/install.sh` script sits behind Cloudflare's bot
+        # challenge, which flags GitHub Actions runners and returns
+        # 403/503 for hours at a time — that broke main + dev CI
+        # repeatedly through the 2026-04-25 session. Pulling the
+        # release tarball directly from github.com bypasses the
+        # challenge and pins a known-good version.
+        env:
+          RAILWAY_CLI_VERSION: v4.42.1
         run: |
           set -euo pipefail
 
+          URL="https://github.com/railwayapp/cli/releases/download/${RAILWAY_CLI_VERSION}/railway-${RAILWAY_CLI_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+
           for attempt in $(seq 1 5); do
-            if curl --fail --silent --show-error --location https://railway.com/install.sh | sh; then
-              echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+            if curl --fail --silent --show-error --location "$URL" -o /tmp/railway.tar.gz; then
+              tar -xzf /tmp/railway.tar.gz -C /tmp
+              sudo install -m 0755 /tmp/railway /usr/local/bin/railway
+              railway --version
               exit 0
             fi
 
-            echo "railway CLI install failed ($attempt/5)" >&2
+            echo "railway CLI download failed ($attempt/5)" >&2
             sleep 5
           done
 
@@ -508,16 +521,29 @@ jobs:
       - uses: actions/checkout@v6
       - name: install Railway CLI
         shell: bash
+        # Pinned binary download from GitHub releases. The official
+        # `railway.com/install.sh` script sits behind Cloudflare's bot
+        # challenge, which flags GitHub Actions runners and returns
+        # 403/503 for hours at a time — that broke main + dev CI
+        # repeatedly through the 2026-04-25 session. Pulling the
+        # release tarball directly from github.com bypasses the
+        # challenge and pins a known-good version.
+        env:
+          RAILWAY_CLI_VERSION: v4.42.1
         run: |
           set -euo pipefail
 
+          URL="https://github.com/railwayapp/cli/releases/download/${RAILWAY_CLI_VERSION}/railway-${RAILWAY_CLI_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+
           for attempt in $(seq 1 5); do
-            if curl --fail --silent --show-error --location https://railway.com/install.sh | sh; then
-              echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+            if curl --fail --silent --show-error --location "$URL" -o /tmp/railway.tar.gz; then
+              tar -xzf /tmp/railway.tar.gz -C /tmp
+              sudo install -m 0755 /tmp/railway /usr/local/bin/railway
+              railway --version
               exit 0
             fi
 
-            echo "railway CLI install failed ($attempt/5)" >&2
+            echo "railway CLI download failed ($attempt/5)" >&2
             sleep 5
           done
 
@@ -588,16 +614,29 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
       - name: install Railway CLI
         shell: bash
+        # Pinned binary download from GitHub releases. The official
+        # `railway.com/install.sh` script sits behind Cloudflare's bot
+        # challenge, which flags GitHub Actions runners and returns
+        # 403/503 for hours at a time — that broke main + dev CI
+        # repeatedly through the 2026-04-25 session. Pulling the
+        # release tarball directly from github.com bypasses the
+        # challenge and pins a known-good version.
+        env:
+          RAILWAY_CLI_VERSION: v4.42.1
         run: |
           set -euo pipefail
 
+          URL="https://github.com/railwayapp/cli/releases/download/${RAILWAY_CLI_VERSION}/railway-${RAILWAY_CLI_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+
           for attempt in $(seq 1 5); do
-            if curl --fail --silent --show-error --location https://railway.com/install.sh | sh; then
-              echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+            if curl --fail --silent --show-error --location "$URL" -o /tmp/railway.tar.gz; then
+              tar -xzf /tmp/railway.tar.gz -C /tmp
+              sudo install -m 0755 /tmp/railway /usr/local/bin/railway
+              railway --version
               exit 0
             fi
 
-            echo "railway CLI install failed ($attempt/5)" >&2
+            echo "railway CLI download failed ($attempt/5)" >&2
             sleep 5
           done
 
@@ -683,16 +722,29 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
       - name: install Railway CLI
         shell: bash
+        # Pinned binary download from GitHub releases. The official
+        # `railway.com/install.sh` script sits behind Cloudflare's bot
+        # challenge, which flags GitHub Actions runners and returns
+        # 403/503 for hours at a time — that broke main + dev CI
+        # repeatedly through the 2026-04-25 session. Pulling the
+        # release tarball directly from github.com bypasses the
+        # challenge and pins a known-good version.
+        env:
+          RAILWAY_CLI_VERSION: v4.42.1
         run: |
           set -euo pipefail
 
+          URL="https://github.com/railwayapp/cli/releases/download/${RAILWAY_CLI_VERSION}/railway-${RAILWAY_CLI_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+
           for attempt in $(seq 1 5); do
-            if curl --fail --silent --show-error --location https://railway.com/install.sh | sh; then
-              echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+            if curl --fail --silent --show-error --location "$URL" -o /tmp/railway.tar.gz; then
+              tar -xzf /tmp/railway.tar.gz -C /tmp
+              sudo install -m 0755 /tmp/railway /usr/local/bin/railway
+              railway --version
               exit 0
             fi
 
-            echo "railway CLI install failed ($attempt/5)" >&2
+            echo "railway CLI download failed ($attempt/5)" >&2
             sleep 5
           done
 
