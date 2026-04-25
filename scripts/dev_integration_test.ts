@@ -57,9 +57,13 @@ if (!POLAR_TOKEN) {
 const POLAR_BASE = "https://sandbox-api.polar.sh";
 
 // Polar's email validator rejects RFC 2606 special-use TLDs (.test,
-// .example, .invalid, .localhost). Use a real gTLD the user owns so
-// the customer create call passes validation.
-const email = `dev-it-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@hela.dev`;
+// .example, .invalid, .localhost), so the test email must be on a
+// real gTLD. We use `@v0id.me` because that domain is owned by the
+// project owner — it passes validation and the resulting customer
+// rows are clearly the owner's test data, not someone else's domain
+// being squatted (do not use `@hela.dev` here, the project does not
+// own that domain — see CLAUDE.md and docs/dev/pitfalls.md).
+const email = `dev-it-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@v0id.me`;
 const password = `boring-${crypto.randomUUID().slice(0, 16)}`;
 
 console.log(`> dev env: ${CONTROL_URL}`);

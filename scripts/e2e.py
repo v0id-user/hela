@@ -167,7 +167,11 @@ class HelaWS:
 
 async def main() -> None:
     start = time.time()
-    email = f"py-e2e-{int(time.time() * 1000)}@gmail.com"
+    # Use `@v0id.me` (owned by the project owner) for test data.
+    # Don't use `@hela.dev` (we don't own it) or `@gmail.com` (third
+    # party — risks colliding with a real account in Polar). See
+    # docs/dev/pitfalls.md "test data domains".
+    email = f"py-e2e-{int(time.time() * 1000)}@v0id.me"
     password = f"e2e-pw-{int(time.time() * 1000)}"
 
     client = httpx.AsyncClient(timeout=20, follow_redirects=False)
