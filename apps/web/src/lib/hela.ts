@@ -8,15 +8,17 @@ let heroSingleton: HelaClient | null = null;
 
 let heroSocketHooksInstalled = false;
 let demoSocketHooksInstalled = false;
-let lifecycleHooksInstalled = false;
 
+// `needsTokenRefresh` returns true when the cached token is within
+// this many ms of its server-side `exp` claim. The reactive close
+// handler uses this to decide whether the in-memory token is fresh
+// enough for the next reconnect or whether to refetch first.
 const TOKEN_REFRESH_LEEWAY_MS = 60_000;
 
 type TokenState = {
   token: string | null;
   expiresAtMs: number;
   refreshInFlight: Promise<string> | null;
-  refreshTimer: ReturnType<typeof setTimeout> | null;
 };
 
 type HelaDebugState = {
@@ -51,14 +53,12 @@ const demoTokenState: TokenState = {
   token: null,
   expiresAtMs: 0,
   refreshInFlight: null,
-  refreshTimer: null,
 };
 
 const heroTokenState: TokenState = {
   token: null,
   expiresAtMs: 0,
   refreshInFlight: null,
-  refreshTimer: null,
 };
 
 /**
@@ -66,7 +66,6 @@ const heroTokenState: TokenState = {
  * primitive panels (history, presence, sequencing, etc.).
  */
 export async function ensureClient(): Promise<HelaClient> {
-  installLifecycleHooks();
   const token = await ensureDemoFreshToken();
 
   if (demoSingleton) {
@@ -89,7 +88,6 @@ export async function ensureClient(): Promise<HelaClient> {
  * Join/history are broadcast-only; no replay from cache or Postgres.
  */
 export async function ensureHeroClient(): Promise<HelaClient> {
-  installLifecycleHooks();
   const token = await ensureHeroFreshToken();
 
   if (heroSingleton) {
@@ -117,11 +115,9 @@ export function resetClient(): void {
   demoTokenState.token = null;
   demoTokenState.expiresAtMs = 0;
   demoTokenState.refreshInFlight = null;
-  clearDemoRefreshTimer();
   heroTokenState.token = null;
   heroTokenState.expiresAtMs = 0;
   heroTokenState.refreshInFlight = null;
-  clearHeroRefreshTimer();
   resetDebugState();
 }
 
@@ -158,7 +154,6 @@ async function ensureDemoFreshToken(force = false): Promise<string> {
     demoTokenState.token = token;
     demoTokenState.expiresAtMs = expiresAtMs;
     if (demoSingleton) demoSingleton.setPlaygroundToken(token);
-    scheduleDemoRefresh();
     return token;
   })()
     .catch((error) => {
@@ -192,7 +187,6 @@ async function ensureHeroFreshToken(force = false): Promise<string> {
     heroTokenState.token = token;
     heroTokenState.expiresAtMs = expiresAtMs;
     if (heroSingleton) heroSingleton.setPlaygroundToken(token);
-    scheduleHeroRefresh();
     updateDebugState({
       tokenStatus: "ready",
       tokenExpiresAt: expiresAtMs,
@@ -283,55 +277,28 @@ function installDemoSocketHooks(client: HelaClient): void {
   });
 }
 
-function installLifecycleHooks(): void {
-  if (lifecycleHooksInstalled || typeof window === "undefined") return;
-  lifecycleHooksInstalled = true;
-
-  const refreshIfNeeded = () => {
-    if (heroSingleton && needsTokenRefresh(heroTokenState)) void ensureHeroFreshToken(true);
-    if (demoSingleton && needsTokenRefresh(demoTokenState)) void ensureDemoFreshToken(true);
-  };
-
-  window.addEventListener("focus", refreshIfNeeded);
-  window.addEventListener("online", refreshIfNeeded);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") refreshIfNeeded();
-  });
-}
-
-function scheduleHeroRefresh(): void {
-  if (typeof window === "undefined") return;
-  clearHeroRefreshTimer();
-  if (!heroTokenState.expiresAtMs) return;
-
-  const waitMs = Math.max(1_000, heroTokenState.expiresAtMs - Date.now() - TOKEN_REFRESH_LEEWAY_MS);
-  heroTokenState.refreshTimer = window.setTimeout(() => {
-    void ensureHeroFreshToken(true);
-  }, waitMs);
-}
-
-function clearHeroRefreshTimer(): void {
-  if (!heroTokenState.refreshTimer) return;
-  clearTimeout(heroTokenState.refreshTimer);
-  heroTokenState.refreshTimer = null;
-}
-
-function scheduleDemoRefresh(): void {
-  if (typeof window === "undefined") return;
-  clearDemoRefreshTimer();
-  if (!demoTokenState.expiresAtMs) return;
-
-  const waitMs = Math.max(1_000, demoTokenState.expiresAtMs - Date.now() - TOKEN_REFRESH_LEEWAY_MS);
-  demoTokenState.refreshTimer = window.setTimeout(() => {
-    void ensureDemoFreshToken(true);
-  }, waitMs);
-}
-
-function clearDemoRefreshTimer(): void {
-  if (!demoTokenState.refreshTimer) return;
-  clearTimeout(demoTokenState.refreshTimer);
-  demoTokenState.refreshTimer = null;
-}
+// Token refresh is reactive, not proactive.
+//
+// Phoenix only validates the JWT at WebSocket handshake. Once the
+// socket is open, the server never re-checks the token, so a token
+// rotation while the WS is healthy serves no purpose other than
+// burning a control plane round trip. We used to schedule a setTimeout
+// per-token to refresh just before expiry, which on an idle marketing
+// page produced ~12 wasted requests/hour per visitor for tokens nobody
+// would ever actually use.
+//
+// Reactive design: refresh on `onClose` / `onError` only. The handlers
+// are wired in `installHeroSocketHooks` / `installDemoSocketHooks`.
+// Phoenix.js's reconnect retries with backoff (10ms, 50ms, 100ms, …),
+// so even if the disconnect-triggered fetch isn't finished by the
+// first retry, it finishes by the second or third — well within the
+// reconnect window. The user-visible cost is one bonus failed retry
+// in the worst case; the user-visible benefit is zero refreshes when
+// the socket is healthy (the common case).
+//
+// If you need proactive refresh later for a reason (e.g. polling an
+// HTTP endpoint that checks the same token), reintroduce it here, not
+// per-callsite. Don't pile timers on multiple layers.
 
 function needsTokenRefresh(state: TokenState, now = Date.now()): boolean {
   if (!state.token) return true;

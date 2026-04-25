@@ -76,6 +76,15 @@ resp, err := rest.MintToken(ctx, hela.TokenRequest{
 })
 ```
 
+### token rotation and reconnect
+
+The JWT is checked **once** at WebSocket handshake. After that the
+gateway never re-validates the token for the life of the socket. If
+your app rotates tokens, the new value is used the **next** time the
+SDK reconnects, not on the open socket. Refresh reactively on
+disconnect rather than on a timer — see
+[`docs/api/websocket.md` § auth lifecycle](../api/websocket.md#auth-lifecycle).
+
 ## channels
 
 ```go
@@ -174,16 +183,16 @@ hela.Connect(ctx, hela.Config{
 
 ## reference
 
-| symbol                       | what                                             |
-| ---------------------------- | ------------------------------------------------ |
-| `Connect(ctx, cfg)`          | open a WS, return a `*Client`                    |
-| `Client.Channel(name)`       | create a `*Channel` bound to this client         |
-| `Channel.Join/Publish/...`   | domain verbs                                     |
-| `Channel.Presence`           | CRDT roster with `OnSync`                        |
-| `NewREST(base, opts)`        | REST client for server-side use                  |
-| `PlaygroundTokenWithOpts`    | mint playground JWT with `Ephemeral` flag        |
-| `ErrHela`                    | sentinel for `errors.Is` / `errors.As`           |
-| `Message`, `PublishReply`, … | hand-written types matching `packages/schemas/`  |
+| symbol                       | what                                            |
+| ---------------------------- | ----------------------------------------------- |
+| `Connect(ctx, cfg)`          | open a WS, return a `*Client`                   |
+| `Client.Channel(name)`       | create a `*Channel` bound to this client        |
+| `Channel.Join/Publish/...`   | domain verbs                                    |
+| `Channel.Presence`           | CRDT roster with `OnSync`                       |
+| `NewREST(base, opts)`        | REST client for server-side use                 |
+| `PlaygroundTokenWithOpts`    | mint playground JWT with `Ephemeral` flag       |
+| `ErrHela`                    | sentinel for `errors.Is` / `errors.As`          |
+| `Message`, `PublishReply`, … | hand-written types matching `packages/schemas/` |
 
 ## internals
 

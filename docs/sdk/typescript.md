@@ -64,7 +64,10 @@ const r = await fetch(`https://gateway-production-bfdf.up.railway.app/v1/tokens`
   },
   body: JSON.stringify({
     sub: user.id,
-    chans: [["read", `chat:room:${roomId}`], ["write", `chat:room:${roomId}`]],
+    chans: [
+      ["read", `chat:room:${roomId}`],
+      ["write", `chat:room:${roomId}`],
+    ],
     ttl_seconds: 300,
     // optional: ephemeral: true  → broadcast-only for this JWT on the gateway
   }),
@@ -75,6 +78,35 @@ const { token } = await r.json();
 Include `"ephemeral": true` in that JSON body when you want the same
 broadcast-only semantics as `issuePlaygroundToken({ ephemeral: true })`
 for customer-minted HS256 tokens via `/v1/tokens`.
+
+### token rotation and reconnect
+
+The JWT is verified **once** at WebSocket handshake. The gateway
+attaches the claims to the socket and never re-checks the token for
+the life of that connection. So:
+
+- Calling `client.setToken(newJwt)` while the socket is open updates
+  the cached token but does not affect the running session.
+- The new token is used the **next** time `phoenix.js` reconnects
+  (network blip, server restart, etc.). The SDK's `params()` callback
+  rebuilds the URL with whatever token is in memory at that moment.
+
+The right pattern for refreshing tokens in a long-lived browser
+session: refresh **on `onClose` / `onError`**, not on a timer. A
+healthy socket pays zero refresh requests; a dropped socket gets
+fresh credentials in flight by the time the reconnect fires.
+
+```ts
+client.onClose(() => {
+  void mintFreshToken().then((t) => client.setToken(t));
+});
+```
+
+A `setTimeout` that refreshes before expiry on a healthy socket is
+wasted bandwidth — it served no purpose for the open WS, since the
+gateway is already past the auth check. See
+[`docs/api/websocket.md` § auth lifecycle](../api/websocket.md#auth-lifecycle)
+for the protocol contract.
 
 ## channels
 
@@ -90,7 +122,7 @@ const page = await chat.history({ limit: 50 });
 // page: { source, messages }
 
 const unsub = chat.onMessage((msg) => console.log(msg));
-unsub();  // remove the listener
+unsub(); // remove the listener
 
 await chat.leave();
 ```
@@ -113,7 +145,9 @@ function useChannel(token: string, name: string) {
       await ch.join();
       setChannel(ch);
     })();
-    return () => { ch?.leave(); };
+    return () => {
+      ch?.leave();
+    };
   }, [token, name]);
   return channel;
 }
@@ -126,7 +160,7 @@ shipped in the SDK.
 
 ```ts
 chat.presence.onSync((users) => {
-  console.log(`online: ${users.map(u => u.id).join(", ")}`);
+  console.log(`online: ${users.map((u) => u.id).join(", ")}`);
 });
 ```
 
@@ -144,7 +178,7 @@ try {
   await chat.publish("x");
 } catch (e) {
   if (e.reason === "rate_limited") {
-    await new Promise(r => setTimeout(r, e.retry_after_ms));
+    await new Promise((r) => setTimeout(r, e.retry_after_ms));
     // retry
   }
 }
@@ -167,16 +201,16 @@ console.log(REGIONS);
 
 ## reference
 
-| symbol | what |
-| --- | --- |
-| `connect(config)` | open a WS + return a `HelaClient` |
-| `HelaClient` | the socket owner |
-| `HelaClient#channel(name)` | create a channel handle |
-| `HelaChannel` | joined channel: `join`, `publish`, `history`, `onMessage`, `leave` |
-| `HelaPresence` | CRDT roster with `onSync` |
-| `REGIONS`, `wsUrl`, `httpUrl` | region helpers |
-| `issuePlaygroundToken(opts?)` | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
-| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | generated types |
+| symbol                                                  | what                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `connect(config)`                                       | open a WS + return a `HelaClient`                                      |
+| `HelaClient`                                            | the socket owner                                                       |
+| `HelaClient#channel(name)`                              | create a channel handle                                                |
+| `HelaChannel`                                           | joined channel: `join`, `publish`, `history`, `onMessage`, `leave`     |
+| `HelaPresence`                                          | CRDT roster with `onSync`                                              |
+| `REGIONS`, `wsUrl`, `httpUrl`                           | region helpers                                                         |
+| `issuePlaygroundToken(opts?)`                           | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
+| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | generated types                                                        |
 
 ## internals
 

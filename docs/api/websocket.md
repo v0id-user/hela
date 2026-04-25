@@ -27,6 +27,41 @@ Optional JWT claims relevant to transport behavior:
   replay, `history` replay, ETS cache writes, and Postgres persistence
   for publishes sent with that token.
 
+## auth lifecycle
+
+The JWT is checked **once**, at WebSocket handshake. The gateway
+validates the token in `Hela.UserSocket.connect/3`, attaches the
+decoded claims to the socket, and **never re-checks them for the
+life of the socket**. There is no periodic re-validation, no in-band
+re-auth event, no "renew" frame.
+
+This has direct implications for SDKs and customers:
+
+- **Token rotation while a socket is open is a no-op for that
+  socket.** Calling the SDK's `setToken()` / `setPlaygroundToken()`
+  while the connection is healthy updates the cached token but does
+  not affect the running session — the gateway is already past the
+  point where it would read it.
+- **Rotation only matters at reconnect.** Phoenix's `reconnectAfterMs`
+  retries call the SDK's `params()` callback to build the next URL;
+  whatever token is in memory at that moment is what gets sent. The
+  recommended pattern is to refresh **on `onClose` / `onError`** —
+  reactive, not on a timer — so a healthy socket costs zero refresh
+  requests and a dropped socket has fresh credentials in flight by
+  the time `phoenix.js` retries.
+- **Server-side revocation isn't supported today.** A signed JWT is
+  trusted until it expires. If you need hard revocation (e.g. an
+  immediately compromised token must stop working), you have to drop
+  the customer's socket(s) on the server and let them reconnect with
+  fresh creds. There's no in-protocol "kick this token" mechanism.
+
+The mistake the dashboard and the marketing playground both made
+early on was scheduling a `setTimeout` per token to refresh just
+before expiry. On an idle WebSocket that produced ~12 wasted control
+plane requests per hour per visitor for tokens nobody would ever use.
+The fix is `apps/web/src/lib/hela.ts`'s reactive design: refresh
+only on close/error.
+
 ## frame format (Phoenix Channel v2)
 
 Every frame is a JSON array:
@@ -107,20 +142,20 @@ Every event below links to its canonical JSON Schema under
 Reply:
 
 ```json
-[null, "42", "phoenix", "phx_reply", {"status": "ok", "response": {}}]
+[null, "42", "phoenix", "phx_reply", { "status": "ok", "response": {} }]
 ```
 
 ## error reasons
 
 `phx_reply` with `status: "error"` has a machine-readable `reason`:
 
-| reason | meaning |
-| --- | --- |
-| `bad_topic` | topic doesn't match `chan:<project>:<name>` |
-| `project_mismatch` | JWT's `pid` doesn't match the topic's project |
-| `unauthorized_read` / `unauthorized_write` | scope in JWT doesn't cover this channel |
-| `body_too_large` | publish body over 4 KB |
-| `rate_limited` | per-second cap — payload carries `retry_after_ms` |
+| reason                                     | meaning                                           |
+| ------------------------------------------ | ------------------------------------------------- |
+| `bad_topic`                                | topic doesn't match `chan:<project>:<name>`       |
+| `project_mismatch`                         | JWT's `pid` doesn't match the topic's project     |
+| `unauthorized_read` / `unauthorized_write` | scope in JWT doesn't cover this channel           |
+| `body_too_large`                           | publish body over 4 KB                            |
+| `rate_limited`                             | per-second cap — payload carries `retry_after_ms` |
 
 SDKs map `unauthorized` to `UnauthorizedError`, `rate_limited` to
 `RateLimitedError(retry_after_ms=…)`, and everything else to a
