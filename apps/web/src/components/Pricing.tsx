@@ -2,6 +2,8 @@ import { useState } from "react";
 import { SectionHeading } from "./Panel";
 import { signupUrl } from "../lib/urls";
 
+// Canonical plan catalog: docs/hosted-plans/. Keep these rows in sync with
+// the per-tier files there; the directory wins on any disagreement.
 const TIERS = [
   {
     name: "Free",

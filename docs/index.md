@@ -30,6 +30,7 @@ async with (await connect(region="iad", token=my_jwt)) as client:
 | use the Go SDK | [sdk/go](./sdk/go.md) |
 | use the Rust SDK | [sdk/rust](./sdk/rust.md) |
 | add a Swift / Kotlin / … SDK | [sdk/adding-a-language](./sdk/adding-a-language.md) |
+| see what each hosted plan includes | [hosted-plans](./hosted-plans/README.md) |
 | run ops on a live region | [runbook](./runbook.md) |
 
 ## regions

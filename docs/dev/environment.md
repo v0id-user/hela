@@ -97,6 +97,28 @@ is unset.
 | `POLAR_WEBHOOK_SECRET` | HMAC secret for verifying inbound webhooks. |
 | `POLAR_PRODUCT_STARTER`, `POLAR_PRODUCT_GROWTH`, `POLAR_PRODUCT_SCALE` | Product ids per tier. |
 
+The hosted plane runs **two** Polar orgs, one per Railway environment:
+
+| Railway env | Polar org | `POLAR_ENV` | host |
+| --- | --- | --- | --- |
+| `production` | production `hela` org | `production` | `api.polar.sh` |
+| `dev` | sandbox `hela` org | `sandbox` | `sandbox-api.polar.sh` |
+
+Product IDs are **not portable** between the two orgs. The canonical
+list of IDs lives in [`docs/hosted-plans/`](../hosted-plans/) — each
+per-tier file shows both production and sandbox IDs side by side. To
+inspect what is actually live on Railway:
+
+    railway variables --service control --environment production --kv | grep '^POLAR_'
+    railway variables --service control --environment dev        --kv | grep '^POLAR_'
+
+These vars are managed via `railway` CLI today and **not** mirrored in
+`infra/railway/main.tf` per-environment — the Terraform setup is
+single-environment and only knows about one set of `var.polar_*`
+inputs. Reconciling Terraform to support both envs is a follow-up;
+until then, treat the `railway` CLI as the source of truth and update
+both surfaces explicitly when adding a new env var.
+
 ### deploy / build
 
 | Name | Purpose |
