@@ -322,6 +322,15 @@ That script rasterises every SVG at every documented size, runs
 1× for each asset. Requires `rsvg-convert`, `oxipng`, and `cwebp`
 (`brew install librsvg oxipng webp` on macOS).
 
+### Brand book
+
+The asset table above is the inventory. The voice rules, one-liners,
+short / medium / long descriptions, sample copy for tweets / press /
+PH, and asset-by-surface usage matrix all live in
+[`apps/web/public/brand/BRAND.md`](apps/web/public/brand/BRAND.md).
+That's the file to open when you need to write copy or pick the
+right logo file for a new surface.
+
 ### Brand assets are not AGPL
 
 The code in this repo is AGPL-3.0-or-later. The **brand assets**
