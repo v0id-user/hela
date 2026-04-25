@@ -184,13 +184,18 @@ These **monthly** tiers and caps apply **only** when you run on hela
 **hosted** clusters. They are not the price of cloning the repo, self
 hosting, or using the software under the AGPL in your own environment.
 
-| Tier        | $/mo    | Connections | Messages/mo | Regions             | History  | SLA    |
-| ----------- | ------- | ----------- | ----------- | ------------------- | -------- | ------ |
-| Free        | $0      | 100         | 1M          | 1                   | 1k msgs  | none   |
-| Starter     | $19     | 1,000       | 10M         | 1                   | 10k msgs | none   |
-| Growth      | $99     | 10,000      | 100M        | 1                   | 100k msgs| 99.9%  |
-| Scale       | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs  | 99.95% |
-| Enterprise  | contact | custom      | custom      | all                 | custom   | 99.99% |
+The canonical plan catalog — caps, descriptions, Polar product IDs —
+lives in [`docs/hosted-plans/`](docs/hosted-plans/). If this table
+disagrees with that directory, **the directory wins** and the table
+below is the bug.
+
+| Tier        | $/mo    | Connections | Messages/mo | Regions             | History  | SLA    | details |
+| ----------- | ------- | ----------- | ----------- | ------------------- | -------- | ------ | ------- |
+| Free        | $0      | 100         | 1M          | 1                   | 1k msgs  | none   | [free](docs/hosted-plans/free.md) |
+| Starter     | $19     | 1,000       | 10M         | 1                   | 10k msgs | none   | [starter](docs/hosted-plans/starter.md) |
+| Growth      | $99     | 10,000      | 100M        | 1                   | 100k msgs| 99.9%  | [growth](docs/hosted-plans/growth.md) |
+| Scale       | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs  | 99.95% | [scale](docs/hosted-plans/scale.md) |
+| Enterprise  | contact | custom      | custom      | all                 | custom   | 99.99% | [enterprise](docs/hosted-plans/enterprise.md) |
 
 ## Public hosted deploy
 

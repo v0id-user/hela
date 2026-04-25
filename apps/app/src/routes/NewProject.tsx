@@ -11,6 +11,8 @@ const REGIONS: { slug: Region; label: string }[] = [
   { slug: "syd", label: "Sydney · AU" },
 ];
 
+// Canonical plan catalog: docs/hosted-plans/. Keep these blurbs in sync with
+// the per-tier files there; the directory wins on any disagreement.
 const TIERS: { slug: Tier; title: string; blurb: string }[] = [
   { slug: "free", title: "Free", blurb: "100 conns · 1M msgs/mo" },
   { slug: "starter", title: "Starter", blurb: "1k conns · 10M msgs/mo" },
