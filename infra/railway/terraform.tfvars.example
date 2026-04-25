@@ -1,27 +1,13 @@
 ##
 ## Copy to terraform.tfvars (gitignored) and fill in. Alternatively set
-## as environment variables prefixed with TF_VAR_:
+## as environment variables prefixed with TF_VAR_.
 ##
-##     export TF_VAR_postgres_password=...
-##     export TF_VAR_polar_access_token=polar_oat_...
+## Per-service env var values (POLAR_*, DATABASE_URL, secrets, etc.) are
+## NOT inputs to Terraform — they are seeded into Railway via CLI. See
+## `infra/railway/README.md` for the matrix and commands.
 ##
 
-project_name        = "hela"
-workspace_id        = "30ae0030-123a-4f5c-87b9-03de3b9a9f12"
-github_repo         = "v0id-user/hela"
-github_branch       = "main"
-gateway_region_slug = "ams"
-
-# Generate once, never re-use. `openssl rand -hex 24` is enough entropy.
-postgres_password = "CHANGE_ME_TO_A_REAL_PASSWORD"
-
-# Polar sandbox.polar.sh/dashboard/<org>/settings → API keys → New token
-polar_access_token    = "polar_oat_..."
-polar_org_id          = "00000000-0000-0000-0000-000000000000"
-polar_env             = "sandbox"
-# After creating the webhook endpoint in Polar's dashboard, paste its secret
-polar_webhook_secret  = "polar_whs_..."
-# Product IDs from sandbox.polar.sh/dashboard/<org>/products
-polar_product_starter = "00000000-0000-0000-0000-000000000000"
-polar_product_growth  = "00000000-0000-0000-0000-000000000000"
-polar_product_scale   = "00000000-0000-0000-0000-000000000000"
+project_name  = "hela"
+workspace_id  = "30ae0030-123a-4f5c-87b9-03de3b9a9f12"
+github_repo   = "v0id-user/hela"
+github_branch = "main"

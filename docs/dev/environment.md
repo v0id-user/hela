@@ -112,12 +112,18 @@ inspect what is actually live on Railway:
     railway variables --service control --environment production --kv | grep '^POLAR_'
     railway variables --service control --environment dev        --kv | grep '^POLAR_'
 
-These vars are managed via `railway` CLI today and **not** mirrored in
-`infra/railway/main.tf` per-environment — the Terraform setup is
-single-environment and only knows about one set of `var.polar_*`
-inputs. Reconciling Terraform to support both envs is a follow-up;
-until then, treat the `railway` CLI as the source of truth and update
-both surfaces explicitly when adding a new env var.
+These vars are managed via `railway` CLI **by design**. Terraform owns
+the Railway project structure (services, postgres volume, public
+domains) but does not own variable values — see
+[`infra/railway/README.md`](../../infra/railway/README.md) for the
+full per-service env var matrix and the `railway variable set`
+commands that seed each environment. The split keeps the production
+and dev environments free to point at different Polar orgs without a
+per-env Terraform module.
+
+Adding a new env var: update [`infra/railway/README.md`](../../infra/railway/README.md)
+first (it is the source of truth for shape), then run the matching
+`railway variable set` against each environment.
 
 ### deploy / build
 

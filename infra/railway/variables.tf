@@ -26,70 +26,7 @@ variable "github_branch" {
   default     = "main"
 }
 
-# --- gateway region assignment ------------------------------------------
-#
-# At v1 there's one gateway service handling all regions. Introducing more
-# gateways means adding entries here and a module per region. The per-
-# region env var `HELA_REGION` is what the code uses to identify itself.
-
-variable "gateway_region_slug" {
-  description = "Region slug this gateway reports as (iad, sjc, ams, sin, syd). Default ams since the only live gateway is on Railway europe-west4 (Amsterdam)."
-  type        = string
-  default     = "ams"
-
-  validation {
-    condition     = contains(["iad", "sjc", "ams", "sin", "syd"], var.gateway_region_slug)
-    error_message = "gateway_region_slug must be one of iad, sjc, ams, sin, syd."
-  }
-}
-
-# --- secrets ------------------------------------------------------------
-#
-# These are sensitive. Provide via -var-file=secrets.tfvars (gitignored)
-# or set TF_VAR_* env vars before `terraform apply`. The three random
-# secrets (playground, internal, signing bases) get generated if left
-# null.
-
-variable "postgres_password" {
-  description = "Postgres superuser password. Also used as the app DB password."
-  type        = string
-  sensitive   = true
-}
-
-variable "polar_access_token" {
-  description = "Polar organization access token (polar_oat_...)."
-  type        = string
-  sensitive   = true
-}
-
-variable "polar_org_id" {
-  description = "Polar organization UUID."
-  type        = string
-}
-
-variable "polar_env" {
-  description = "Polar environment — sandbox or production."
-  type        = string
-  default     = "sandbox"
-}
-
-variable "polar_webhook_secret" {
-  description = "Signing secret from Polar's webhook-endpoint config (whsec_ or polar_whs_ prefix)."
-  type        = string
-  sensitive   = true
-}
-
-variable "polar_product_starter" {
-  description = "Polar product id for the Starter tier."
-  type        = string
-}
-
-variable "polar_product_growth" {
-  description = "Polar product id for the Growth tier."
-  type        = string
-}
-
-variable "polar_product_scale" {
-  description = "Polar product id for the Scale tier."
-  type        = string
-}
+# Per-service environment variables (POLAR_*, DATABASE_URL, SECRET_KEY_BASE,
+# PHX_HOST, etc.) are *not* declared here — they are managed via the
+# `railway` CLI per environment. See `infra/railway/README.md` for the
+# full matrix and seeding commands.
