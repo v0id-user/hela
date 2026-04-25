@@ -61,6 +61,15 @@ async with Hela(base_url="https://gateway-production-bfdf.up.railway.app", api_k
     token = resp.token
 ```
 
+### token rotation and reconnect
+
+The JWT is checked **once** at WebSocket handshake. After that the
+gateway never re-validates the token for the life of the socket. If
+your app rotates tokens (e.g. mints a new one before the old expires),
+the new value is used the **next** time the SDK reconnects, not on
+the open socket. Refresh reactively on disconnect rather than on a
+timer — see [`docs/api/websocket.md` § auth lifecycle](../api/websocket.md#auth-lifecycle).
+
 ## channels
 
 ```python
@@ -165,13 +174,13 @@ except TimeoutError:
     ...
 ```
 
-| exception | when |
-| --- | --- |
-| `UnauthorizedError` | server rejected auth (401, or `reason: unauthorized`) |
-| `RateLimitedError(retry_after_ms)` | per-second cap hit |
-| `TimeoutError` | push's `timeout=` elapsed without a reply |
-| `ServerError(reason, payload)` | any other `phx_reply` error |
-| `HelaError` | base class — catch once to swallow all SDK errors |
+| exception                          | when                                                  |
+| ---------------------------------- | ----------------------------------------------------- |
+| `UnauthorizedError`                | server rejected auth (401, or `reason: unauthorized`) |
+| `RateLimitedError(retry_after_ms)` | per-second cap hit                                    |
+| `TimeoutError`                     | push's `timeout=` elapsed without a reply             |
+| `ServerError(reason, payload)`     | any other `phx_reply` error                           |
+| `HelaError`                        | base class — catch once to swallow all SDK errors     |
 
 ## REST client
 
@@ -209,15 +218,15 @@ slug + an explicit `endpoint=` points at a local gateway.
 
 ## reference
 
-| symbol | what |
-| --- | --- |
-| `hela.connect` | open a WS + return a `HelaClient` |
-| `hela.HelaClient` | the socket owner |
-| `hela.HelaChannel` | a joined channel: publish, history, on_message |
-| `hela.Presence`, `hela.PresenceEntry` | CRDT roster types |
-| `hela.rest.Hela` | REST client |
-| `hela.Message`, `PublishReply`, `HistoryReply`, … | Pydantic v2 types, generated from schemas |
-| `hela.HelaError` and friends | exception hierarchy |
+| symbol                                            | what                                           |
+| ------------------------------------------------- | ---------------------------------------------- |
+| `hela.connect`                                    | open a WS + return a `HelaClient`              |
+| `hela.HelaClient`                                 | the socket owner                               |
+| `hela.HelaChannel`                                | a joined channel: publish, history, on_message |
+| `hela.Presence`, `hela.PresenceEntry`             | CRDT roster types                              |
+| `hela.rest.Hela`                                  | REST client                                    |
+| `hela.Message`, `PublishReply`, `HistoryReply`, … | Pydantic v2 types, generated from schemas      |
+| `hela.HelaError` and friends                      | exception hierarchy                            |
 
 ## internals
 
