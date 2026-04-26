@@ -174,23 +174,30 @@ hela.Connect(ctx, hela.Config{
 
 ## reference
 
-| symbol                       | what                                             |
-| ---------------------------- | ------------------------------------------------ |
-| `Connect(ctx, cfg)`          | open a WS, return a `*Client`                    |
-| `Client.Channel(name)`       | create a `*Channel` bound to this client         |
-| `Channel.Join/Publish/...`   | domain verbs                                     |
-| `Channel.Presence`           | CRDT roster with `OnSync`                        |
-| `NewREST(base, opts)`        | REST client for server-side use                  |
-| `PlaygroundTokenWithOpts`    | mint playground JWT with `Ephemeral` flag        |
-| `ErrHela`                    | sentinel for `errors.Is` / `errors.As`           |
-| `Message`, `PublishReply`, … | hand-written types matching `packages/schemas/`  |
+| symbol                       | what                                            |
+| ---------------------------- | ----------------------------------------------- |
+| `Connect(ctx, cfg)`          | open a WS, return a `*Client`                   |
+| `Client.Channel(name)`       | create a `*Channel` bound to this client        |
+| `Channel.Join/Publish/...`   | domain verbs                                    |
+| `Channel.Presence`           | CRDT roster with `OnSync`                       |
+| `NewREST(base, opts)`        | REST client for server-side use                 |
+| `PlaygroundTokenWithOpts`    | mint playground JWT with `Ephemeral` flag       |
+| `ErrHela`                    | sentinel for `errors.Is` / `errors.As`          |
+| `Message`, `PublishReply`, … | hand-written types matching `packages/schemas/` |
 
 ## internals
 
 - Types are hand-written in `types.go`. The surface is small (~11
-  types); a code generator produces uglier Go than we'd want. Drift
-  is caught by `types_test.go` roundtripping real payloads + the
-  CI `schema-drift` guard that runs `make sdk.gen`.
+  types); a code generator produces uglier Go than we'd want.
+  Drift is caught two ways:
+  - `types_test.go` round-trips real payloads through every named
+    struct, so a shape change in the gateway breaks the test.
+  - `make sdk.gen` runs a Python drift checker that walks each
+    wire schema's properties and confirms the corresponding
+    `types.go` struct has a field with a matching `json:"<name>"`
+    tag. If a schema gains a property and `types.go` does not,
+    the check fails with a useful message naming the missing
+    field, and CI's `schema · regenerate + diff` fails the PR.
 - Transport (`transport.go`) speaks Phoenix Channel v2 directly. See
   [api/websocket](../api/websocket.md) for the wire format.
 - Heartbeat interval is 30 seconds. Phoenix drops the socket at ~60;
