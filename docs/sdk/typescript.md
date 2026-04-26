@@ -187,12 +187,18 @@ console.log(REGIONS);
 
 ## internals
 
-- Types live in `@hela/sdk-types/src/index.ts`, hand-written
-  against [`packages/schemas/`](../../packages/schemas/). The
-  hand-written file is small enough to keep in sync by eye, and
-  round-trip tests in the SDK plus a schema drift gate in CI
-  catch unconfessed drift. A migration to generated wire types
-  via `quicktype` is planned; until it lands, edit the file
-  directly when a schema changes.
+- Wire types live in `@hela/sdk-types/src/_generated.ts`,
+  emitted by `packages/sdk-gen/gen.py` from
+  [`packages/schemas/wire/`](../../packages/schemas/wire/). The
+  generator shells out to `quicktype` for TypeScript today; run
+  `make sdk.gen` after a schema change.
+- The hand-curated `index.ts` re-exports the generated module and
+  adds the region catalog (`Region`, `REGIONS`), the tier catalog
+  (`Tier`, `TIER_CAPS`, `TIER_PRICE`), the SDK-flattened presence
+  shape (`PresenceEntry`), the `metrics:live` snapshot shapes
+  (`Snapshot`, `LatencyHist`), and the JWT claim shape
+  (`HelaClaims`). Those are not in `packages/schemas/` yet; Tier
+  and Region are scheduled for promotion to JSON Schemas in a
+  later codegen phase.
 - The transport is phoenix.js (`^1.8`). We don't reimplement its
   channel protocol in browser — phoenix.js is the reference.

@@ -13,6 +13,7 @@ Reads packages/schemas/** and regenerates type definitions across every
 SDK that needs them. Invoked via `make sdk.gen`. Safe to re-run; output
 is deterministic and committed so CI can diff for drift.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -25,6 +26,12 @@ WIRE = SCHEMAS / "wire"
 OPENAPI = SCHEMAS / "openapi.yaml"
 
 SDK_PY_GEN = ROOT / "packages" / "sdk-py" / "src" / "hela" / "_generated"
+SDK_TS_GEN = ROOT / "packages" / "sdk-types" / "src" / "_generated.ts"
+
+# Pinned via PATH-resolved bunx invocation. quicktype is installed as
+# a transient bunx dependency on first run; bun caches it locally so
+# subsequent runs are instant.
+QUICKTYPE_VERSION = "23.2.6"
 
 
 def _banner(label: str) -> None:
@@ -113,12 +120,67 @@ def gen_python() -> None:
     print(f"  wrote: {SDK_PY_GEN.relative_to(ROOT)}/rest.py")
 
 
+def gen_typescript() -> None:
+    """
+    TypeScript — wire types as plain interfaces.
+
+    quicktype is the only single tool that targets TS, Go and Rust
+    from JSON Schema; we use it for TS today and may grow to cover
+    more languages later. `--just-types` strips the runtime helpers
+    so the package stays dependency-free. `--no-date-times` keeps
+    `inserted_at` as `string` so the SDK does not implicitly turn
+    every payload into `Date` objects on receipt — which would break
+    consumers that pass the wire shape through unchanged.
+    """
+    _banner("typescript sdk types")
+    SDK_TS_GEN.parent.mkdir(parents=True, exist_ok=True)
+
+    _run(
+        [
+            "bunx",
+            f"quicktype@{QUICKTYPE_VERSION}",
+            "--src-lang",
+            "schema",
+            "--src",
+            str(WIRE / "_index.schema.json"),
+            "--lang",
+            "typescript",
+            "--just-types",
+            "--top-level",
+            "Wire",
+            "--no-date-times",
+            "--out",
+            str(SDK_TS_GEN),
+        ]
+    )
+
+    # Prepend a "do not edit" header. quicktype with --just-types
+    # emits no header of its own.
+    body = SDK_TS_GEN.read_text()
+    header = (
+        "// Auto-generated from packages/schemas/wire/. Do not edit.\n"
+        "// Run `make sdk.gen` after changing a schema.\n"
+        "//\n"
+        "// quicktype emits a top-level `Wire` interface with every event\n"
+        "// as an optional field. It is a place-holder; consumers should\n"
+        "// import individual types (`Message`, `JoinReply`, etc.) by name.\n"
+        "\n"
+    )
+    SDK_TS_GEN.write_text(header + body)
+
+    # Run prettier so the file matches the rest of the repo's TS.
+    _run(["bunx", "--bun", "prettier", "--write", str(SDK_TS_GEN)])
+
+    print(f"  wrote: {SDK_TS_GEN.relative_to(ROOT)}")
+
+
 def main() -> int:
     if not WIRE.exists():
         print(f"ERR: schemas dir missing at {WIRE}", file=sys.stderr)
         return 1
 
     gen_python()
+    gen_typescript()
     print("\ndone.")
     return 0
 
