@@ -7,12 +7,42 @@ import {
   notFound,
   useParams,
 } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { Markdown } from "./components/Markdown";
 import { allPages, pageBySlug } from "./lib/docs";
 
 const APP_BASE = "https://app-production-1716a.up.railway.app";
 const WEB_BASE = "https://web-production-f24fc.up.railway.app";
+
+// Mirror apps/web/src/router.tsx exactly so the navbar reads as a
+// single bar across all three surfaces (marketing, docs, dashboard).
+// Anything that diverges here will jump when a user clicks between
+// them — keep it in sync.
+const NAV_HEIGHT = 35;
+
+const linkStyle: CSSProperties = {
+  color: "#888",
+  textDecoration: "none",
+  fontSize: 12,
+  padding: "6px 14px",
+  borderRight: "1px solid #333",
+};
+
+const activeLinkStyle: CSSProperties = {
+  color: "#fff",
+  background: "#1a1a1a",
+};
+
+const ctaLinkStyle: CSSProperties = {
+  color: "#c9a76a",
+  textDecoration: "none",
+  fontSize: 12,
+  padding: "6px 14px",
+  borderLeft: "1px solid #333",
+  borderRight: "1px solid #333",
+  background: "#14110a",
+};
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -28,7 +58,6 @@ const rootRoute = createRootRoute({
           position: "sticky",
           top: 0,
           zIndex: 10,
-          height: 56,
         }}
       >
         <a
@@ -38,44 +67,57 @@ const rootRoute = createRootRoute({
             borderRight: "1px solid #333",
             display: "flex",
             alignItems: "center",
-            height: "100%",
+            height: 28,
           }}
           aria-label="hela home"
         >
           <img src="/brand/wordmark.svg" alt="hela" height={22} style={{ display: "block" }} />
         </a>
-        <Link
-          to="/"
-          style={navLink}
-          activeOptions={{ exact: true }}
-          activeProps={{ style: navLinkActive }}
-        >
+        <a href={WEB_BASE} style={linkStyle}>
+          home
+        </a>
+        <a href={`${WEB_BASE}/how`} style={linkStyle}>
+          how
+        </a>
+        {/* `docs` is the active page on this surface, so apply
+            activeLinkStyle directly — TanStack `activeProps` only
+            covers in-app routes, but the nav bar reads better when
+            this is the visibly-active link. */}
+        <Link to="/" style={{ ...linkStyle, ...activeLinkStyle }}>
           docs
         </Link>
-        <a href={`${WEB_BASE}/how`} style={navLink}>
-          how it works
+        <a href={`${APP_BASE}/dashboard`} style={linkStyle}>
+          dashboard
         </a>
-        <a href={`${WEB_BASE}/status`} style={navLink}>
+        <a href={`${WEB_BASE}/status`} style={linkStyle}>
           status
         </a>
-        <div style={{ flex: 1 }} />
-        <a
-          href="https://github.com/v0id-user/hela"
-          target="_blank"
-          rel="noreferrer noopener"
-          style={navLink}
-        >
-          github
-        </a>
-        <a href={`${APP_BASE}`} style={navLink}>
+        <a href={APP_BASE} style={{ ...linkStyle, marginLeft: 0 }}>
           sign in
         </a>
-        <a href={`${APP_BASE}/signup`} style={{ ...navLink, color: "var(--gold)" }}>
-          get started
+        <a href={`${APP_BASE}/signup`} style={ctaLinkStyle}>
+          get started &rarr;
         </a>
+        <span
+          style={{
+            marginLeft: "auto",
+            padding: "6px 14px",
+            color: "#666",
+            fontSize: 11,
+            borderLeft: "1px solid #333",
+          }}
+        >
+          elixir · phoenix · pubsub · ets · presence
+        </span>
       </nav>
-      <div style={{ display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 56px)" }}>
-        <Sidebar />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "stretch",
+          minHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
+        }}
+      >
+        <Sidebar navHeight={NAV_HEIGHT} />
         <main style={{ flex: 1, minWidth: 0 }}>
           <Outlet />
         </main>
@@ -88,8 +130,6 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: function Index() {
-    // Show docs/index.md as the landing page; fall back to the
-    // first page if the index doc is missing.
     const page = pageBySlug("index") ?? allPages()[0];
     if (!page) return <div className="prose">no docs found</div>;
     return (
@@ -102,7 +142,6 @@ const indexRoute = createRoute({
 
 const docRoute = createRoute({
   getParentRoute: () => rootRoute,
-  // splat path: anything after `/`
   path: "/$",
   beforeLoad: ({ params }) => {
     const slug = (params as { _splat: string })._splat;
@@ -156,19 +195,3 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
-
-const navLink = {
-  padding: "0 14px",
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  borderRight: "1px solid #333",
-  color: "#c0c0c0",
-  fontSize: 13,
-  textDecoration: "none",
-} as const;
-
-const navLinkActive = {
-  background: "#1a1a1a",
-  color: "#e8e8e8",
-} as const;
