@@ -30,13 +30,48 @@ if config_env() == :prod do
          System.get_env("GATEWAY_INTERNAL_SECRET") ||
            raise("GATEWAY_INTERNAL_SECRET is missing")
 
-  # Per-region gateway endpoints come from env as a JSON map, e.g.:
-  #   GATEWAYS={"iad":"https://iad-gateway.internal","ams":"https://..."}
-  gateways =
+  # Per-region gateway endpoints. Today the hosted plane runs one
+  # gateway in Amsterdam; per-region routing is a future expansion.
+  # Two ways to wire this:
+  #
+  #   1. Set HELA_GATEWAY_URL to a single URL. Every region resolves
+  #      to that URL. Right answer for the single-region deployment.
+  #   2. Set GATEWAYS to a JSON map for per-region overrides, e.g.
+  #      `GATEWAYS={"iad":"https://iad-gw...","ams":"https://ams-gw..."}`.
+  #      Useful when more than one gateway exists.
+  #
+  # If both are set, GATEWAYS overrides per region; HELA_GATEWAY_URL is
+  # the fallback for any region missing from GATEWAYS. Missing both
+  # means the control plane has nowhere to push project upserts and
+  # can't function — raise at boot.
+  fallback_gateway = System.get_env("HELA_GATEWAY_URL")
+
+  gateway_overrides =
     case System.get_env("GATEWAYS") do
-      nil -> raise "GATEWAYS env (JSON map region -> url) is missing"
+      nil -> %{}
       j -> Jason.decode!(j)
     end
+
+  if is_nil(fallback_gateway) and gateway_overrides == %{} do
+    raise "set HELA_GATEWAY_URL (recommended) or GATEWAYS (per-region map). neither is set."
+  end
+
+  hosted_regions = ~w(iad sjc ams sin syd)
+
+  gateways =
+    Enum.reduce(hosted_regions, %{}, fn region, acc ->
+      url = Map.get(gateway_overrides, region) || fallback_gateway
+
+      if is_nil(url) do
+        acc
+      else
+        Map.put(acc, region, url)
+      end
+    end)
+
+  if gateways == %{} do
+    raise "no gateway URL resolved for any hosted region. set HELA_GATEWAY_URL."
+  end
 
   config :control, :gateways, gateways
 
