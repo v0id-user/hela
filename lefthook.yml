@@ -91,10 +91,11 @@ pre-commit:
 
     js-eslint:
       tags: js lint
-      # Mirror the include scope in eslint.config.mjs. SDK packages,
-      # the e2e package, and the UI package each have their own
-      # toolchain and aren't covered by the dashboard rules.
-      glob: "{apps/app,apps/web}/src/**/*.{ts,tsx},scripts/**/*.ts"
+      # Mirror the include scope in eslint.config.mjs. Wider globs
+      # match files (e.g. in packages/sdk-types) that ESLint ignores
+      # by config; the resulting "file ignored" warnings then fail
+      # the --max-warnings 0 check.
+      glob: "{apps/app/src,apps/web/src,scripts}/**/*.{ts,tsx}"
       run: bunx eslint --max-warnings 0 {staged_files}
 
     js-tsc-app:
@@ -129,16 +130,18 @@ pre-commit:
     # --- schemas ------------------------------------------------------
     # Any schema change has to regenerate or CI's drift guard fails.
     # Run the same check locally so nobody pushes a broken commit.
-    # Only checks the generated tree — Go and Rust types are
-    # hand-written and covered by their own round-trip tests.
+    # Generated trees today: Python `_generated/` and TypeScript
+    # `packages/sdk-types/src/_generated.ts`. Go and Rust types are
+    # hand-written; the multi-language codegen plan tracks bringing
+    # them under drift checks of their own.
     schema-drift:
       tags: schema
       glob: "packages/schemas/**/*"
       run: |
         uv run packages/sdk-gen/gen.py >/dev/null
-        if ! git diff --quiet -- packages/sdk-py/src/hela/_generated packages/sdk-types; then
+        if ! git diff --quiet -- packages/sdk-py/src/hela/_generated packages/sdk-types/src/_generated.ts; then
           echo "err: schema change did not regenerate SDK types" >&2
-          echo "     run: make sdk.gen && git add ." >&2
+          echo "     run: make sdk.gen and git add" >&2
           exit 1
         fi
 

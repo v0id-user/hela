@@ -63,27 +63,37 @@ defmodule Control.Sync do
   defp regions_for(%Project{region: home}), do: [home]
 
   defp request(region, method, path, body) do
-    base =
-      Application.fetch_env!(:control, :gateways)
-      |> Map.get(region) || raise "unknown region #{region}"
+    case Application.fetch_env!(:control, :gateways) |> Map.get(region) do
+      nil ->
+        # Treat missing region config as a controlled error rather than
+        # a crash. The control plane keeps serving so the dashboard can
+        # surface a useful 4xx, and the operator notices in logs.
+        Logger.warning(
+          "sync to #{region}#{path} skipped: no gateway URL configured for region. " <>
+            "set HELA_GATEWAY_URL or extend GATEWAYS json."
+        )
 
-    secret = Application.fetch_env!(:control, :internal_secret)
+        {:error, {:unknown_region, region}}
 
-    opts =
-      [url: base <> path, method: method, headers: [{"x-hela-internal", secret}]]
-      |> Keyword.merge(if(body, do: [json: body], else: []))
+      base when is_binary(base) ->
+        secret = Application.fetch_env!(:control, :internal_secret)
 
-    case Req.request(opts) do
-      {:ok, %{status: s}} when s in 200..299 ->
-        :ok
+        opts =
+          [url: base <> path, method: method, headers: [{"x-hela-internal", secret}]]
+          |> Keyword.merge(if(body, do: [json: body], else: []))
 
-      {:ok, resp} ->
-        Logger.warning("sync to #{region}#{path} failed: #{resp.status}")
-        {:error, {:bad_status, resp.status}}
+        case Req.request(opts) do
+          {:ok, %{status: s}} when s in 200..299 ->
+            :ok
 
-      {:error, reason} ->
-        Logger.warning("sync to #{region}#{path} network error: #{inspect(reason)}")
-        {:error, reason}
+          {:ok, resp} ->
+            Logger.warning("sync to #{region}#{path} failed: #{resp.status}")
+            {:error, {:bad_status, resp.status}}
+
+          {:error, reason} ->
+            Logger.warning("sync to #{region}#{path} network error: #{inspect(reason)}")
+            {:error, reason}
+        end
     end
   end
 

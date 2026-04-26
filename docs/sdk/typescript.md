@@ -9,6 +9,8 @@ The package source is at [`packages/sdk-js/`](../../packages/sdk-js/).
 ## install
 
 ```sh
+bun add @hela/sdk
+# or
 pnpm add @hela/sdk
 # or
 npm i @hela/sdk
@@ -210,12 +212,22 @@ console.log(REGIONS);
 | `HelaPresence`                                          | CRDT roster with `onSync`                                              |
 | `REGIONS`, `wsUrl`, `httpUrl`                           | region helpers                                                         |
 | `issuePlaygroundToken(opts?)`                           | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
-| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | generated types                                                        |
+| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | wire types                                                             |
 
 ## internals
 
-- Types come from `@hela/sdk-types`, regenerated from
-  [`packages/schemas/`](../../packages/schemas/). Run `make sdk.gen`
-  after schema changes.
+- Wire types live in `@hela/sdk-types/src/_generated.ts`,
+  emitted by `packages/sdk-gen/gen.py` from
+  [`packages/schemas/wire/`](../../packages/schemas/wire/). The
+  generator shells out to `quicktype` for TypeScript today; run
+  `make sdk.gen` after a schema change.
+- The hand-curated `index.ts` re-exports the generated module and
+  adds the region catalog (`Region`, `REGIONS`), the tier catalog
+  (`Tier`, `TIER_CAPS`, `TIER_PRICE`), the SDK-flattened presence
+  shape (`PresenceEntry`), the `metrics:live` snapshot shapes
+  (`Snapshot`, `LatencyHist`), and the JWT claim shape
+  (`HelaClaims`). Those are not in `packages/schemas/` yet; Tier
+  and Region are scheduled for promotion to JSON Schemas in a
+  later codegen phase.
 - The transport is phoenix.js (`^1.8`). We don't reimplement its
   channel protocol in browser — phoenix.js is the reference.

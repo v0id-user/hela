@@ -4,8 +4,29 @@
  * here mirrors what `Hela.Chat.Message.to_wire/1` or the metrics sampler
  * produces.
  *
- * Keep this package dependency-free so it's safe to import from anywhere.
+ * Wire types come from `./_generated.ts` — auto-emitted by
+ * `make sdk.gen` from `packages/schemas/wire/`. Do not edit them.
+ *
+ * The hand-curated additions in this file cover three things the
+ * schemas do not yet describe:
+ *
+ *   1. The hosted-region catalog (`Region`, `REGIONS`).
+ *   2. The hosted-plans tier catalog (`Tier`, `TIER_CAPS`, `TIER_PRICE`).
+ *   3. SDK-domain shapes that flatten or restructure the wire shapes
+ *      for ergonomic use (`PresenceEntry`).
+ *   4. `metrics:live` snapshot types and JWT claim shape — neither
+ *      surface has a JSON Schema today.
+ *
+ * Keep this package dependency-free so it's safe to import from
+ * anywhere.
  */
+
+// Re-export every generated wire type. Consumers import `Message`,
+// `JoinReply`, `Source`, etc. directly from "@hela/sdk-types".
+export * from "./_generated.js";
+
+// ---- region catalog (phase 5 of the codegen plan promotes this
+// to a schema) -----------------------------------------------------
 
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd" | "dev";
 
@@ -17,6 +38,8 @@ export const REGIONS: Record<Region, { city: string; host: string }> = {
   syd: { city: "Sydney, AU", host: "gateway-production-bfdf.up.railway.app" },
   dev: { city: "local dev", host: "localhost:4001" },
 };
+
+// ---- tier catalog (phase 5 promotes this to a schema too) --------
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 
@@ -36,28 +59,17 @@ export const TIER_PRICE: Record<Tier, number> = {
   ent: 2500,
 };
 
-export interface Message {
-  id: string;
-  channel: string;
-  author: string;
-  body: string;
-  reply_to_id: string | null;
-  node: string;
-  inserted_at: string;
-}
+// ---- SDK-domain shapes -------------------------------------------
 
-export interface HistoryReply {
-  source: "cache" | "mixed" | "db";
-  messages: Message[];
-}
-
-export interface JoinReply {
-  messages: Message[];
-  source: string;
-  node: string;
-  region: string;
-}
-
+/**
+ * SDK-flattened presence roster entry. The wire shape (`Entry` in
+ * `_generated.ts`) is keyed by user id in a dict; this struct adds
+ * the dict key as `id` for ergonomic list iteration.
+ *
+ * @hela/sdk's `presence.list()` returns `PresenceEntry[]`; the
+ * underlying phoenix.js Presence shape is the wire `Entry` plus its
+ * key.
+ */
 export interface PresenceEntry {
   id: string;
   metas: Array<{
@@ -67,6 +79,8 @@ export interface PresenceEntry {
     phx_ref?: string;
   }>;
 }
+
+// ---- ops shapes (metrics:live snapshot — not yet in schemas) -----
 
 export interface LatencyHist {
   count: number;
@@ -112,6 +126,8 @@ export interface Snapshot {
     uptime_s: number;
   };
 }
+
+// ---- auth (JWT claims — not on the WS surface) -------------------
 
 /**
  * What a customer-signed JWT must carry. The gateway enforces these
