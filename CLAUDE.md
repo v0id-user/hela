@@ -86,8 +86,11 @@ means you are repeating a mistake we already paid for. See
 
 1. Run the package's typechecker and tests. See `docs/dev/testing.md`
    for the exact commands per language.
-2. Subject must match `^[A-Za-z0-9 ,:]{4,72}$`. Conventional-Commit
-   prefixes are allowed, parens and hyphens are not.
+2. Subject must match `^[A-Za-z0-9 ,:()#]{4,72}$`. Parens and `#`
+   are allowed because GitHub's squash-merge button appends
+   ` (#NNN)` to every merged subject. Conventional-Commit prefixes
+   are fine. Hyphens, dots, underscores and other punctuation stay
+   out.
 3. One logical change per commit. If you have to write `also: ...`
    in the body, split.
 4. Body explains *why*, not *what*. The diff shows what.

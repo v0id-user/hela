@@ -2,17 +2,18 @@
 # Enforces the commit-message rules for the hela repo:
 #
 #   - ASCII only
-#   - Letters, digits, spaces, commas, colons
+#   - Letters, digits, spaces, commas, colons, parens, hashes
 #   - 4 to 72 chars
 #
 # Colons are allowed so Conventional-Commits-style prefixes work:
 #
 #     fix: race in cache trim
-#     feat: per project signing secret
+#     feat: per project signing secret (#42)
 #
-# But parens and hyphens stay out — scoped prefixes like `feat(auth):`
-# are not required here. Bot PRs (Dependabot etc) are exempted in the
-# CI lint, not this script.
+# Parens and hash signs are allowed because GitHub's squash-merge
+# button appends ` (#NNN)` to every merged subject. Hyphens, dots,
+# underscores and other punctuation are still rejected. Bot PRs
+# (Dependabot etc) are exempted in the CI lint, not this script.
 #
 # Used by .git/hooks/commit-msg locally and by .github/workflows/pr-lint.yml
 # in CI. Pass the subject line as the only argument.
@@ -40,11 +41,12 @@ if [ "$len" -gt 72 ]; then
   exit 1
 fi
 
-# Whitelist: A-Z a-z 0-9 space comma colon. Anything else is rejected.
+# Whitelist: A-Z a-z 0-9 space comma colon paren hash. Anything else
+# is rejected.
 case "$subject" in
-  *[!A-Za-z0-9\ ,:]*)
+  *[!A-Za-z0-9\ ,:#\(\)]*)
     echo "err: subject contains disallowed characters" >&2
-    echo "  allowed: letters, digits, spaces, commas, colons" >&2
+    echo "  allowed: letters, digits, spaces, commas, colons, parens, hashes" >&2
     echo "  subject: $subject" >&2
     exit 1
     ;;
