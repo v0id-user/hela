@@ -152,21 +152,31 @@ hela::Region::Dev   // localhost (pair with `endpoint`)
 
 ## reference
 
-| symbol                      | what                                             |
-| --------------------------- | ------------------------------------------------ |
-| `connect(cfg)`              | open a WS, return a `Client`                     |
-| `Client::channel(name)`     | create a `Channel`                               |
-| `Channel::{join,publish,history,on_message,leave}` | domain API          |
-| `Channel::presence`         | `Arc<Presence>` CRDT roster with `on_sync`       |
-| `Rest::new(base, opts)`     | REST client                                      |
-| `Error` / `ErrorKind`       | one-error surface, enum for matching             |
+| symbol                                             | what                                       |
+| -------------------------------------------------- | ------------------------------------------ |
+| `connect(cfg)`                                     | open a WS, return a `Client`               |
+| `Client::channel(name)`                            | create a `Channel`                         |
+| `Channel::{join,publish,history,on_message,leave}` | domain API                                 |
+| `Channel::presence`                                | `Arc<Presence>` CRDT roster with `on_sync` |
+| `Rest::new(base, opts)`                            | REST client                                |
+| `Error` / `ErrorKind`                              | one-error surface, enum for matching       |
 
 ## internals
 
 - Types hand-written in `src/types.rs` with `serde` derives. The
-  surface is small (~11 types); `typify` output is larger than just
-  writing it. Round-trip tests validate every payload against real
-  schema shapes.
+  surface is small (~11 types); `typify` and `quicktype` output is
+  larger and drops the `serde(default, skip_serializing_if = ...)`
+  attributes the hand-written file relies on. Drift is caught two
+  ways:
+  - Round-trip tests in `tests/types.rs` exercise every named
+    struct against real-shape payloads.
+  - `make sdk.gen` runs a Python drift checker that walks each
+    wire schema's properties and confirms the corresponding
+    `types.rs` struct has a `pub <name>:` field (or
+    `#[serde(rename = "...")]` overriding it). If a schema gains a
+    property and `types.rs` does not, the check fails with a
+    useful message naming the missing field, and CI's
+    `schema · regenerate + diff` fails the PR.
 - Transport (`src/transport.rs`) speaks Phoenix Channel v2 directly
   over `tokio-tungstenite`. Heartbeat interval is 30 seconds.
 - Live integration (`tests/integration.rs`) gated by `HELA_LIVE=1`.
