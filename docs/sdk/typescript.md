@@ -9,6 +9,8 @@ The package source is at [`packages/sdk-js/`](../../packages/sdk-js/).
 ## install
 
 ```sh
+bun add @hela/sdk
+# or
 pnpm add @hela/sdk
 # or
 npm i @hela/sdk
@@ -64,7 +66,10 @@ const r = await fetch(`https://gateway-production-bfdf.up.railway.app/v1/tokens`
   },
   body: JSON.stringify({
     sub: user.id,
-    chans: [["read", `chat:room:${roomId}`], ["write", `chat:room:${roomId}`]],
+    chans: [
+      ["read", `chat:room:${roomId}`],
+      ["write", `chat:room:${roomId}`],
+    ],
     ttl_seconds: 300,
     // optional: ephemeral: true  → broadcast-only for this JWT on the gateway
   }),
@@ -90,7 +95,7 @@ const page = await chat.history({ limit: 50 });
 // page: { source, messages }
 
 const unsub = chat.onMessage((msg) => console.log(msg));
-unsub();  // remove the listener
+unsub(); // remove the listener
 
 await chat.leave();
 ```
@@ -113,7 +118,9 @@ function useChannel(token: string, name: string) {
       await ch.join();
       setChannel(ch);
     })();
-    return () => { ch?.leave(); };
+    return () => {
+      ch?.leave();
+    };
   }, [token, name]);
   return channel;
 }
@@ -126,7 +133,7 @@ shipped in the SDK.
 
 ```ts
 chat.presence.onSync((users) => {
-  console.log(`online: ${users.map(u => u.id).join(", ")}`);
+  console.log(`online: ${users.map((u) => u.id).join(", ")}`);
 });
 ```
 
@@ -144,7 +151,7 @@ try {
   await chat.publish("x");
 } catch (e) {
   if (e.reason === "rate_limited") {
-    await new Promise(r => setTimeout(r, e.retry_after_ms));
+    await new Promise((r) => setTimeout(r, e.retry_after_ms));
     // retry
   }
 }
@@ -167,21 +174,25 @@ console.log(REGIONS);
 
 ## reference
 
-| symbol | what |
-| --- | --- |
-| `connect(config)` | open a WS + return a `HelaClient` |
-| `HelaClient` | the socket owner |
-| `HelaClient#channel(name)` | create a channel handle |
-| `HelaChannel` | joined channel: `join`, `publish`, `history`, `onMessage`, `leave` |
-| `HelaPresence` | CRDT roster with `onSync` |
-| `REGIONS`, `wsUrl`, `httpUrl` | region helpers |
-| `issuePlaygroundToken(opts?)` | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
-| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | generated types |
+| symbol                                                  | what                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `connect(config)`                                       | open a WS + return a `HelaClient`                                      |
+| `HelaClient`                                            | the socket owner                                                       |
+| `HelaClient#channel(name)`                              | create a channel handle                                                |
+| `HelaChannel`                                           | joined channel: `join`, `publish`, `history`, `onMessage`, `leave`     |
+| `HelaPresence`                                          | CRDT roster with `onSync`                                              |
+| `REGIONS`, `wsUrl`, `httpUrl`                           | region helpers                                                         |
+| `issuePlaygroundToken(opts?)`                           | mint a 5-min guest token; set `opts.ephemeral` for broadcast-only JWTs |
+| `Message`, `HistoryReply`, `JoinReply`, `PresenceEntry` | wire types                                                             |
 
 ## internals
 
-- Types come from `@hela/sdk-types`, regenerated from
-  [`packages/schemas/`](../../packages/schemas/). Run `make sdk.gen`
-  after schema changes.
+- Types live in `@hela/sdk-types/src/index.ts`, hand-written
+  against [`packages/schemas/`](../../packages/schemas/). The
+  hand-written file is small enough to keep in sync by eye, and
+  round-trip tests in the SDK plus a schema drift gate in CI
+  catch unconfessed drift. A migration to generated wire types
+  via `quicktype` is planned; until it lands, edit the file
+  directly when a schema changes.
 - The transport is phoenix.js (`^1.8`). We don't reimplement its
   channel protocol in browser — phoenix.js is the reference.
