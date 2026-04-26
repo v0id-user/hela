@@ -24,6 +24,42 @@
   <img alt="sdks" src="https://img.shields.io/badge/sdks-ts%20%C2%B7%20py%20%C2%B7%20go%20%C2%B7%20rs-c0c0c0?style=flat-square&labelColor=0a0a0a"/>
 </p>
 
+## Project status: archived experiment
+
+**hela is archived.** It was a full-on experiment, not a minimal MVP with a
+frozen contract: a data plane, control plane, four SDKs, two React apps, infra,
+and hosted product concerns, all in one monorepo. The work outgrew the plan
+(**scope creep**) and the plan was not **thorough enough on day one** (what
+ships, what is out of scope, and what "done" means per surface). The repo stays
+up as reference; this section is the honest post-mortem.
+
+**What the experiment taught:**
+
+- **Scope has to be explicit from the start.** "Real-time platform" plus
+  self-host, hosted billing, and multi-language clients sounds like one product
+  and behaves like four. Without a written boundary, every new file is
+  "in scope" until the queue never clears.
+
+- **Auto-generating SDKs from a shared schema** kept wire types honest and
+  **was still a bet**: four languages, four toolchains, and a codegen path is
+  a maintenance surface. It is a mistake to add codegen and multiple SDKs
+  *before* the wire protocol and product surface are stable and small. Schema
+  as source of truth does not remove the need for a *small* surface.
+
+- **Agentic coding** (and heavy AI-assisted iteration) is powerful: you can
+  go from idea to a credible stack quickly. It also amplifies **bad
+  structure** just as fast—wrong abstractions, duplicated ownership, and
+  "one more feature" compounding. Speed without a spec becomes technical debt
+  at a higher clock rate.
+
+- **Monorepo as default** is fine for a team with shared CI habits; for a
+  solo experiment it means every change touches the mental model of the
+  **whole** system. That is a feature when you are integrating; it is
+  a drag when you are trying to finish one vertical slice.
+
+The sections below document **what was built** and how it fit together. Treat
+them as an archive, not a roadmap.
+
 ---
 
 **OSS first, hosted second:** the product is the repo. The supported
