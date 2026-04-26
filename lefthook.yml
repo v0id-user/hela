@@ -126,16 +126,18 @@ pre-commit:
     # --- schemas ------------------------------------------------------
     # Any schema change has to regenerate or CI's drift guard fails.
     # Run the same check locally so nobody pushes a broken commit.
-    # Only checks the generated tree — Go and Rust types are
-    # hand-written and covered by their own round-trip tests.
+    # Only checks the generated Python tree today. TS, Go and Rust
+    # types are hand-written and covered by their own round-trip
+    # tests; a planned multi-language codegen pass will bring them
+    # into this gate.
     schema-drift:
       tags: schema
       glob: "packages/schemas/**/*"
       run: |
         uv run packages/sdk-gen/gen.py >/dev/null
-        if ! git diff --quiet -- packages/sdk-py/src/hela/_generated packages/sdk-types; then
+        if ! git diff --quiet -- packages/sdk-py/src/hela/_generated; then
           echo "err: schema change did not regenerate SDK types" >&2
-          echo "     run: make sdk.gen && git add ." >&2
+          echo "     run: make sdk.gen and git add" >&2
           exit 1
         fi
 
