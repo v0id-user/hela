@@ -6,8 +6,13 @@
 // routing have everything in memory at first paint — the docs are
 // small (~30 files, well under 1MB combined gzipped), so a single
 // bundle beats a code-split per page.
+//
+// The path is relative to *this file*, not absolute. The leading
+// `/` form would resolve against Vite's project root (apps/docs/)
+// which contains no `docs/` directory; the actual markdown lives
+// at the monorepo root, two levels up.
 
-const sources = import.meta.glob("/docs/**/*.md", {
+const sources = import.meta.glob("../../../../docs/**/*.md", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -63,14 +68,24 @@ function deriveTitle(content: string, slug: string): string {
 }
 
 function pathToPage(path: string, content: string): DocPage {
-  // path looks like "/docs/sdk/typescript.md"
-  const trimmed = path.replace(/^\/?docs\//, "").replace(/\.md$/, "");
-  const parts = trimmed.split("/");
+  // Path can come in three shapes depending on how Vite resolves
+  // the glob:
+  //   "/docs/sdk/typescript.md"            (absolute, from project root)
+  //   "../../../../docs/sdk/typescript.md" (relative, from this file)
+  //   "/abs/path/docs/sdk/typescript.md"   (filesystem absolute)
+  //
+  // Strip everything up to and including the last `/docs/` segment
+  // and drop the .md extension, then everything works the same way.
+  const after = path.replace(/^.*?\/docs\//, "").replace(/\.md$/, "");
+  const parts = after.split("/");
   const isCategorised = parts.length > 1;
   const category = isCategorised ? parts[0] : "general";
-  const slug = trimmed; // e.g. "sdk/typescript" or "quickstart"
+  const slug = after; // e.g. "sdk/typescript" or "quickstart"
   const title = deriveTitle(content, slug);
-  return { slug, category, title, content, path: path.replace(/^\//, "") };
+  // Surface a clean repo-relative path (docs/...) for the
+  // "view source on GitHub" footer link.
+  const cleanPath = "docs/" + after + ".md";
+  return { slug, category, title, content, path: cleanPath };
 }
 
 const PAGES: DocPage[] = Object.entries(sources)
