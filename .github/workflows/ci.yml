@@ -296,6 +296,10 @@ jobs:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with: { python-version: "3.13" }
+      # bun is required because gen.py shells out to bunx quicktype
+      # for the TypeScript target. quicktype is fetched on first run
+      # and cached locally; CI runs are clean so it always fetches.
+      - uses: oven-sh/setup-bun@v2
       - name: regenerate SDK types
         run: uv run packages/sdk-gen/gen.py
       - name: assert no drift
