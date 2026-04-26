@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  hela mark. A 3-dot presence roster inside square brackets — two
+  filled, one hollow. Reads as "two users online, one leaving" at a
+  glance. Same shape as phoenix.js' presence frames:
+  `%{joins: %{...}, leaves: %{...}}`.
+
+  Scales cleanly from 16px favicon to any display size. No fonts
+  required; every glyph is a vector path.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>hela</title>
+  <rect width="64" height="64" fill="#0a0a0a"/>
+
+  <!-- Left bracket -->
+  <path d="M 13 18 L 9 18 L 9 46 L 13 46"
+        fill="none" stroke="#c9a76a" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"/>
+
+  <!-- Right bracket -->
+  <path d="M 51 18 L 55 18 L 55 46 L 51 46"
+        fill="none" stroke="#c9a76a" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"/>
+
+  <!-- Three dots. Two filled silver (present), one hollow (just left). -->
+  <circle cx="19" cy="32" r="4" fill="#c0c0c0"/>
+  <circle cx="32" cy="32" r="4" fill="#c0c0c0"/>
+  <circle cx="45" cy="32" r="3.25" fill="none" stroke="#666" stroke-width="1.5"/>
+</svg>

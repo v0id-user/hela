@@ -39,12 +39,17 @@ env:
   VITE_HELA_GATEWAY: ${{ github.ref == 'refs/heads/dev' && 'https://gateway-dev-dev.up.railway.app' || 'https://gateway-production-bfdf.up.railway.app' }}
   VITE_HELA_CONTROL: ${{ github.ref == 'refs/heads/dev' && 'https://control-dev.up.railway.app'    || 'https://control-production-059e.up.railway.app' }}
   VITE_HELA_APP:     ${{ github.ref == 'refs/heads/dev' && 'https://app-dev-dev-4b3a.up.railway.app' || 'https://app-production-1716a.up.railway.app' }}
+  # docs URL: dev points at the dev railway service that already
+  # exists; production points at the dev URL too until the prod
+  # docs service is provisioned (next operator-side task).
+  VITE_HELA_DOCS:    ${{ github.ref == 'refs/heads/dev' && 'https://docs-dev-02b1.up.railway.app' || 'https://docs-dev-02b1.up.railway.app' }}
   # Public domains used by post-deploy health/version polls and the
   # browser e2e job. Same per-branch switch as the build-time URLs.
   HELA_GATEWAY_URL:  ${{ github.ref == 'refs/heads/dev' && 'https://gateway-dev-dev.up.railway.app' || 'https://gateway-production-bfdf.up.railway.app' }}
   HELA_CONTROL_URL:  ${{ github.ref == 'refs/heads/dev' && 'https://control-dev.up.railway.app'    || 'https://control-production-059e.up.railway.app' }}
   HELA_APP_URL:      ${{ github.ref == 'refs/heads/dev' && 'https://app-dev-dev-4b3a.up.railway.app' || 'https://app-production-1716a.up.railway.app' }}
   HELA_WEB_URL:      ${{ github.ref == 'refs/heads/dev' && 'https://web-dev-dev-881b.up.railway.app' || 'https://web-production-f24fc.up.railway.app' }}
+  HELA_DOCS_URL:     ${{ github.ref == 'refs/heads/dev' && 'https://docs-dev-02b1.up.railway.app' || 'https://docs-dev-02b1.up.railway.app' }}
 
 jobs:
   # ---------- lint / format check (fast-fail) ---------------------------
@@ -402,6 +407,7 @@ jobs:
       control_svc: ${{ steps.pick.outputs.control_svc }}
       web_svc: ${{ steps.pick.outputs.web_svc }}
       app_svc: ${{ steps.pick.outputs.app_svc }}
+      docs_svc: ${{ steps.pick.outputs.docs_svc }}
     steps:
       - id: pick
         run: |
@@ -412,6 +418,7 @@ jobs:
             echo "control_svc=control"    >> "$GITHUB_OUTPUT"
             echo "web_svc=web"            >> "$GITHUB_OUTPUT"
             echo "app_svc=app"            >> "$GITHUB_OUTPUT"
+            echo "docs_svc=docs"          >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref }}" = "refs/heads/dev" ] && [ "${{ github.event_name }}" = "push" ]; then
             # Dev Railway env was provisioned with -dev suffixed service
             # names because the original shells lacked source_image /
@@ -422,6 +429,7 @@ jobs:
             echo "control_svc=control"    >> "$GITHUB_OUTPUT"
             echo "web_svc=web-dev"        >> "$GITHUB_OUTPUT"
             echo "app_svc=app-dev"        >> "$GITHUB_OUTPUT"
+            echo "docs_svc=docs-dev"      >> "$GITHUB_OUTPUT"
           else
             # PR context — used only for status display; deploy jobs are
             # guarded on push events below so this never actually runs.
@@ -431,6 +439,7 @@ jobs:
             echo "control_svc=control"    >> "$GITHUB_OUTPUT"
             echo "web_svc=web-dev"        >> "$GITHUB_OUTPUT"
             echo "app_svc=app-dev"        >> "$GITHUB_OUTPUT"
+            echo "docs_svc=docs-dev"      >> "$GITHUB_OUTPUT"
           fi
 
   deploy-control:
@@ -808,6 +817,109 @@ jobs:
           done
 
           echo "::error::app /version never reported commit $EXPECTED_SHA — Railway likely served a cached image"
+          exit 1
+
+  deploy-docs:
+    name: deploy · docs (${{ needs.target.outputs.env }})
+    needs: [build-js, target]
+    # Today the docs service exists only on the dev environment; the
+    # production docs service is provisioned on demand. Gate this
+    # job to dev pushes only until then. Flip to include
+    # `refs/heads/main` once the production service is set up and
+    # HELA_DOCS_URL above is pointing at it.
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.target.outputs.env }}
+    concurrency: deploy-docs-${{ needs.target.outputs.env }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: build docs with commit stamp
+        # Same shape as web/app — prepare_static_assets emits
+        # version.json off GITHUB_SHA so the post-deploy gate can match
+        # the shipped commit against the pushed sha.
+        run: cd apps/docs && bun run build
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+      - name: install Railway CLI
+        shell: bash
+        env:
+          RAILWAY_CLI_VERSION: v4.42.1
+        run: |
+          set -euo pipefail
+
+          URL="https://github.com/railwayapp/cli/releases/download/${RAILWAY_CLI_VERSION}/railway-${RAILWAY_CLI_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+
+          for attempt in $(seq 1 5); do
+            if curl --fail --silent --show-error --location "$URL" -o /tmp/railway.tar.gz; then
+              tar -xzf /tmp/railway.tar.gz -C /tmp
+              sudo install -m 0755 /tmp/railway /usr/local/bin/railway
+              railway --version
+              exit 0
+            fi
+
+            echo "railway CLI download failed ($attempt/5)" >&2
+            sleep 5
+          done
+
+          echo "::error::failed to install Railway CLI after retries"
+          exit 1
+      - name: railway up docs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 3); do
+            if railway up ./apps/docs --service ${{ needs.target.outputs.docs_svc }} --path-as-root --ci --detach \
+              --environment ${{ needs.target.outputs.railway_env }}; then
+              exit 0
+            fi
+
+            echo "railway up docs failed ($attempt/3)" >&2
+            sleep 10
+          done
+
+          echo "::error::railway up docs failed after retries"
+          exit 1
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: wait for docs /health + /version commit match
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          hurl="${HELA_DOCS_URL}/health"
+          vurl="${HELA_DOCS_URL}/version"
+
+          for attempt in $(seq 1 60); do
+            body=$(curl --silent --show-error --location --max-time 8 "$hurl" || true)
+            if [ "$body" = "ok" ]; then
+              echo "docs /health is ok"
+              break
+            fi
+            echo "docs /health not ok yet ($attempt/60)"
+            sleep 5
+            if [ "$attempt" = "60" ]; then
+              echo "::error::docs /health never returned the expected body (got: ${body:0:80}...)"
+              exit 1
+            fi
+          done
+
+          for attempt in $(seq 1 30); do
+            payload=$(curl --silent --show-error --location --max-time 8 "$vurl" || true)
+            got_sha=$(printf '%s' "$payload" | jq -r '.commit // empty' 2>/dev/null || true)
+            if [ "$got_sha" = "$EXPECTED_SHA" ]; then
+              echo "docs /version commit matches $EXPECTED_SHA"
+              exit 0
+            fi
+            echo "docs /version commit mismatch (got=${got_sha:-unset}, want=$EXPECTED_SHA, $attempt/30)"
+            sleep 5
+          done
+
+          echo "::error::docs /version never reported commit $EXPECTED_SHA — Railway likely served a cached image"
           exit 1
 
   # ---------- post-deploy smoke ----------------------------------------

@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/presence_diff.schema.json",
+  "title": "PresenceDiff",
+  "description": "Incremental presence update. Apply to local state: leaves first, then joins. Clients that need full state should still initialize from presence_state on join.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "joins": {
+      "type": "object",
+      "additionalProperties": { "$ref": "./presence_state.schema.json#/definitions/Entry" }
+    },
+    "leaves": {
+      "type": "object",
+      "additionalProperties": { "$ref": "./presence_state.schema.json#/definitions/Entry" }
+    }
+  }
+}

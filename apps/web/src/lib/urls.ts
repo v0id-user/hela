@@ -1,4 +1,8 @@
-const env = (import.meta as { env?: { VITE_HELA_APP?: string } }).env;
+const env = (
+  import.meta as {
+    env?: { VITE_HELA_APP?: string; VITE_HELA_DOCS?: string };
+  }
+).env;
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -17,6 +21,15 @@ export const APP_BASE =
   (isLocalBrowserHost()
     ? `${window.location.protocol}//${window.location.hostname}:5174`
     : "https://app-production-1716a.up.railway.app");
+
+// Public docs origin. Same shape as APP_BASE: VITE_HELA_DOCS at
+// build time wins, local web dev points at the docs vite server on
+// :5175, production falls back to the Railway `docs` service URL.
+export const DOCS_BASE =
+  env?.VITE_HELA_DOCS ??
+  (isLocalBrowserHost()
+    ? `${window.location.protocol}//${window.location.hostname}:5175`
+    : "https://docs-production.up.railway.app");
 
 export const SIGNIN_URL = APP_BASE;
 

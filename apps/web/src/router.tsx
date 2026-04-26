@@ -4,7 +4,7 @@ import { How } from "./routes/How";
 import { Dashboard } from "./routes/Dashboard";
 import { Signup } from "./routes/Signup";
 import { Status } from "./routes/Status";
-import { SIGNIN_URL, signupUrl } from "./lib/urls";
+import { DOCS_BASE, SIGNIN_URL, signupUrl } from "./lib/urls";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -43,6 +43,9 @@ const rootRoute = createRootRoute({
         <Link to="/how" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
           how
         </Link>
+        <a href={DOCS_BASE} style={linkStyle}>
+          docs
+        </a>
         <Link to="/dashboard" style={linkStyle} activeProps={{ style: activeLinkStyle }}>
           dashboard
         </Link>

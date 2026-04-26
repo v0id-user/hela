@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/publish_request.schema.json",
+  "title": "PublishRequest",
+  "description": "Outgoing publish frame. Goes as the `publish` event payload on a joined channel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["body"],
+  "properties": {
+    "body": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "The message body. Rejected if over 4KB."
+    },
+    "author": {
+      "type": "string",
+      "description": "Optional author override. Defaults to the channel's joined nickname."
+    },
+    "reply_to_id": {
+      "type": "string",
+      "description": "Optional. UUIDv7 of the message this replies to.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

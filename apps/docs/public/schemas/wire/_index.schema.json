@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/_index.schema.json",
+  "title": "WireEvents",
+  "description": "Umbrella schema that references every WS event. This is the entry point datamodel-codegen (and other tools) read to emit a single types module covering the whole WS surface in one file.",
+  "type": "object",
+  "definitions": {
+    "Message": { "$ref": "./message.schema.json" },
+    "PublishRequest": { "$ref": "./publish_request.schema.json" },
+    "PublishReply": { "$ref": "./publish_reply.schema.json" },
+    "HistoryRequest": { "$ref": "./history_request.schema.json" },
+    "HistoryReply": { "$ref": "./history_reply.schema.json" },
+    "JoinRequest": { "$ref": "./join_request.schema.json" },
+    "JoinReply": { "$ref": "./join_reply.schema.json" },
+    "PresenceState": { "$ref": "./presence_state.schema.json" },
+    "PresenceDiff": { "$ref": "./presence_diff.schema.json" },
+    "ErrorReply": { "$ref": "./error.schema.json" }
+  },
+  "properties": {
+    "message": { "$ref": "#/definitions/Message" },
+    "publish_request": { "$ref": "#/definitions/PublishRequest" },
+    "publish_reply": { "$ref": "#/definitions/PublishReply" },
+    "history_request": { "$ref": "#/definitions/HistoryRequest" },
+    "history_reply": { "$ref": "#/definitions/HistoryReply" },
+    "join_request": { "$ref": "#/definitions/JoinRequest" },
+    "join_reply": { "$ref": "#/definitions/JoinReply" },
+    "presence_state": { "$ref": "#/definitions/PresenceState" },
+    "presence_diff": { "$ref": "#/definitions/PresenceDiff" },
+    "error": { "$ref": "#/definitions/ErrorReply" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/error.schema.json",
+  "title": "ErrorReply",
+  "description": "Generic shape for error replies on the channel (status=\"error\" phx_reply).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["reason"],
+  "properties": {
+    "reason": {
+      "type": "string",
+      "description": "Short machine-readable error code. Known values: `body_too_large`, `unauthorized_read`, `unauthorized_write`, `project_mismatch`, `rate_limited`, `bad_topic`."
+    },
+    "retry_after_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Present when `reason == rate_limited`. Milliseconds until the current rate bucket resets."
+    }
+  }
+}

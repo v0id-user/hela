@@ -18,12 +18,12 @@ const ROOT = resolve(import.meta.dir, "..");
 const TEMP_SCHEMA_BASE = "https://web-production-f24fc.up.railway.app/schemas/wire/";
 const target = Bun.argv[2];
 
-if (target !== "web" && target !== "app") {
-  console.error("usage: bun run scripts/prepare_static_assets.ts <web|app>");
+if (target !== "web" && target !== "app" && target !== "docs") {
+  console.error("usage: bun run scripts/prepare_static_assets.ts <web|app|docs>");
   process.exit(1);
 }
 
-type Target = "web" | "app";
+type Target = "web" | "app" | "docs";
 
 function envFirst(...names: string[]): string | undefined {
   for (const name of names) {
