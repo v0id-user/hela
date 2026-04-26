@@ -1,0 +1,6 @@
+# `apps/docs/dist/` is in repo-root .gitignore, so without this the
+# vite-built bundle would be missing from the Railway upload context
+# and the Dockerfile's `COPY dist` would fail. Same dance as
+# apps/web/ and apps/app/.
+!dist
+!dist/**

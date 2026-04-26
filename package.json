@@ -5,6 +5,7 @@
   "workspaces": [
     "apps/web",
     "apps/app",
+    "apps/docs",
     "packages/sdk-js",
     "packages/sdk-js-e2e",
     "packages/sdk-types",

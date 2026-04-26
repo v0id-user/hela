@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  hela wordmark. Gold brackets, silver text, terminal aesthetic.
+  Uses a monospace font stack so both browser render and
+  rsvg-convert rasterization pick a reasonable mono face. Weight
+  500 is a deliberate middle — regular feels thin at small sizes,
+  bold reads as shouting.
+
+  Dimensions: 360 × 80.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" width="360" height="80">
+  <title>hela</title>
+  <rect width="360" height="80" fill="#0a0a0a"/>
+
+  <!-- Gold brackets + silver type. One `<text>` element, two
+       `<tspan>`s so each segment gets its own fill. -->
+  <text x="180" y="52" text-anchor="middle"
+        font-family="'SF Mono', 'JetBrains Mono', 'Menlo', 'DejaVu Sans Mono', 'Consolas', monospace"
+        font-size="42" font-weight="500" letter-spacing="2">
+    <tspan fill="#c9a76a">[&#160;</tspan>
+    <tspan fill="#c0c0c0">hela</tspan>
+    <tspan fill="#c9a76a">&#160;]</tspan>
+  </text>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://web-production-f24fc.up.railway.app/schemas/wire/history_reply.schema.json",
+  "title": "HistoryReply",
+  "description": "Ordered oldest → newest. `source` tells the client where the page came from so it can show cache-hit rate in dashboards or switch strategy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["messages", "source"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "enum": ["cache", "mixed", "db"],
+      "description": "`cache`: entirely from ETS hot-tier. `mixed`: cache + Postgres topup. `db`: cache miss, Postgres fall-through."
+    },
+    "messages": {
+      "type": "array",
+      "items": { "$ref": "./message.schema.json" }
+    }
+  }
+}

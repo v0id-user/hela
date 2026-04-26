@@ -1,0 +1,28 @@
+{
+  "name": "@hela/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "bun run ../../scripts/prepare_static_assets.ts docs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.168.23",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "rehype-highlight": "^7.0.0",
+    "highlight.js": "^11.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.10"
+  }
+}
