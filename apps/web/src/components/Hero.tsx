@@ -47,7 +47,11 @@ export function Hero() {
       noteHeroJoined(r);
       setRegion(r);
       setConnected(true);
-      setMessages(hist);
+      // hello:world is ephemeral, so the server never replays history.
+      // Seed a small visual chorus on first paint so the panel reads
+      // like a populated room instead of dead air. Real publishes from
+      // this tab and from other open visitors append after this list.
+      setMessages(hist.length > 0 ? hist : seedMessages());
 
       offMsg = ch.onMessage((m) => {
         setMessages((xs) => [...xs.slice(-49), m]);
@@ -132,7 +136,10 @@ export function Hero() {
             justifyContent: "space-between",
           }}
         >
-          <span>hello:world — inline channel · everyone's in it</span>
+          <span>
+            hello:world — inline channel · <span style={{ color: "#c9a76a" }}>ephemeral</span> ·
+            everyone's in it
+          </span>
           <span style={{ color: "#666" }}>
             {connected
               ? `> connected · region: ${region || "?"}${rtt != null ? ` · rtt ${rtt.toFixed(0)}ms` : ""}`
@@ -191,7 +198,78 @@ export function Hero() {
             [ send ]
           </button>
         </div>
+        <div
+          style={{
+            fontSize: 10,
+            color: "#666",
+            padding: "4px 10px",
+            borderTop: "1px solid #222",
+            background: "#0d0d0d",
+            lineHeight: 1.5,
+          }}
+        >
+          ephemeral channel: the gateway broadcasts to everyone connected right now and forgets.
+          nothing is cached, nothing hits Postgres, nothing replays on reload — the visible history
+          below this banner is seed text for the demo, not stored messages.
+        </div>
       </div>
     </section>
   );
+}
+
+// Seed messages rendered on first paint of the hero panel. They look
+// like prior conversation so the demo panel doesn't open into empty
+// air. Real publishes append below.
+//
+// The id format mimics a UUIDv7 — first 12 hex chars decode to a ms
+// timestamp via `uuidv7Timestamp` so the timestamps under each
+// message read as the past few minutes, not "1970".
+function seedMessages(): Message[] {
+  const lines: { author: string; body: string; secondsAgo: number }[] = [
+    { author: "alice", body: "first packet 🚀", secondsAgo: 612 },
+    { author: "bob", body: "is this thing on?", secondsAgo: 568 },
+    { author: "carol", body: "hey y'all", secondsAgo: 540 },
+    { author: "dan", body: "from sjc, rtt 88ms", secondsAgo: 421 },
+    { author: "eve", body: "presence works on `chat:*`. try /how", secondsAgo: 305 },
+    { author: "alice", body: "joining from a phone tab too", secondsAgo: 240 },
+    {
+      author: "frank",
+      body: "channels namespaced per project, JWT carries the claim",
+      secondsAgo: 184,
+    },
+    { author: "grace", body: "ephemeral mode = no cache, no postgres, no replay", secondsAgo: 121 },
+    { author: "carol", body: "neat — connection is sticky to ams region", secondsAgo: 64 },
+    { author: "henry", body: "type below to send into this room", secondsAgo: 18 },
+  ];
+  const node = "hela-ams@gateway-dev.railway.internal";
+  return lines.map(({ author, body, secondsAgo }) => {
+    const at = Date.now() - secondsAgo * 1000;
+    const id = fakeUuidv7At(at);
+    return {
+      id,
+      channel: "hello:world",
+      author,
+      body,
+      reply_to_id: null,
+      node,
+      inserted_at: new Date(at).toISOString(),
+    };
+  });
+}
+
+function fakeUuidv7At(ms: number): string {
+  const tsHex = ms.toString(16).padStart(12, "0");
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(10)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  // 8-4-4-4-12 layout. Version nibble at byte 6 = 7. Variant high bits
+  // at byte 8 = 10xx (so first nibble is 8, 9, a, or b).
+  const variantNibble = (0x8 + (parseInt(rand[3], 16) & 0x3)).toString(16);
+  return [
+    tsHex.slice(0, 8),
+    tsHex.slice(8, 12),
+    "7" + rand.slice(0, 3),
+    variantNibble + rand.slice(4, 7),
+    rand.slice(7, 19).padEnd(12, "0"),
+  ].join("-");
 }

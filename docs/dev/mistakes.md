@@ -12,6 +12,7 @@ their category.
 ## Assumptions about the codebase
 
 ### Assumed BEAM clustering was wired up
+
 - What happened: gateway's `rel/env.sh.eex` set
   `RELEASE_NODE="hela-${HELA_REGION:-dev}@${RAILWAY_PRIVATE_IP:-127.0.0.1}"`.
   In production this fell through to `127.0.0.1` because
@@ -30,11 +31,12 @@ their category.
   in `apps/` is a 5-second check.
 
 ### Assumed `railway redeploy` re-pulls the new image
+
 - What happened: after `serviceInstanceUpdate(source.image="postgres:18-alpine")`
   via GraphQL, I ran `railway redeploy --service postgres --yes` and
   the live service stayed on PG16.
-- Why it happened: `railway redeploy` redeploys the *last
-  deployment*, not the *current config*. The CLI verb name implies
+- Why it happened: `railway redeploy` redeploys the _last
+  deployment_, not the _current config_. The CLI verb name implies
   otherwise.
 - How it was caught: by reading the new deployment's logs:
   `starting PostgreSQL 16.13`.
@@ -42,11 +44,12 @@ their category.
   `serviceInstanceDeployV2(serviceId, environmentId)` which uses
   the current configuration.
 - Rule going forward: when you change service config (image, env,
-  volume), trigger a *fresh* deploy with `serviceInstanceDeployV2`,
+  volume), trigger a _fresh_ deploy with `serviceInstanceDeployV2`,
   not `railway redeploy`. Pin the deployment id returned by the
   mutation and watch it specifically, not `deployments(first: 1)`.
 
 ### Assumed `/health = 200` proves DB recovery
+
 - What happened: after the PG18 cutover, gateway's `/health`
   returned `{"ok":true}` and I declared "gateway reconnected to
   Postgres". `/health` does not exercise the DB pool. Postgrex
@@ -66,6 +69,7 @@ their category.
 ## Environment and dependency drift
 
 ### Volume attach raced the image bump
+
 - What happened: upgrading Postgres 16 to 18 on Railway, I
   performed (1) set `PGDATA` env, (2) `railway volume add`, (3)
   `serviceInstanceUpdate(source.image="postgres:18-alpine")`, (4)
@@ -73,21 +77,22 @@ their category.
   PG16 image, which initdb'd the freshly-attached volume with PG16
   layout. Step 4's PG18 deploy crashed:
   `database files are incompatible with server. The data directory
-  was initialized by PostgreSQL version 16, which is not compatible
-  with this version 18.3`.
+was initialized by PostgreSQL version 16, which is not compatible
+with this version 18.3`.
 - Why it happened: I sequenced volume attach before image bump.
   Each Railway service-config change triggers a deploy with
-  whatever the *current* image is at that moment.
+  whatever the _current_ image is at that moment.
 - How it was caught: by reading the postgres logs after the
   "successful" deploy claim.
 - The fix: `railway volume delete postgres-volume` and recreate.
   Safe only because the user had explicitly confirmed no real data
   yet. With data, this would be catastrophic.
 - Rule going forward: when both the image and a volume are new,
-  set the image first via `serviceInstanceUpdate`, *then* attach
+  set the image first via `serviceInstanceUpdate`, _then_ attach
   the volume. Or attach to a service that has never deployed.
 
 ### Terraform was source of truth in code, but applied via CLI/API
+
 - What happened: PG18 + volume + env vars were edited in
   `infra/railway/main.tf`, committed, and pushed. Live Railway
   state was updated via `railway` CLI and GraphQL because Terraform
@@ -114,6 +119,7 @@ real ones if they happen.
 ## Ignoring existing patterns
 
 ### Fixed gateway's release env, did not fix control's
+
 - What happened: I gave `apps/gateway/rel/env.sh.eex` a clean
   `RELEASE_NODE`, declared the fix done, and reported
   "control still reports `control@4d8cbad16093`, worth a follow-up
@@ -131,6 +137,7 @@ real ones if they happen.
   surfaced both.
 
 ### "Sweep" did not actually sweep
+
 - What happened: prior sessions reported sweeping `stripe` and
   `hela.dev` references. This session a `grep -r` from repo root
   found 12 surviving `hela.dev` references and a dozen surviving
@@ -157,6 +164,7 @@ real ones if they happen.
 ## Over-engineering or under-engineering
 
 ### Retry-on-429 covered up a real rate-limit bug
+
 - What happened: when the gateway's per-IP playground token
   limiter (1/sec) returned a 429 to the marketing landing page, I
   added a 4-attempt retry with backoff to
@@ -164,7 +172,7 @@ real ones if they happen.
   `Failed to load resource: status of (429|503|504)` out of
   `consoleErrors` in `packages/sdk-js-e2e/fixtures/playground.ts`.
   The page eventually loaded but the user saw `token 200 / token
-  429 / token 200` in DevTools, and the e2e test stayed green.
+429 / token 200` in DevTools, and the e2e test stayed green.
   User: "wasn't the E2E supposed to catch this?".
 - Why it happened: I treated the 429 as a transient and the test
   as too strict. The actual problem was a tight rate limit
@@ -185,6 +193,7 @@ real ones if they happen.
   the user-facing requirement. Usually it is.
 
 ### Pitched brand v2 alternatives the user had not asked for
+
 - What happened: prior session, I pitched alternative brand
   directions ("startupy", v2 marks) when the user expressed
   uncertainty.
@@ -203,9 +212,10 @@ real ones if they happen.
 ## Process mistakes
 
 ### Did not pin deployment id when checking status
+
 - What happened: after `serviceInstanceUpdate` to bump the PG
   image, I queried `service.deployments(first: 1)` to watch the
-  new deploy. That query returned the *prior* deploy (which had
+  new deploy. That query returned the _prior_ deploy (which had
   succeeded with the old image). I declared the bump live based on
   that prior deploy's `SUCCESS` status, then noticed PG16 in the
   logs.
@@ -219,6 +229,7 @@ real ones if they happen.
   created".
 
 ### "All green" claims that hid what was not green
+
 - What happened: I reported "All green" after CI runs that
   succeeded for the deploy gates, but did not call out that
   gateway emits a `deployment_id` in `/version`, not a `commit`
@@ -233,6 +244,7 @@ real ones if they happen.
   on commit and which are not.
 
 ### Started a preview server mid-merge
+
 - What happened: I ran `preview_start` after committing a merge
   resolution, mid-rebase.
 - Why it happened: the post-edit hook reminded me about preview
@@ -248,6 +260,7 @@ real ones if they happen.
 ## Communication mistakes
 
 ### Treated "fix that too" as transitive permission for destructive ops
+
 - What happened: user said "we haven't stored anything yet and we
   didn't even attach a storage to it fix that too". I attached a
   volume, hit a PG version conflict, then deleted the volume and
@@ -265,6 +278,7 @@ real ones if they happen.
   message.
 
 ### Vague summaries hid which checks ran
+
 - What happened: closing a piece of work with "everything is
   green, shipped" without listing which jobs actually ran. The
   post-PG18 closeout listed gateway as "deployed and live" without
@@ -276,6 +290,7 @@ real ones if they happen.
   list of jobs that ran, it is hiding something.
 
 ### Reused `@hela.dev` for test emails despite four prior callouts
+
 - What happened: in this session I generated test signups against
   the dev integration test as `dev-it-...@hela.dev` and the live
   browser test as `browser-it-...@hela.dev`. The project does not
@@ -305,6 +320,7 @@ real ones if they happen.
   alternative. If unclear, ask before generating.
 
 ### Pushed feature PR with prettier-dirty files; CI failed half-shipped
+
 - What happened: PR #23 (auth + TF refactor) merged via admin
   squash to main. CI's `js · prettier + typecheck` job failed
   because three new files (`Login.tsx`, `Signup.tsx`,
@@ -335,6 +351,7 @@ real ones if they happen.
   is not enough; formatters and lints have to pass too.
 
 ### Smoke test e2e.py was not updated when auth contract changed
+
 - What happened: PR #23 changed `POST /auth/signup` from
   accepting just `{email}` to requiring `{email, password}`.
   `scripts/e2e.py` (the post-deploy smoke run by CI) was not
@@ -349,14 +366,55 @@ real ones if they happen.
 - How it was caught: CI smoke job failure on the post-deploy
   smoke; user noticed.
 - The fix: PR #25 added the `password` field to e2e.py's signup
-  + login calls.
+  - login calls.
 - Rule going forward: when changing a wire-level contract on an
-  auth/billing endpoint, grep the repo for *every* caller (test
+  auth/billing endpoint, grep the repo for _every_ caller (test
   scripts, smoke tests, SDK integration tests, sample code in
   docs) and update them in the same PR.
   `rg -nF '/auth/signup' .` from the repo root is the minimum.
 
+### Proactive token refresh on a healthy WebSocket
+
+- What happened: the marketing site's playground token logic in
+  `apps/web/src/lib/hela.ts` scheduled a `setTimeout` per token to
+  refresh the playground JWT just before its server-side `exp`
+  expired. On an idle hero panel that meant ~12 wasted
+  `POST /playground/token` calls per hour per visitor — for tokens
+  the open WebSocket would never use, since Phoenix only validates
+  the JWT at handshake and never re-checks it for the life of the
+  socket. User caught it watching the network tab on the dev
+  playground: "i can see it requesting a new token after expiring
+  but no new connection is that how it's supposed to work, is this
+  fine?" — no, it isn't fine, and the answer is to refresh
+  reactively rather than on a timer.
+- Why it happened: a different reconnect-storm bug earlier in the
+  project's life made it tempting to "just always have a fresh
+  token in memory." The setTimeout was added as belt-and-braces
+  without thinking through whether the open WS could ever consume
+  the new value. It can't.
+- How it was caught: the user opened DevTools on dev/web and saw
+  a steady drumbeat of `token` requests with no corresponding new
+  WebSocket. Asked the question.
+- The fix: drop `scheduleHeroRefresh` / `scheduleDemoRefresh` /
+  the `installLifecycleHooks` (focus/online/visibilitychange)
+  proactive paths from `apps/web/src/lib/hela.ts`. Keep only the
+  reactive refresh on `client.onClose` / `client.onError`, which
+  was already wired and is the only refresh that actually serves
+  the next reconnect. Document the contract in
+  `docs/api/websocket.md` under "auth lifecycle" and add a
+  matching note to each per-language SDK doc
+  (`docs/sdk/{typescript,python,go,rust}.md`).
+- Rule going forward: when adding a refresh of any kind, articulate
+  who's going to consume the refreshed value and when. If the
+  consumer is "the next reconnect, which may never happen,"
+  refresh on the disconnect signal — not on a timer. If the
+  consumer is "an HTTP client polling the same endpoint," that's a
+  different surface and may need its own logic. **Don't refresh
+  hopefully.** A `setTimeout` for an event that may never come is
+  a smell.
+
 ### Provisioned dev gateway without overriding HELA_WEB_HOST / HELA_APP_HOST
+
 - What happened: when I provisioned `gateway-dev` earlier this
   session I set `PHX_SERVER`, `HELA_REGION`, `DATABASE_URL`,
   `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6`, `SECRET_KEY_BASE`,

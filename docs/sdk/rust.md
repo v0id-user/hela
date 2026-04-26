@@ -63,6 +63,15 @@ For the public playground, use [`Rest::playground_token_ephemeral`](../../packag
 instead of `playground_token` when you want the same semantics (live delivery
 only; no join replay, no persistence).
 
+### token rotation and reconnect
+
+The JWT is checked **once** at WebSocket handshake. After that the
+gateway never re-validates the token for the life of the socket. If
+your app rotates tokens, the new value is used the **next** time the
+SDK reconnects, not on the open socket. Refresh reactively on
+disconnect rather than on a timer — see
+[`docs/api/websocket.md` § auth lifecycle](../api/websocket.md#auth-lifecycle).
+
 ## channels
 
 ```rust

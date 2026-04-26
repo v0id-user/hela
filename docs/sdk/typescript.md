@@ -81,6 +81,35 @@ Include `"ephemeral": true` in that JSON body when you want the same
 broadcast-only semantics as `issuePlaygroundToken({ ephemeral: true })`
 for customer-minted HS256 tokens via `/v1/tokens`.
 
+### token rotation and reconnect
+
+The JWT is verified **once** at WebSocket handshake. The gateway
+attaches the claims to the socket and never re-checks the token for
+the life of that connection. So:
+
+- Calling `client.setToken(newJwt)` while the socket is open updates
+  the cached token but does not affect the running session.
+- The new token is used the **next** time `phoenix.js` reconnects
+  (network blip, server restart, etc.). The SDK's `params()` callback
+  rebuilds the URL with whatever token is in memory at that moment.
+
+The right pattern for refreshing tokens in a long-lived browser
+session: refresh **on `onClose` / `onError`**, not on a timer. A
+healthy socket pays zero refresh requests; a dropped socket gets
+fresh credentials in flight by the time the reconnect fires.
+
+```ts
+client.onClose(() => {
+  void mintFreshToken().then((t) => client.setToken(t));
+});
+```
+
+A `setTimeout` that refreshes before expiry on a healthy socket is
+wasted bandwidth — it served no purpose for the open WS, since the
+gateway is already past the auth check. See
+[`docs/api/websocket.md` § auth lifecycle](../api/websocket.md#auth-lifecycle)
+for the protocol contract.
+
 ## channels
 
 ```ts
