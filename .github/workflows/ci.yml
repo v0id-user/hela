@@ -423,13 +423,15 @@ jobs:
             # Dev Railway env was provisioned with -dev suffixed service
             # names because the original shells lacked source_image /
             # tracked-branch config. control kept its original name.
+            # docs is dev-only today and was added without a suffix; if
+            # that splits later, rename here.
             echo "env=dev"                >> "$GITHUB_OUTPUT"
             echo "railway_env=dev"        >> "$GITHUB_OUTPUT"
             echo "gateway_svc=gateway-dev" >> "$GITHUB_OUTPUT"
             echo "control_svc=control"    >> "$GITHUB_OUTPUT"
             echo "web_svc=web-dev"        >> "$GITHUB_OUTPUT"
             echo "app_svc=app-dev"        >> "$GITHUB_OUTPUT"
-            echo "docs_svc=docs-dev"      >> "$GITHUB_OUTPUT"
+            echo "docs_svc=docs"          >> "$GITHUB_OUTPUT"
           else
             # PR context — used only for status display; deploy jobs are
             # guarded on push events below so this never actually runs.
@@ -439,7 +441,7 @@ jobs:
             echo "control_svc=control"    >> "$GITHUB_OUTPUT"
             echo "web_svc=web-dev"        >> "$GITHUB_OUTPUT"
             echo "app_svc=app-dev"        >> "$GITHUB_OUTPUT"
-            echo "docs_svc=docs-dev"      >> "$GITHUB_OUTPUT"
+            echo "docs_svc=docs"          >> "$GITHUB_OUTPUT"
           fi
 
   deploy-control:
