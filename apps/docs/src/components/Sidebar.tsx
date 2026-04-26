@@ -2,21 +2,27 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { groupedPages } from "../lib/docs";
 import { Search } from "./Search";
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Pixel height of the surrounding nav bar; used so the sidebar
+   *  can stick directly under it without overlapping. */
+  navHeight: number;
+}
+
+export function Sidebar({ navHeight }: SidebarProps) {
   const groups = groupedPages();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <aside
       style={{
-        width: 260,
-        flex: "0 0 260px",
+        width: 240,
+        flex: "0 0 240px",
         borderRight: "1px solid var(--rule)",
         background: "var(--bg-elev)",
         position: "sticky",
-        top: 56,
+        top: navHeight,
         alignSelf: "flex-start",
-        maxHeight: "calc(100vh - 56px)",
+        maxHeight: `calc(100vh - ${navHeight}px)`,
         overflowY: "auto",
         padding: "16px 0",
       }}
