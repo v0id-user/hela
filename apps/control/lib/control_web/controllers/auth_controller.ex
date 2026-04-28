@@ -3,6 +3,10 @@ defmodule ControlWeb.AuthController do
 
   alias Control.Accounts
 
+  def csrf(conn, _) do
+    json(conn, %{csrf_token: Plug.CSRFProtection.get_csrf_token()})
+  end
+
   def signup(conn, %{"email" => email, "password" => password})
       when is_binary(email) and is_binary(password) do
     case Accounts.create_account(email, password) do

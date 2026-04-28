@@ -3,6 +3,7 @@
 defmodule HelaWeb.PageControllerTest do
   use ExUnit.Case, async: true
   import Phoenix.ConnTest
+  import Plug.Conn
 
   @endpoint HelaWeb.Endpoint
 
@@ -22,5 +23,26 @@ defmodule HelaWeb.PageControllerTest do
     assert is_binary(body["generated_at"])
     assert is_binary(body["region"])
     assert is_binary(body["node"])
+  end
+
+  test "POST /cluster/reset is not public" do
+    conn = post(build_conn(), "/cluster/reset")
+
+    assert response(conn, 404)
+  end
+
+  test "POST /_internal/cluster/reset requires internal auth" do
+    conn = post(build_conn(), "/_internal/cluster/reset")
+
+    assert %{"error" => "forbidden"} = json_response(conn, 401)
+  end
+
+  test "POST /_internal/cluster/reset accepts internal auth" do
+    conn =
+      build_conn()
+      |> put_req_header("x-hela-internal", "dev-only-internal-secret")
+      |> post("/_internal/cluster/reset")
+
+    assert %{"ok" => true} = json_response(conn, 200)
   end
 end

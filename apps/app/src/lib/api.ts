@@ -1,3 +1,5 @@
+import { HOSTED_ENDPOINTS } from "@hela/config/hosted";
+
 // Dashboard API client. Auth is real (cookie-session against /auth/*
 // on the control plane). Projects + API keys are real (against /api/*).
 // Usage stats are not implemented on the backend yet — the dashboard
@@ -5,8 +7,10 @@
 // usage panels render placeholders.
 
 const BASE: string =
-  import.meta.env.VITE_HELA_CONTROL ??
-  (import.meta.env.DEV ? "" : "https://control-production-059e.up.railway.app");
+  envUrl(import.meta.env.VITE_HELA_CONTROL) ??
+  (import.meta.env.DEV ? "" : HOSTED_ENDPOINTS.production.control);
+
+let csrfToken: string | null = null;
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
@@ -86,7 +90,7 @@ async function postCreds(path: string, email: string, password: string): Promise
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: await unsafeHeaders(),
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
@@ -100,7 +104,11 @@ async function postCreds(path: string, email: string, password: string): Promise
 
 export async function signout(): Promise<void> {
   try {
-    await fetch(`${BASE}/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${BASE}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: await unsafeHeaders(),
+    });
   } finally {
     _account = null;
   }
@@ -140,10 +148,12 @@ export async function getBilling(): Promise<BillingSummary> {
 // --- projects -----------------------------------------------------------
 
 async function jsonRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? "GET").toUpperCase();
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...(isUnsafe(method) ? await csrfHeader() : {}),
       ...((init.headers as Record<string, string>) ?? {}),
     },
     ...init,
@@ -153,6 +163,38 @@ async function jsonRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
     throw new ApiError(body.error ?? `request failed (${res.status})`, res.status);
   }
   return (await res.json()) as T;
+}
+
+async function unsafeHeaders(): Promise<Record<string, string>> {
+  return {
+    "Content-Type": "application/json",
+    ...(await csrfHeader()),
+  };
+}
+
+async function csrfHeader(): Promise<Record<string, string>> {
+  return { "x-csrf-token": await getCsrfToken() };
+}
+
+async function getCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+
+  const res = await fetch(`${BASE}/auth/csrf`, { credentials: "include" });
+  if (!res.ok) throw new ApiError(`csrf token failed (${res.status})`, res.status);
+
+  const body = (await res.json()) as { csrf_token?: string };
+  if (!body.csrf_token) throw new ApiError("csrf token missing", 500);
+  csrfToken = body.csrf_token;
+  return csrfToken;
+}
+
+function isUnsafe(method: string): boolean {
+  return !["GET", "HEAD", "OPTIONS"].includes(method);
+}
+
+function envUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 export async function listProjects(): Promise<Project[]> {

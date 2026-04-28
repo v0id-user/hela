@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "@tanstack/react-router";
+import { HOSTED_ENDPOINTS } from "@hela/config/hosted";
 import { getProject, setProjectJwk, deleteProject, ApiError, Project } from "../lib/api";
 import { Page, Panel, KV } from "../components/Layout";
 
 const GATEWAY_URL =
-  import.meta.env.VITE_HELA_GATEWAY ?? "https://gateway-production-bfdf.up.railway.app";
+  envUrl(import.meta.env.VITE_HELA_GATEWAY) ?? HOSTED_ENDPOINTS.production.gateway;
 
 export function ProjectDetail() {
   const { id } = useParams({ strict: false }) as { id: string };
@@ -232,4 +233,9 @@ export function ProjectDetail() {
       </Panel>
     </Page>
   );
+}
+
+function envUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }
