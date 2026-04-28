@@ -9,17 +9,25 @@ defmodule ControlWeb.AuthController do
 
   def signup(conn, %{"email" => email, "password" => password})
       when is_binary(email) and is_binary(password) do
-    case Accounts.create_account(email, password) do
-      {:ok, account} ->
-        conn
-        |> put_session(:account_id, account.id)
-        |> configure_session(renew: true)
-        |> json(%{account: shape(account)})
+    case validate_signup_access(conn.params) do
+      :ok ->
+        case Accounts.create_account(email, password) do
+          {:ok, account} ->
+            conn
+            |> put_session(:account_id, account.id)
+            |> configure_session(renew: true)
+            |> json(%{account: shape(account)})
 
-      {:error, changeset} ->
+          {:error, changeset} ->
+            conn
+            |> put_status(400)
+            |> json(%{error: "invalid", details: errors(changeset)})
+        end
+
+      {:error, reason} ->
         conn
-        |> put_status(400)
-        |> json(%{error: "invalid", details: errors(changeset)})
+        |> put_status(403)
+        |> json(%{error: reason})
     end
   end
 
@@ -66,6 +74,34 @@ defmodule ControlWeb.AuthController do
   end
 
   defp shape(a), do: Map.take(a, [:id, :email, :polar_customer_id, :github_id])
+
+  defp validate_signup_access(params) do
+    case System.get_env("HELA_SIGNUP_MODE", "open") do
+      "open" ->
+        :ok
+
+      "invite" ->
+        code = params["invite_code"] || params["invite"]
+
+        if code in invite_codes() do
+          :ok
+        else
+          {:error, "invite_required"}
+        end
+
+      "closed" ->
+        {:error, "signups_closed"}
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp invite_codes do
+    System.get_env("HELA_INVITE_CODES", "")
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+  end
 
   defp errors(%Ecto.Changeset{errors: errs}),
     do: Enum.into(errs, %{}, fn {k, {m, _}} -> {k, m} end)

@@ -6,6 +6,7 @@ import { Page, Panel } from "../components/Layout";
 export function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -18,7 +19,7 @@ export function Signup() {
     setBusy(true);
     setError(null);
     try {
-      await signup(email.trim(), password);
+      await signup(email.trim(), password, inviteCode);
       // Full reload so bootstrap() re-runs and the root route picks up
       // the new session for SessionChip + route guards.
       window.location.href = "/";
@@ -67,6 +68,20 @@ export function Signup() {
               required
             />
           </div>
+          <div style={{ marginBottom: 10 }}>
+            <label htmlFor="signup-invite" style={labelStyle}>
+              invite code
+            </label>
+            <input
+              id="signup-invite"
+              type="text"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              autoComplete="off"
+              placeholder="optional unless signups are invite-only"
+              style={inputStyle}
+            />
+          </div>
           {error && <div style={{ color: "#e07b7b", fontSize: 12, marginBottom: 10 }}>{error}</div>}
           <button type="submit" disabled={busy} className="cta" style={{ width: "100%" }}>
             [ {busy ? "creating…" : "create account"} ]
@@ -107,5 +122,8 @@ function humanError(err: ApiError): string {
   if (err.status === 409 || err.message.includes("has already been taken")) {
     return "an account with that email already exists; try sign in";
   }
+  if (err.status === 403 && err.message === "invite_required") return "valid invite code required";
+  if (err.status === 403 && err.message === "signups_closed") return "signups are closed";
+  if (err.status === 429) return "too many signup attempts; wait and retry";
   return err.message;
 }

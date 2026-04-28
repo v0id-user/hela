@@ -23,6 +23,11 @@ defmodule HelaWeb.PageControllerTest do
     assert is_binary(body["generated_at"])
     assert is_binary(body["region"])
     assert is_binary(body["node"])
+    assert is_binary(body["request_id"])
+    assert [body["request_id"]] == get_resp_header(conn, "x-request-id")
+    assert ["gateway"] == get_resp_header(conn, "x-hela-service")
+    assert [body["region"]] == get_resp_header(conn, "x-hela-region")
+    assert [_] = get_resp_header(conn, "x-hela-version")
   end
 
   test "POST /cluster/reset is not public" do

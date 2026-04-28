@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Hero } from "../components/Hero";
 import { Primitives } from "../components/Primitives";
 import { RegionPicker } from "../components/RegionPicker";
@@ -50,7 +51,9 @@ function Footer() {
         color: "#666",
       }}
     >
-      <span>hela · open source real time on BEAM</span>
+      <span>
+        hela · open source real time on BEAM · <VersionStamp />
+      </span>
       <span>
         <a href="/how" style={{ color: "#888" }}>
           how
@@ -70,4 +73,19 @@ function Footer() {
       </span>
     </footer>
   );
+}
+
+function VersionStamp() {
+  const [commit, setCommit] = useState<string>("dev");
+
+  useEffect(() => {
+    fetch("/version", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((v: { commit?: string } | null) => {
+        if (v?.commit) setCommit(v.commit.slice(0, 7));
+      })
+      .catch(() => {});
+  }, []);
+
+  return <span>{commit}</span>;
 }

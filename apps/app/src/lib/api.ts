@@ -78,20 +78,33 @@ export class ApiError extends Error {
   }
 }
 
-export async function signup(email: string, password: string): Promise<Account> {
-  return await postCreds("/auth/signup", email, password);
+export async function signup(
+  email: string,
+  password: string,
+  inviteCode?: string,
+): Promise<Account> {
+  return await postCreds("/auth/signup", email, password, inviteCode);
 }
 
 export async function login(email: string, password: string): Promise<Account> {
   return await postCreds("/auth/login", email, password);
 }
 
-async function postCreds(path: string, email: string, password: string): Promise<Account> {
+async function postCreds(
+  path: string,
+  email: string,
+  password: string,
+  inviteCode?: string,
+): Promise<Account> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     credentials: "include",
     headers: await unsafeHeaders(),
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      ...(inviteCode?.trim() ? { invite_code: inviteCode.trim() } : {}),
+    }),
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };

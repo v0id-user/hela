@@ -7,7 +7,7 @@ import {
   notFound,
   useParams,
 } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { Markdown } from "./components/Markdown";
 import { allPages, pageBySlug } from "./lib/docs";
@@ -107,7 +107,7 @@ const rootRoute = createRootRoute({
             borderLeft: "1px solid #333",
           }}
         >
-          elixir · phoenix · pubsub · ets · presence
+          elixir · phoenix · pubsub · ets · presence · <VersionStamp />
         </span>
       </nav>
       <div
@@ -125,6 +125,21 @@ const rootRoute = createRootRoute({
     </div>
   ),
 });
+
+function VersionStamp() {
+  const [commit, setCommit] = useState<string>("dev");
+
+  useEffect(() => {
+    fetch("/version", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((v: { commit?: string } | null) => {
+        if (v?.commit) setCommit(v.commit.slice(0, 7));
+      })
+      .catch(() => {});
+  }, []);
+
+  return <span>{commit}</span>;
+}
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,

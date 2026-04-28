@@ -3,6 +3,7 @@
 defmodule ControlWeb.PageControllerTest do
   use ExUnit.Case, async: true
   import Phoenix.ConnTest
+  import Plug.Conn
 
   @endpoint ControlWeb.Endpoint
 
@@ -21,5 +22,9 @@ defmodule ControlWeb.PageControllerTest do
     assert is_binary(body["version"])
     assert is_binary(body["generated_at"])
     assert is_binary(body["node"])
+    assert is_binary(body["request_id"])
+    assert [body["request_id"]] == get_resp_header(conn, "x-request-id")
+    assert ["control"] == get_resp_header(conn, "x-hela-service")
+    assert [_] = get_resp_header(conn, "x-hela-version")
   end
 end
