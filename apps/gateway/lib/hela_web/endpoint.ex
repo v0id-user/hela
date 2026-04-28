@@ -31,7 +31,8 @@ defmodule HelaWeb.Endpoint do
     param_key: "request_logger",
     cookie_key: "request_logger"
 
-  plug Plug.RequestId
+  plug Plug.RequestId, assign_as: :request_id
+  plug :put_observability_headers
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Plug.Parsers,
@@ -44,4 +45,33 @@ defmodule HelaWeb.Endpoint do
   plug Plug.Session, @session_options
   plug CORSPlug, origin: ["*"]
   plug HelaWeb.Router
+
+  defp put_observability_headers(conn, _) do
+    Plug.Conn.register_before_send(conn, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_header("x-hela-service", "gateway")
+      |> Plug.Conn.put_resp_header("x-hela-region", Hela.region())
+      |> Plug.Conn.put_resp_header("x-hela-version", app_version())
+      |> maybe_put_commit_header()
+    end)
+  end
+
+  defp app_version, do: Application.spec(:hela, :vsn) |> to_string()
+
+  defp maybe_put_commit_header(conn) do
+    case env_first(["RAILWAY_GIT_COMMIT_SHA", "SOURCE_VERSION", "GITHUB_SHA"]) do
+      nil -> conn
+      commit -> Plug.Conn.put_resp_header(conn, "x-hela-commit", commit)
+    end
+  end
+
+  defp env_first(names) do
+    Enum.find_value(names, fn name ->
+      case System.get_env(name) do
+        nil -> nil
+        "" -> nil
+        value -> value
+      end
+    end)
+  end
 end

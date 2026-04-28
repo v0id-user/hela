@@ -43,8 +43,8 @@ up as reference; this section is the honest post-mortem.
 - **Auto-generating SDKs from a shared schema** kept wire types honest and
   **was still a bet**: four languages, four toolchains, and a codegen path is
   a maintenance surface. It is a mistake to add codegen and multiple SDKs
-  *before* the wire protocol and product surface are stable and small. Schema
-  as source of truth does not remove the need for a *small* surface.
+  _before_ the wire protocol and product surface are stable and small. Schema
+  as source of truth does not remove the need for a _small_ surface.
 
 - **Agentic coding** (and heavy AI-assisted iteration) is powerful: you can
   go from idea to a credible stack quickly. It also amplifies **bad
@@ -129,13 +129,20 @@ make dev         # runs all 4 apps (concurrently, one terminal)
 
 You get:
 
-| app         | url                    | what it is                    |
-| ----------- | ---------------------- | ----------------------------- |
-| control     | http://localhost:4000  | REST API for signup/projects  |
-| gateway     | http://localhost:4001  | the realtime cluster (WS + REST) |
-| web         | http://localhost:5173  | the marketing site            |
-| app         | http://localhost:5174  | the customer dashboard        |
-| mailpit     | http://localhost:8025  | outbound email preview        |
+| app     | url                   | what it is                       |
+| ------- | --------------------- | -------------------------------- |
+| control | http://localhost:4000 | REST API for signup/projects     |
+| gateway | http://localhost:4001 | the realtime cluster (WS + REST) |
+| web     | http://localhost:5173 | the marketing site               |
+| app     | http://localhost:5174 | the customer dashboard           |
+| mailpit | http://localhost:8025 | outbound email preview           |
+
+For a full local product path — account, project, API key, token, SDK
+connect — follow [`docs/self-host.md`](docs/self-host.md).
+
+The current surface area and stability levels are in
+[`docs/roadmap.md`](docs/roadmap.md). Operational health, request IDs, and
+version metadata are documented in [`docs/observability.md`](docs/observability.md).
 
 Polar webhooks in dev:
 
@@ -150,7 +157,7 @@ Stripe was evaluated early and dropped, there is no Stripe plumbing.
 ## The four apps, in one paragraph each
 
 **gateway** is the data plane. Phoenix 1.8 + Bandit, Channels + Presence
-+ PubSub, ETS ring buffers per (project, channel), Broadway batching into
+and PubSub, ETS ring buffers per (project, channel), Broadway batching into
 a per-region Postgres. `dns_cluster` meshes replicas within a region.
 One Railway service per region (single `ams` service in production
 today; other region slugs are reserved but not yet deployed). Stateless
@@ -225,13 +232,13 @@ lives in [`docs/hosted-plans/`](docs/hosted-plans/). If this table
 disagrees with that directory, **the directory wins** and the table
 below is the bug.
 
-| Tier        | $/mo    | Connections | Messages/mo | Regions             | History  | SLA    | details |
-| ----------- | ------- | ----------- | ----------- | ------------------- | -------- | ------ | ------- |
-| Free        | $0      | 100         | 1M          | 1                   | 1k msgs  | none   | [free](docs/hosted-plans/free.md) |
-| Starter     | $19     | 1,000       | 10M         | 1                   | 10k msgs | none   | [starter](docs/hosted-plans/starter.md) |
-| Growth      | $99     | 10,000      | 100M        | 1                   | 100k msgs| 99.9%  | [growth](docs/hosted-plans/growth.md) |
-| Scale       | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs  | 99.95% | [scale](docs/hosted-plans/scale.md) |
-| Enterprise  | contact | custom      | custom      | all                 | custom   | 99.99% | [enterprise](docs/hosted-plans/enterprise.md) |
+| Tier       | $/mo    | Connections | Messages/mo | Regions             | History   | SLA    | details                                       |
+| ---------- | ------- | ----------- | ----------- | ------------------- | --------- | ------ | --------------------------------------------- |
+| Free       | $0      | 100         | 1M          | 1                   | 1k msgs   | none   | [free](docs/hosted-plans/free.md)             |
+| Starter    | $19     | 1,000       | 10M         | 1                   | 10k msgs  | none   | [starter](docs/hosted-plans/starter.md)       |
+| Growth     | $99     | 10,000      | 100M        | 1                   | 100k msgs | 99.9%  | [growth](docs/hosted-plans/growth.md)         |
+| Scale      | $499    | 100,000     | 1B          | up to 3, replicated | 1M msgs   | 99.95% | [scale](docs/hosted-plans/scale.md)           |
+| Enterprise | contact | custom      | custom      | all                 | custom    | 99.99% | [enterprise](docs/hosted-plans/enterprise.md) |
 
 ## Public hosted deploy
 
@@ -240,8 +247,8 @@ can use hela without operating regions yourself. The same `Dockerfile`
 and Terraform under `infra/` is what you would use to run the stack
 elsewhere. Live URLs today:
 
-- web:     https://web-production-f24fc.up.railway.app
-- app:     https://app-production-1716a.up.railway.app
+- web: https://web-production-f24fc.up.railway.app
+- app: https://app-production-1716a.up.railway.app
 - gateway: https://gateway-production-bfdf.up.railway.app
 - control: https://control-production-059e.up.railway.app
 
@@ -269,9 +276,9 @@ push to main
 PRs run the full lint + test + build surface but do **not** deploy.
 Only pushes to `main` roll to production:
 
-| GitHub env   | Railway env  | Triggers           | Review required |
-| ------------ | ------------ | ------------------ | --------------- |
-| `production` | `production` | push to `main`     | admin-bypass    |
+| GitHub env   | Railway env  | Triggers       | Review required |
+| ------------ | ------------ | -------------- | --------------- |
+| `production` | `production` | push to `main` | admin-bypass    |
 
 The Railway `dev` environment exists but has no live service
 instances, so PR / Dependabot contexts (which don't get a Railway
@@ -299,12 +306,12 @@ generated from `packages/schemas/` via `make sdk.gen`; transport and
 the domain API are hand-written per language. The recipe for adding a
 fifth is in [`docs/sdk/adding-a-language.md`](docs/sdk/adding-a-language.md).
 
-| package            | lang       | registry                  | runtime                      |
-| ------------------ | ---------- | ------------------------- | ---------------------------- |
-| `@hela/sdk`        | TypeScript | npm                       | browser + Node (phoenix.js)  |
-| `hela`             | Python     | PyPI                      | asyncio (`websockets` + `httpx`) |
-| `hela-go`          | Go         | `go install`              | `coder/websocket`            |
-| `hela` (crate)     | Rust       | crates.io                 | `tokio-tungstenite` + `reqwest` |
+| package        | lang       | registry     | runtime                          |
+| -------------- | ---------- | ------------ | -------------------------------- |
+| `@hela/sdk`    | TypeScript | npm          | browser + Node (phoenix.js)      |
+| `hela`         | Python     | PyPI         | asyncio (`websockets` + `httpx`) |
+| `hela-go`      | Go         | `go install` | `coder/websocket`                |
+| `hela` (crate) | Rust       | crates.io    | `tokio-tungstenite` + `reqwest`  |
 
 Docs: [`docs/sdk/`](docs/sdk/).
 
@@ -332,16 +339,16 @@ Rasterised PNGs (at 1×, 2×, and 4K where it matters) live under
 are under `brand/png/webp/`. Everything is served verbatim at
 `/brand/...` on the marketing site.
 
-| asset | what it is | SVG | PNG sizes | WebP |
-| ----- | ---------- | --- | --------- | ---- |
-| mark     | 3-dot presence roster in gold brackets (favicon-safe) | [`mark.svg`](apps/web/public/brand/mark.svg) | 128 · 256 · 512 · 1024 · 2048 · 4096 (square) | `mark.webp` · `mark@2x.webp` |
-| signal   | kinetic timeline mark — trailing events + live accent | [`signal.svg`](apps/web/public/brand/signal.svg) | 512×256 · 1024×512 · 2048×1024 · 2560×1280 | `signal.webp` · `signal@2x.webp` |
-| wordmark | `[ hela ]` in gold + silver mono | [`wordmark.svg`](apps/web/public/brand/wordmark.svg) | 720×160 · 1440×320 · 2880×640 | `wordmark.webp` |
-| lockup   | mark + wordmark + tagline | [`lockup.svg`](apps/web/public/brand/lockup.svg) | 960×160 · 1920×320 · 3840×640 | `lockup.webp` |
-| banner   | hero strip, used at the top of this README | [`banner.svg`](apps/web/public/brand/banner.svg) | 1280×320 · 2560×640 · 3840×960 (4K) | `banner.webp` · `banner@2x.webp` |
-| avatar   | profile picture for GitHub / Twitter / Discord | [`avatar.svg`](apps/web/public/brand/avatar.svg) | 400² · 800² · 2048² · 4096² | `avatar.webp` · `avatar@2x.webp` |
-| og       | social share card | [`og.svg`](apps/web/public/brand/og.svg) | 1200×630 · 2400×1260 · 3840×2016 (4K) | `og.webp` · `og@2x.webp` |
-| favicon  | simplified 2-dot mark tuned for ≤32 px | [`favicon.svg`](apps/web/public/brand/favicon.svg) | 32 · 180 · 512 (maskable) | — |
+| asset    | what it is                                            | SVG                                                  | PNG sizes                                     | WebP                             |
+| -------- | ----------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------- | -------------------------------- |
+| mark     | 3-dot presence roster in gold brackets (favicon-safe) | [`mark.svg`](apps/web/public/brand/mark.svg)         | 128 · 256 · 512 · 1024 · 2048 · 4096 (square) | `mark.webp` · `mark@2x.webp`     |
+| signal   | kinetic timeline mark — trailing events + live accent | [`signal.svg`](apps/web/public/brand/signal.svg)     | 512×256 · 1024×512 · 2048×1024 · 2560×1280    | `signal.webp` · `signal@2x.webp` |
+| wordmark | `[ hela ]` in gold + silver mono                      | [`wordmark.svg`](apps/web/public/brand/wordmark.svg) | 720×160 · 1440×320 · 2880×640                 | `wordmark.webp`                  |
+| lockup   | mark + wordmark + tagline                             | [`lockup.svg`](apps/web/public/brand/lockup.svg)     | 960×160 · 1920×320 · 3840×640                 | `lockup.webp`                    |
+| banner   | hero strip, used at the top of this README            | [`banner.svg`](apps/web/public/brand/banner.svg)     | 1280×320 · 2560×640 · 3840×960 (4K)           | `banner.webp` · `banner@2x.webp` |
+| avatar   | profile picture for GitHub / Twitter / Discord        | [`avatar.svg`](apps/web/public/brand/avatar.svg)     | 400² · 800² · 2048² · 4096²                   | `avatar.webp` · `avatar@2x.webp` |
+| og       | social share card                                     | [`og.svg`](apps/web/public/brand/og.svg)             | 1200×630 · 2400×1260 · 3840×2016 (4K)         | `og.webp` · `og@2x.webp`         |
+| favicon  | simplified 2-dot mark tuned for ≤32 px                | [`favicon.svg`](apps/web/public/brand/favicon.svg)   | 32 · 180 · 512 (maskable)                     | —                                |
 
 Colour palette:
 

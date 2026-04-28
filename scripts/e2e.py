@@ -176,19 +176,32 @@ async def main() -> None:
 
     client = httpx.AsyncClient(timeout=20, follow_redirects=False)
 
+    async def csrf_headers() -> dict[str, str]:
+        r = await client.get(f"{CT}/auth/csrf")
+        r.raise_for_status()
+        return {"x-csrf-token": r.json()["csrf_token"]}
+
     # --- 1. signup --------------------------------------------------------
     print("\n1. SIGNUP")
-    r = await client.post(f"{CT}/auth/signup", json={"email": email, "password": password})
+    r = await client.post(
+        f"{CT}/auth/signup",
+        headers=await csrf_headers(),
+        json={"email": email, "password": password},
+    )
     r.raise_for_status()
     account = r.json()["account"]
     _ok("account created", {"id": account["id"], "email": account["email"]})
 
     # --- 2. logout + login ------------------------------------------------
     print("\n2. LOGOUT + LOGIN")
-    (await client.post(f"{CT}/auth/logout")).raise_for_status()
+    (await client.post(f"{CT}/auth/logout", headers=await csrf_headers())).raise_for_status()
     _ok("logout")
     client.cookies.clear()
-    r = await client.post(f"{CT}/auth/login", json={"email": email, "password": password})
+    r = await client.post(
+        f"{CT}/auth/login",
+        headers=await csrf_headers(),
+        json={"email": email, "password": password},
+    )
     r.raise_for_status()
     assert r.json()["account"]["id"] == account["id"], "logged in as different account"
     _ok("logged back in", account["id"])
@@ -197,6 +210,7 @@ async def main() -> None:
     print("\n3. CREATE PROJECT")
     r = await client.post(
         f"{CT}/api/projects",
+        headers=await csrf_headers(),
         json={"name": "py-smoke", "region": "iad", "tier": "starter"},
     )
     r.raise_for_status()
@@ -207,6 +221,7 @@ async def main() -> None:
     print("\n4. API KEY")
     r = await client.post(
         f"{CT}/api/projects/{project['id']}/keys",
+        headers=await csrf_headers(),
         json={"label": "py-smoke"},
     )
     r.raise_for_status()

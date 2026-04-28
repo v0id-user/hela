@@ -14,6 +14,18 @@ defmodule ControlWeb.Router do
     plug ControlWeb.Plugs.RequireAccount
   end
 
+  pipeline :csrf do
+    plug Plug.CSRFProtection
+  end
+
+  pipeline :signup_rate_limit do
+    plug ControlWeb.Plugs.AuthRateLimit, action: :signup
+  end
+
+  pipeline :login_rate_limit do
+    plug ControlWeb.Plugs.AuthRateLimit, action: :login
+  end
+
   scope "/", ControlWeb do
     pipe_through :api
 
@@ -26,13 +38,29 @@ defmodule ControlWeb.Router do
   scope "/", ControlWeb do
     pipe_through :api_session
 
+    get "/auth/csrf", AuthController, :csrf
+  end
+
+  scope "/", ControlWeb do
+    pipe_through [:api_session, :csrf, :signup_rate_limit]
+
     post "/auth/signup", AuthController, :signup
+  end
+
+  scope "/", ControlWeb do
+    pipe_through [:api_session, :csrf, :login_rate_limit]
+
     post "/auth/login", AuthController, :login
+  end
+
+  scope "/", ControlWeb do
+    pipe_through [:api_session, :csrf]
+
     post "/auth/logout", AuthController, :logout
   end
 
   scope "/api", ControlWeb do
-    pipe_through [:api_session, :session]
+    pipe_through [:api_session, :csrf, :session]
 
     get "/me", AuthController, :me
     delete "/me", AuthController, :delete_me

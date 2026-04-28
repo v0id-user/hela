@@ -19,19 +19,22 @@ async with (await connect(region="iad", token=my_jwt)) as client:
 
 ## where to go next
 
-| you want to… | read |
-| --- | --- |
-| ship your first message in 5 minutes | [quickstart](./quickstart.md) |
-| understand the system | [architecture](./architecture.md) |
-| mint tokens / publish from a backend | [api/rest](./api/rest.md) |
-| drive the socket by hand | [api/websocket](./api/websocket.md) |
-| use the Python SDK | [sdk/python](./sdk/python.md) |
-| use the TypeScript SDK | [sdk/typescript](./sdk/typescript.md) |
-| use the Go SDK | [sdk/go](./sdk/go.md) |
-| use the Rust SDK | [sdk/rust](./sdk/rust.md) |
-| add a Swift / Kotlin / … SDK | [sdk/adding-a-language](./sdk/adding-a-language.md) |
-| see what each hosted plan includes | [hosted-plans](./hosted-plans/README.md) |
-| run ops on a live region | [runbook](./runbook.md) |
+| you want to…                         | read                                                |
+| ------------------------------------ | --------------------------------------------------- |
+| ship your first message in 5 minutes | [quickstart](./quickstart.md)                       |
+| run the whole product locally        | [self-host](./self-host.md)                         |
+| see what is stable vs beta           | [roadmap](./roadmap.md)                             |
+| wire monitoring and health checks    | [observability](./observability.md)                 |
+| understand the system                | [architecture](./architecture.md)                   |
+| mint tokens / publish from a backend | [api/rest](./api/rest.md)                           |
+| drive the socket by hand             | [api/websocket](./api/websocket.md)                 |
+| use the Python SDK                   | [sdk/python](./sdk/python.md)                       |
+| use the TypeScript SDK               | [sdk/typescript](./sdk/typescript.md)               |
+| use the Go SDK                       | [sdk/go](./sdk/go.md)                               |
+| use the Rust SDK                     | [sdk/rust](./sdk/rust.md)                           |
+| add a Swift / Kotlin / … SDK         | [sdk/adding-a-language](./sdk/adding-a-language.md) |
+| see what each hosted plan includes   | [hosted-plans](./hosted-plans/README.md)            |
+| run ops on a live region             | [runbook](./runbook.md)                             |
 
 ## regions
 
@@ -41,10 +44,10 @@ deploy. Five **hosted** clusters, plus a `dev` region that points at
 a local Elixir process, when you are using the shared service. Pick
 the one closest to most of your users:
 
-| slug | city | host |
-| --- | --- | --- |
+| slug  | city          | host                                     |
+| ----- | ------------- | ---------------------------------------- |
 | `ams` | Amsterdam, EU | `gateway-production-bfdf.up.railway.app` |
-| `dev` | localhost | `localhost:4001` |
+| `dev` | localhost     | `localhost:4001`                         |
 
 Only `ams` is live today on the hosted plane (single Railway service).
 `iad`, `sjc`, `sin`, `syd` are planned regions; until they come up,

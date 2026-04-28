@@ -1,0 +1,10 @@
+{
+  "name": "@hela/config",
+  "version": "0.1.0",
+  "description": "Shared public product config for hela apps and docs.",
+  "type": "module",
+  "exports": {
+    "./hosted": "./src/hosted.ts"
+  },
+  "files": ["src"]
+}

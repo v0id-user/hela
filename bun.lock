@@ -25,6 +25,7 @@
       "name": "@hela/app",
       "version": "0.0.0",
       "dependencies": {
+        "@hela/config": "workspace:*",
         "@hela/sdk": "workspace:*",
         "@hela/sdk-types": "workspace:*",
         "@hela/ui": "workspace:*",
@@ -64,6 +65,7 @@
       "name": "@hela/web",
       "version": "0.0.0",
       "dependencies": {
+        "@hela/config": "workspace:*",
         "@hela/sdk": "workspace:*",
         "@hela/sdk-types": "workspace:*",
         "@hela/ui": "workspace:*",
@@ -80,6 +82,10 @@
         "typescript": "~6.0.3",
         "vite": "^8.0.10",
       },
+    },
+    "packages/config": {
+      "name": "@hela/config",
+      "version": "0.1.0",
     },
     "packages/sdk-js": {
       "name": "@hela/sdk",
@@ -195,6 +201,8 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.1", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ=="],
 
     "@hela/app": ["@hela/app@workspace:apps/app"],
+
+    "@hela/config": ["@hela/config@workspace:packages/config"],
 
     "@hela/docs": ["@hela/docs@workspace:apps/docs"],
 
