@@ -134,7 +134,7 @@ first (it is the source of truth for shape), then run the matching
 | `RAILWAY_GIT_COMMIT_SHA`, `SOURCE_VERSION`, `GITHUB_SHA` | Commit SHAs forwarded into the build for `version.json` stamping. |
 | `RAILWAY_DOCKERFILE_PATH` | Per-service Dockerfile path under monorepo root. |
 | `RAILWAY_RUN_UID` | Set to `0` only as escape hatch for non-root containers needing volume root. Postgres uses the `PGDATA` subdir trick instead. |
-| `PGDATA` | `/var/lib/postgresql/data/pgdata`. Subdirectory under the volume mount; lets the postgres entrypoint chown it on first boot. |
+| `PGDATA` | `/var/lib/postgresql/18/docker`. PostgreSQL 18's versioned data directory under the `/var/lib/postgresql` volume mount. |
 | `POSTGRES_INITDB_ARGS` | `--data-checksums`. Pinned even though PG18 makes it the default. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Standard postgres image envs. |
 

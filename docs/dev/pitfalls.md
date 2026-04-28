@@ -35,9 +35,9 @@ before changing the area in question.
   service.
 
 ### Railway volumes mount as root, postgres runs as uid 999
-- `PGDATA` must point at a *subdirectory* under the volume
-  mount, e.g. `/var/lib/postgresql/data/pgdata`. The postgres
-  entrypoint will then chown the subdirectory on first boot.
+- For `postgres:18-alpine`, mount the volume at
+  `/var/lib/postgresql` and keep `PGDATA` on the versioned default
+  path, e.g. `/var/lib/postgresql/18/docker`.
 - Setting `RAILWAY_RUN_UID=0` also works but runs the container
   as root, which we avoid.
 

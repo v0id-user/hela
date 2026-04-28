@@ -17,7 +17,7 @@ Or the old-school way:
 ```
 docker run -d --name hela-pg \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=gateway_dev \
-  -p 5432:5432 postgres:18-alpine
+  -p 5432:5432 postgres:16-alpine
 
 cd apps/gateway
 mix deps.get

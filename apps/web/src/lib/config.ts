@@ -1,9 +1,11 @@
-// Dev default: gateway on :4001 (control is on :4000). In prod, swap
-// to the region you host the public playground on (iad is the canonical
-// one). `VITE_HELA_API` overrides — set it on vercel/fly builds.
+const env = (import.meta as { env?: { DEV?: boolean; VITE_HELA_API?: string } }).env;
+
+// Dev default: gateway on :4001 (control is on :4000). Production
+// defaults to the hosted gateway so a static bundle built without
+// Railway/Vite env vars does not ship localhost URLs.
 export const API_BASE =
-  (import.meta as { env?: { VITE_HELA_API?: string } }).env?.VITE_HELA_API ??
-  "http://localhost:4001";
+  env?.VITE_HELA_API ??
+  (env?.DEV ? "http://localhost:4001" : "https://gateway-production-bfdf.up.railway.app");
 
 export const WS_BASE = API_BASE.replace(/^http/, "ws");
 

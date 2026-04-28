@@ -37,8 +37,11 @@ export function Signup() {
       <Panel title="email + password" style={{ marginBottom: 12 }}>
         <form onSubmit={submit}>
           <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>email</label>
+            <label htmlFor="signup-email" style={labelStyle}>
+              email
+            </label>
             <input
+              id="signup-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -49,8 +52,11 @@ export function Signup() {
             />
           </div>
           <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>password</label>
+            <label htmlFor="signup-password" style={labelStyle}>
+              password
+            </label>
             <input
+              id="signup-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

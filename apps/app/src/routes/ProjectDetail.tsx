@@ -91,8 +91,8 @@ export function ProjectDetail() {
   -H "Authorization: Bearer hk_<your_api_key>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "channels": ["chat:lobby"],
-    "uid": "alice",
+    "sub": "alice",
+    "chans": [["read", "chat:lobby"], ["write", "chat:lobby"]],
     "ttl_seconds": 3600
   }'`;
 

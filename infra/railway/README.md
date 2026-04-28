@@ -57,7 +57,7 @@ This is the canonical list of variables every service expects. The
 | `POSTGRES_USER`        | `hela`                            | `hela`     | static                                          |
 | `POSTGRES_PASSWORD`    | (gen)                             | (gen)      | from `terraform output -json generated_secrets` |
 | `POSTGRES_DB`          | `hela`                            | `hela`     | static                                          |
-| `PGDATA`               | `/var/lib/postgresql/data/pgdata` | same       | subdir of mount; see `docs/dev/environment.md`  |
+| `PGDATA`               | `/var/lib/postgresql/18/docker`   | same       | versioned PG18 subdir; see `docs/dev/environment.md` |
 | `POSTGRES_INITDB_ARGS` | `--data-checksums`                | same       | static                                          |
 
 ### `gateway` service
@@ -155,7 +155,7 @@ APP_URL=$(terraform output -json urls | jq -r .app)
 # postgres
 railway variable set --service postgres --environment $ENV --skip-deploys \
   "POSTGRES_USER=hela" "POSTGRES_PASSWORD=$DB_PW" "POSTGRES_DB=hela" \
-  "PGDATA=/var/lib/postgresql/data/pgdata" "POSTGRES_INITDB_ARGS=--data-checksums"
+  "PGDATA=/var/lib/postgresql/18/docker" "POSTGRES_INITDB_ARGS=--data-checksums"
 
 # gateway
 railway variable set --service gateway --environment $ENV --skip-deploys \
@@ -248,5 +248,6 @@ care.
 | `variables.tf`             | inputs (project name, workspace, github repo) |
 | `secrets.tf`               | generated random secrets, exposed as outputs  |
 | `main.tf`                  | project, services, postgres volume, domains   |
+| `postgres/`                | Dockerfile + railway.json for the Postgres service |
 | `outputs.tf`               | URLs, service ids, generated secrets          |
 | `terraform.tfvars.example` | fill-in template                              |

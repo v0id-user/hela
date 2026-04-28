@@ -42,11 +42,10 @@ locals {
 
 ## ---- postgres ----------------------------------------------------------
 ##
-## PostgreSQL 18 (GA 2025-09-25). Alpine image. The persistent volume is
-## mounted under PGDATA's parent and PGDATA itself points at a
-## *subdirectory* of the mount so the postgres entrypoint can chown it
-## on first boot — Railway volumes mount as root, the postgres image
-## runs as uid 999 (no write permission on the mount root). See
+## PostgreSQL 18. Alpine image. The persistent volume is mounted at
+## /var/lib/postgresql, not /var/lib/postgresql/data, because the
+## official Postgres 18 image stores PGDATA in a versioned subdirectory
+## under that parent. See Docker's Postgres 18 persistence guidance and
 ## `docs/dev/environment.md` for rationale.
 ##
 ## Variables to set on this service (per env): POSTGRES_USER,
@@ -54,13 +53,14 @@ locals {
 ## `infra/railway/README.md` for the canonical commands.
 
 resource "railway_service" "postgres" {
-  name         = "postgres"
-  project_id   = railway_project.hela.id
-  source_image = "postgres:18-alpine"
+  name        = "postgres"
+  project_id  = railway_project.hela.id
+  source_repo = var.github_repo == "" ? null : var.github_repo
+  config_path = "infra/railway/postgres/railway.json"
 
   volume = {
     name       = "pgdata"
-    mount_path = "/var/lib/postgresql/data"
+    mount_path = "/var/lib/postgresql"
   }
 }
 
