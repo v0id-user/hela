@@ -78,6 +78,9 @@ railway.plan:
 railway.apply:
 	@cd infra/railway && terraform apply
 
+railway.up.postgres:
+	@railway up ./infra/railway/postgres --service postgres --path-as-root --ci --detach
+
 railway.up.gateway:
 	@railway up ./apps/gateway --service gateway --path-as-root --ci --detach
 
@@ -92,7 +95,7 @@ railway.up.app:
 	@cd apps/app && bun run build
 	@railway up ./apps/app --service app --path-as-root --ci --detach
 
-railway.up.all: railway.up.gateway railway.up.control railway.up.web railway.up.app
+railway.up.all: railway.up.postgres railway.up.gateway railway.up.control railway.up.web railway.up.app
 
 # ---- fly (secondary / future) -----------------------------------------
 
