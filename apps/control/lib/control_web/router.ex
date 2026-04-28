@@ -36,7 +36,7 @@ defmodule ControlWeb.Router do
   end
 
   scope "/", ControlWeb do
-    pipe_through :api_session
+    pipe_through [:api_session, :csrf]
 
     get "/auth/csrf", AuthController, :csrf
   end
