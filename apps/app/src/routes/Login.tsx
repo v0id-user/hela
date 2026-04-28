@@ -36,8 +36,11 @@ export function Login() {
       <Panel title="email + password" style={{ marginBottom: 12 }}>
         <form onSubmit={submit}>
           <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>email</label>
+            <label htmlFor="login-email" style={labelStyle}>
+              email
+            </label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -48,8 +51,11 @@ export function Login() {
             />
           </div>
           <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>password</label>
+            <label htmlFor="login-password" style={labelStyle}>
+              password
+            </label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -4,7 +4,9 @@
 // should not display fabricated numbers; until /api/usage lands the
 // usage panels render placeholders.
 
-const BASE: string = import.meta.env.VITE_HELA_CONTROL ?? "";
+const BASE: string =
+  import.meta.env.VITE_HELA_CONTROL ??
+  (import.meta.env.DEV ? "" : "https://control-production-059e.up.railway.app");
 
 export type Tier = "free" | "starter" | "growth" | "scale" | "ent";
 export type Region = "iad" | "sjc" | "ams" | "sin" | "syd";
