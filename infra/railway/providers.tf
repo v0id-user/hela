@@ -7,7 +7,7 @@ terraform {
       # Pin 0.5.2+: earlier 0.5.x had an "inconsistent result after
       # apply" bug on the nested `volume` block on railway_service
       # (see upstream issue 61).
-      version = "~> 0.5.2"
+      version = "~> 0.6.2"
     }
     random = {
       source  = "hashicorp/random"
