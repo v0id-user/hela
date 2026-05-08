@@ -15,21 +15,24 @@ uv run packages/sdk-gen/gen.py
 
 ## what it does
 
-| source                               | target                                    | tool                  |
-| ------------------------------------ | ----------------------------------------- | --------------------- |
-| `packages/schemas/wire/*.schema.json` | `packages/sdk-py/src/hela/_generated/models.py` | `datamodel-codegen` |
-| `packages/schemas/openapi.yaml`      | `packages/sdk-py/src/hela/_generated/rest.py`  | `datamodel-codegen` |
+| source                                | target                                        | tool                    |
+| ------------------------------------- | --------------------------------------------- | ----------------------- |
+| `packages/schemas/wire/*.schema.json` | `packages/sdk-py/src/hela/_generated/wire.py` | `datamodel-codegen`     |
+| `packages/schemas/openapi.yaml`       | `packages/sdk-py/src/hela/_generated/rest.py` | `datamodel-codegen`     |
+| `packages/schemas/wire/*.schema.json` | `packages/sdk-types/src/_generated.ts`        | `quicktype`             |
+| `packages/schemas/wire/*.schema.json` | `packages/sdk-go/types.go`                    | handwritten drift check |
+| `packages/schemas/wire/*.schema.json` | `packages/sdk-rs/src/types.rs`                | handwritten drift check |
 
-TS doesn't get codegen — the hand-written `packages/sdk-types/` is the
-source for `sdk-js`. We share prose in `docs/sdk/adding-a-language.md`
-for when Go/Rust/Swift land.
+TypeScript wire shapes are generated into `@hela/sdk-types`. Go and Rust keep
+hand-written public structs because their serde/json behavior is curated, but
+`gen.py` checks those structs against the schemas and fails on missing fields.
 
 ## drift protection
 
-Every SDK's integration test publishes a message, reads it back, and
-validates the received frame against `message.schema.json`. If the
-gateway ever emits a field the schema doesn't know about, or drops one
-the schema requires, CI fails loudly on the next PR.
+CI runs `uv run packages/sdk-gen/gen.py` and then `git diff --exit-code`.
+If a schema or OpenAPI change affects generated Python/TypeScript output, the
+PR must include that generated diff. If a schema adds/removes a property that
+Go or Rust does not expose, the generator exits non-zero.
 
 ## adding a target language
 

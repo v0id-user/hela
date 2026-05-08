@@ -8,6 +8,7 @@ defmodule Control.Application do
       ControlWeb.Telemetry,
       Control.Repo,
       {Phoenix.PubSub, name: Control.PubSub},
+      Control.AuthLimiter,
       ControlWeb.Endpoint
     ]
 

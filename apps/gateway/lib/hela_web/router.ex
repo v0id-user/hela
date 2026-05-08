@@ -36,7 +36,6 @@ defmodule HelaWeb.Router do
 
     # Aggregate cluster metrics — powers the public /dashboard page.
     get "/cluster/snapshot", ClusterController, :snapshot
-    post "/cluster/reset", ClusterController, :reset
   end
 
   # Landing-page playground — free, public, IP-rate-limited on top of
@@ -72,6 +71,7 @@ defmodule HelaWeb.Router do
     delete "/projects/:id", InternalController, :delete_project
     post "/api_keys", InternalController, :upsert_api_key
     post "/api_keys/:id/revoke", InternalController, :revoke_api_key
+    post "/cluster/reset", ClusterController, :reset
   end
 
   if Application.compile_env(:hela, :dev_routes) do

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { HOSTED_ENDPOINTS } from "@hela/config/hosted";
 import { REGIONS, type RegionSlug as Region } from "../lib/regions";
 
 /**
@@ -16,8 +17,8 @@ import { REGIONS, type RegionSlug as Region } from "../lib/regions";
 const LIVE_REGIONS = new Set<Region>(["ams"]);
 
 const CONTROL_BASE =
-  (import.meta as { env?: { VITE_HELA_CONTROL?: string } }).env?.VITE_HELA_CONTROL ??
-  "https://control-production-059e.up.railway.app";
+  envUrl((import.meta as { env?: { VITE_HELA_CONTROL?: string } }).env?.VITE_HELA_CONTROL) ??
+  HOSTED_ENDPOINTS.production.control;
 
 type Probe = {
   ok: boolean;
@@ -64,7 +65,12 @@ function gatewayUrl(_slug: Region): string {
   // When a custom domain lands we'll switch to a per-region host; for
   // now the slug is metadata only (`ams` = "the one we actually run").
   const env = (import.meta as { env?: { VITE_HELA_GATEWAY?: string } }).env;
-  return env?.VITE_HELA_GATEWAY ?? "https://gateway-production-bfdf.up.railway.app";
+  return envUrl(env?.VITE_HELA_GATEWAY) ?? HOSTED_ENDPOINTS.production.gateway;
+}
+
+function envUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 export function Status() {

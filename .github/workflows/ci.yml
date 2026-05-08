@@ -31,25 +31,20 @@ env:
   MIX_ENV: test
   ELIXIR_VERSION: "1.17.3"
   OTP_VERSION: "27.1.2"
-  # Build-time config for web + app, switched per branch so dev pushes
-  # produce a bundle that calls control-dev / gateway-dev. PRs and any
-  # non-{main,dev} ref fall through to production URLs (the bundle is
-  # discarded for non-deploy runs anyway).
-  VITE_HELA_API: ${{ github.ref == 'refs/heads/dev' && 'https://gateway-dev-dev.up.railway.app' || 'https://gateway-production-bfdf.up.railway.app' }}
-  VITE_HELA_GATEWAY: ${{ github.ref == 'refs/heads/dev' && 'https://gateway-dev-dev.up.railway.app' || 'https://gateway-production-bfdf.up.railway.app' }}
-  VITE_HELA_CONTROL: ${{ github.ref == 'refs/heads/dev' && 'https://control-dev.up.railway.app'    || 'https://control-production-059e.up.railway.app' }}
-  VITE_HELA_APP: ${{ github.ref == 'refs/heads/dev' && 'https://app-dev-dev-4b3a.up.railway.app' || 'https://app-production-1716a.up.railway.app' }}
-  # docs URL: dev points at the dev railway service that already
-  # exists; production points at the dev URL too until the prod
-  # docs service is provisioned (next operator-side task).
-  VITE_HELA_DOCS: ${{ github.ref == 'refs/heads/dev' && 'https://docs-dev-02b1.up.railway.app' || 'https://docs-dev-02b1.up.railway.app' }}
-  # Public domains used by post-deploy health/version polls and the
-  # browser e2e job. Same per-branch switch as the build-time URLs.
-  HELA_GATEWAY_URL: ${{ github.ref == 'refs/heads/dev' && 'https://gateway-dev-dev.up.railway.app' || 'https://gateway-production-bfdf.up.railway.app' }}
-  HELA_CONTROL_URL: ${{ github.ref == 'refs/heads/dev' && 'https://control-dev.up.railway.app'    || 'https://control-production-059e.up.railway.app' }}
-  HELA_APP_URL: ${{ github.ref == 'refs/heads/dev' && 'https://app-dev-dev-4b3a.up.railway.app' || 'https://app-production-1716a.up.railway.app' }}
-  HELA_WEB_URL: ${{ github.ref == 'refs/heads/dev' && 'https://web-dev-dev-881b.up.railway.app' || 'https://web-production-f24fc.up.railway.app' }}
-  HELA_DOCS_URL: ${{ github.ref == 'refs/heads/dev' && 'https://docs-dev-02b1.up.railway.app' || 'https://docs-dev-02b1.up.railway.app' }}
+  # Build-time and post-deploy URLs come from GitHub variables, not
+  # workflow literals. Configure these at repo/environment level:
+  # PROD_HELA_{GATEWAY,CONTROL,APP,WEB,DOCS}_URL and
+  # DEV_HELA_{GATEWAY,CONTROL,APP,WEB,DOCS}_URL.
+  VITE_HELA_API: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_GATEWAY_URL || vars.PROD_HELA_GATEWAY_URL }}
+  VITE_HELA_GATEWAY: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_GATEWAY_URL || vars.PROD_HELA_GATEWAY_URL }}
+  VITE_HELA_CONTROL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_CONTROL_URL || vars.PROD_HELA_CONTROL_URL }}
+  VITE_HELA_APP: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_APP_URL || vars.PROD_HELA_APP_URL }}
+  VITE_HELA_DOCS: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_DOCS_URL || vars.PROD_HELA_DOCS_URL }}
+  HELA_GATEWAY_URL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_GATEWAY_URL || vars.PROD_HELA_GATEWAY_URL }}
+  HELA_CONTROL_URL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_CONTROL_URL || vars.PROD_HELA_CONTROL_URL }}
+  HELA_APP_URL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_APP_URL || vars.PROD_HELA_APP_URL }}
+  HELA_WEB_URL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_WEB_URL || vars.PROD_HELA_WEB_URL }}
+  HELA_DOCS_URL: ${{ github.ref == 'refs/heads/dev' && vars.DEV_HELA_DOCS_URL || vars.PROD_HELA_DOCS_URL }}
 
 jobs:
   # ---------- lint / format check (fast-fail) ---------------------------
@@ -128,6 +123,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: prettier
         run: bunx --bun prettier --check "apps/{web,app}/src/**/*.{ts,tsx,css}" "packages/**/src/**/*.{ts,tsx}" "scripts/**/*.ts"
+      - name: eslint
+        run: bun run lint
       # sdk-types has to emit its .d.ts files before sdk-js can
       # typecheck (sdk-js depends on @hela/sdk-types). We build
       # sdk-types, then typecheck sdk-js against the built output.

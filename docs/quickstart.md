@@ -10,10 +10,16 @@ Send your first message in five minutes. You'll:
 ## 1. sign up
 
 ```sh
-curl -sS https://control-production-059e.up.railway.app/auth/signup \
+CONTROL=https://control-production-059e.up.railway.app
+GATEWAY=https://gateway-production-bfdf.up.railway.app
+
+CSRF=$(curl -sS "$CONTROL/auth/csrf" -c cookies.txt | jq -r .csrf_token)
+
+curl -sS "$CONTROL/auth/signup" \
   -H 'content-type: application/json' \
-  -d '{"email":"you@example.com"}' \
-  -c cookies.txt
+  -H "x-csrf-token: $CSRF" \
+  -b cookies.txt -c cookies.txt \
+  -d '{"email":"you@example.com","password":"correct-horse-battery"}'
 ```
 
 The response carries a session cookie (stored in `cookies.txt`). All
@@ -22,9 +28,10 @@ The response carries a session cookie (stored in `cookies.txt`). All
 ## 2. create a project
 
 ```sh
-curl -sS https://control-production-059e.up.railway.app/api/projects \
+curl -sS "$CONTROL/api/projects" \
   -H 'content-type: application/json' \
-  -b cookies.txt \
+  -H "x-csrf-token: $CSRF" \
+  -b cookies.txt -c cookies.txt \
   -d '{"name":"my-app","region":"iad","tier":"starter"}'
 ```
 
@@ -33,9 +40,10 @@ Response includes `project.id` (e.g. `proj_01j9abc…`). Keep it.
 ## 3. issue an API key
 
 ```sh
-curl -sS https://control-production-059e.up.railway.app/api/projects/PROJECT_ID/keys \
+curl -sS "$CONTROL/api/projects/PROJECT_ID/keys" \
   -H 'content-type: application/json' \
-  -b cookies.txt \
+  -H "x-csrf-token: $CSRF" \
+  -b cookies.txt -c cookies.txt \
   -d '{"label":"server-side"}'
 ```
 

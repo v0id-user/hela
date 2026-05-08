@@ -1,3 +1,5 @@
+import { HOSTED_ENDPOINTS } from "@hela/config/hosted";
+
 // The customer dashboard talks to the control plane for account/project
 // CRUD and to the gateway for live per-project metrics. In dev,
 // control API calls stay same-origin through the Vite proxy. In prod,
@@ -11,8 +13,13 @@ const env = (
 ).env;
 
 export const CONTROL_BASE =
-  env?.VITE_HELA_CONTROL ?? (env?.DEV ? "" : "https://control-production-059e.up.railway.app");
+  envUrl(env?.VITE_HELA_CONTROL) ?? (env?.DEV ? "" : HOSTED_ENDPOINTS.production.control);
 
 export const GATEWAY_BASE =
-  env?.VITE_HELA_GATEWAY ??
-  (env?.DEV ? "http://localhost:4001" : "https://gateway-production-bfdf.up.railway.app");
+  envUrl(env?.VITE_HELA_GATEWAY) ??
+  (env?.DEV ? "http://localhost:4001" : HOSTED_ENDPOINTS.production.gateway);
+
+function envUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}

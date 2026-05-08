@@ -28,6 +28,7 @@ import type { HelaClient, HelaChannel, Message, PresenceEntry } from "@hela/sdk"
 
 const GW = process.env.HELA_GATEWAY ?? "https://gateway-production-bfdf.up.railway.app";
 const CT = process.env.HELA_CONTROL ?? "https://control-production-059e.up.railway.app";
+let csrfToken: string | undefined;
 
 // --- tiny HTTP client with cookie jar ------------------------------------
 
@@ -38,6 +39,10 @@ type FetchOpts = Omit<RequestInit, "body"> & { body?: unknown };
 async function ctrl<T = unknown>(path: string, opts: FetchOpts = {}): Promise<T> {
   const headers = new Headers(opts.headers as HeadersInit | undefined);
   if (!headers.has("content-type")) headers.set("content-type", "application/json");
+  const method = (opts.method ?? "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && !headers.has("x-csrf-token")) {
+    headers.set("x-csrf-token", await csrf());
+  }
   if (jar.size) {
     headers.set("cookie", [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; "));
   }
@@ -63,6 +68,13 @@ async function ctrl<T = unknown>(path: string, opts: FetchOpts = {}): Promise<T>
   const txt = await r.text();
   if (!r.ok) throw new Error(`${opts.method ?? "GET"} ${path} → ${r.status}: ${txt.slice(0, 200)}`);
   return JSON.parse(txt) as T;
+}
+
+async function csrf(): Promise<string> {
+  if (csrfToken) return csrfToken;
+  const { csrf_token } = await ctrl<{ csrf_token: string }>("/auth/csrf");
+  csrfToken = csrf_token;
+  return csrfToken;
 }
 
 // --- types for control responses we care about --------------------------
@@ -93,14 +105,15 @@ function note(step: string, data?: unknown): void {
 
 // --- the test -----------------------------------------------------------
 
-const email = `sdk-e2e-${Date.now()}@gmail.com`;
+const email = `sdk-e2e-${Date.now()}@v0id.me`;
+const password = `sdk-e2e-pw-${Date.now()}`;
 const start = Date.now();
 
 // 1. signup
 console.log("\n1. SIGNUP");
 const { account } = await ctrl<{ account: Account }>("/auth/signup", {
   method: "POST",
-  body: { email },
+  body: { email, password },
 });
 note("account created", { id: account.id, email: account.email });
 
@@ -109,9 +122,10 @@ console.log("\n2. LOGOUT + LOGIN (exercise session cookie flow)");
 await ctrl("/auth/logout", { method: "POST" });
 note("logout");
 jar.clear();
+csrfToken = undefined;
 const { account: me2 } = await ctrl<{ account: Account }>("/auth/login", {
   method: "POST",
-  body: { email },
+  body: { email, password },
 });
 if (me2.id !== account.id) throw new Error("logged in as wrong account");
 note("logged back in", me2.id);

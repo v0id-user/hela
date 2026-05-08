@@ -4,7 +4,10 @@ defmodule ControlWeb.PageController do
   def health(conn, _), do: json(conn, %{ok: true})
 
   def version(conn, _) do
-    json(conn, diagnostics("control", %{node: to_string(node())}))
+    json(
+      conn,
+      diagnostics("control", %{node: to_string(node()), request_id: conn.assigns[:request_id]})
+    )
   end
 
   defp diagnostics(service, extra) do

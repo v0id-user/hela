@@ -1,7 +1,22 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 export function Page({ children }: { children: ReactNode }) {
-  return <div style={{ padding: 20, maxWidth: 820, margin: "0 auto" }}>{children}</div>;
+  return (
+    <div style={{ padding: 20, maxWidth: 820, margin: "0 auto" }}>
+      {children}
+      <footer
+        style={{
+          marginTop: 28,
+          paddingTop: 12,
+          borderTop: "1px solid #222",
+          fontSize: 11,
+          color: "#666",
+        }}
+      >
+        hela app · <VersionStamp />
+      </footer>
+    </div>
+  );
 }
 
 export function Panel({
@@ -75,4 +90,19 @@ export function Bar({ value, max }: { value: number; max: number }) {
       </span>
     </div>
   );
+}
+
+function VersionStamp() {
+  const [commit, setCommit] = useState<string>("dev");
+
+  useEffect(() => {
+    fetch("/version", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((v: { commit?: string } | null) => {
+        if (v?.commit) setCommit(v.commit.slice(0, 7));
+      })
+      .catch(() => {});
+  }, []);
+
+  return <span>{commit}</span>;
 }

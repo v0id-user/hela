@@ -20,7 +20,8 @@ defmodule ControlWeb.Endpoint do
     gzip: not code_reloading?,
     only: ControlWeb.static_paths()
 
-  plug Plug.RequestId
+  plug Plug.RequestId, assign_as: :request_id
+  plug :put_observability_headers
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   # Polar webhook needs the RAW body to verify its HMAC signature.
@@ -51,6 +52,15 @@ defmodule ControlWeb.Endpoint do
     end
   end
 
+  defp put_observability_headers(conn, _) do
+    Plug.Conn.register_before_send(conn, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_header("x-hela-service", "control")
+      |> Plug.Conn.put_resp_header("x-hela-version", app_version())
+      |> maybe_put_commit_header()
+    end)
+  end
+
   defp cache_body(conn, _) do
     if conn.request_path == "/webhooks/polar" do
       {:ok, body, conn} = Plug.Conn.read_body(conn)
@@ -58,5 +68,24 @@ defmodule ControlWeb.Endpoint do
     else
       conn
     end
+  end
+
+  defp app_version, do: Application.spec(:control, :vsn) |> to_string()
+
+  defp maybe_put_commit_header(conn) do
+    case env_first(["RAILWAY_GIT_COMMIT_SHA", "SOURCE_VERSION", "GITHUB_SHA"]) do
+      nil -> conn
+      commit -> Plug.Conn.put_resp_header(conn, "x-hela-commit", commit)
+    end
+  end
+
+  defp env_first(names) do
+    Enum.find_value(names, fn name ->
+      case System.get_env(name) do
+        nil -> nil
+        "" -> nil
+        value -> value
+      end
+    end)
   end
 end
