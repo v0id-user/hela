@@ -69,8 +69,11 @@ export default [
       "react-compiler": reactCompiler,
     },
     rules: {
-      // react-hooks: catches useEffectEvent misuse + exhaustive-deps
-      ...reactHooks.configs.recommended.rules,
+      // react-hooks: keep the core Hooks correctness checks stable
+      // across plugin majors; broader compiler purity policy lives in
+      // eslint-plugin-react-compiler below.
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
 
       // react-compiler: warn when a component would bail out of the
       // React 19 compiler's optimizations
