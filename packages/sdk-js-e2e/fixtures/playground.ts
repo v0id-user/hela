@@ -1,18 +1,20 @@
 import type { Page } from "@playwright/test";
 import { issuePlaygroundToken } from "@hela/sdk";
 
-const DEFAULT_GATEWAY_URL = process.env.HELA_E2E_BASE_URL
-  ? "https://gateway-production-bfdf.up.railway.app"
-  : "http://127.0.0.1:4010";
-const DEFAULT_CONTROL_URL = process.env.HELA_E2E_BASE_URL
-  ? "https://control-production-059e.up.railway.app"
-  : "http://127.0.0.1:4010";
+const USE_DEPLOYED_STACK = Boolean(process.env.HELA_E2E_BASE_URL);
+const PREVIEW_GATEWAY_URL = "http://127.0.0.1:4010";
+const DEFAULT_GATEWAY_URL = "https://gateway-production-bfdf.up.railway.app";
+const DEFAULT_CONTROL_URL = "https://control-production-059e.up.railway.app";
 const DEFAULT_APP_URL = "https://app-production-1716a.up.railway.app";
 const PREVIEW_BASE_URL = "http://127.0.0.1:4173";
 
 export const deployedUrls = {
-  gateway: process.env.HELA_GATEWAY_URL ?? DEFAULT_GATEWAY_URL,
-  control: process.env.HELA_CONTROL_URL ?? DEFAULT_CONTROL_URL,
+  gateway: USE_DEPLOYED_STACK
+    ? (process.env.HELA_GATEWAY_URL ?? DEFAULT_GATEWAY_URL)
+    : PREVIEW_GATEWAY_URL,
+  control: USE_DEPLOYED_STACK
+    ? (process.env.HELA_CONTROL_URL ?? DEFAULT_CONTROL_URL)
+    : PREVIEW_GATEWAY_URL,
   app: process.env.HELA_APP_URL ?? DEFAULT_APP_URL,
 };
 
