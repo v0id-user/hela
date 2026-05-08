@@ -18,6 +18,8 @@ defmodule ControlWeb.AuthControllerTest do
     conn = get(build_conn(), "/auth/csrf")
     token = json_response(conn, 200)["csrf_token"]
 
+    assert [_] = get_resp_header(conn, "set-cookie")
+
     conn =
       conn
       |> recycle()
