@@ -16,8 +16,8 @@
     "@hela/ui": "workspace:*",
     "@tanstack/react-router": "^1.169.1",
     "phoenix": "^1.8.5",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@types/phoenix": "^1.6.7",
