@@ -13,7 +13,7 @@
 # build that serves a cached old image will fail CI now, not ship
 # silently like it did on the first launch attempt.
 
-FROM nginx:1.29-alpine
+FROM nginx:1.31-alpine
 COPY dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
