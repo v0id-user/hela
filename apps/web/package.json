@@ -14,7 +14,7 @@
     "@hela/sdk": "workspace:*",
     "@hela/sdk-types": "workspace:*",
     "@hela/ui": "workspace:*",
-    "@tanstack/react-router": "^1.169.1",
+    "@tanstack/react-router": "^1.169.2",
     "phoenix": "^1.8.5",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
