@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@tanstack/react-router": "^1.169.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.0",
     "rehype-highlight": "^7.0.0",
